@@ -2,6 +2,7 @@ package com.glasssix.server.threadPool;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -15,14 +16,29 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Configuration
 public class ThreadPoolConfig {
 
+    @Value("${spring.thread-pool.core-pool-size}")
+    private int corePoolSize;
+
+    @Value("${spring.thread-pool.max-pool-size}")
+    private int maxPoolSize;
+
+    @Value("${spring.thread-pool.queue-capacity}")
+    private int queueCapacity;
+
+    @Value("${spring.thread-pool.keep-alive-seconds}")
+    private int keepAliveSeconds;
+
+    @Value("${spring.thread-pool.thread-name-prefix}")
+    private String threadNamePrefix;
+
     @Bean("taskExecutor")
     public Executor taskExecutor(){
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(20);
-        executor.setMaxPoolSize(40);
-        executor.setQueueCapacity(200);
-        executor.setKeepAliveSeconds(60);
-        executor.setThreadNamePrefix("JNI-Thread-");
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(queueCapacity);
+        executor.setKeepAliveSeconds(keepAliveSeconds);
+        executor.setThreadNamePrefix(threadNamePrefix);
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);

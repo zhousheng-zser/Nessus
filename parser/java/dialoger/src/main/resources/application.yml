@@ -6,6 +6,12 @@ spring:
     port: 5672
     username: guest
     password: guest
+  thread-pool:
+    core-pool-size: 20
+    max-pool-size: 40
+    queue-capacity: 200
+    keep-alive-seconds: 60
+    thread-name-prefix: JNI-Thread-
 
   gson:
     date-format: yyyy-MM-dd HH:mm:ss # 序列化日期对象时使用的格式
