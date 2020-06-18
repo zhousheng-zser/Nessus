@@ -3,6 +3,7 @@ package com.glasssix.server;
 import com.glasssix.server.protocol.longinus.DetectRetinaProtocol;
 import com.glasssix.server.protocol.ProtocolConfig;
 import com.glasssix.server.protocol.ProtocolRegisterEntry;
+import com.glasssix.server.rabbitmq.CustomerRabbitMQSender;
 import com.glasssix.server.rabbitmq.RabbitMQSender;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.*;
 import java.util.List;
 
 @SpringBootTest
@@ -17,7 +19,7 @@ import java.util.List;
 class DialogerApplicationTests {
 
 	@Autowired
-	private RabbitMQSender rabbitMQSender;
+	private CustomerRabbitMQSender customerRabbitMQSender;
 
 	@Autowired
 	private Gson gson;
@@ -25,12 +27,27 @@ class DialogerApplicationTests {
 	@Autowired
 	private ProtocolConfig protocolConfig;
 
+	private String customerRoutingKey = "Glasssix.Excalibur.V1.111.Longinus.detectEx";
+
 
 
 	@Test
 	void rabbitMQConnectTest() {
 		log.info("start test!");
-		rabbitMQSender.send("hello body!");
+		String message = null;
+		try{
+			FileInputStream fileInputStream = new FileInputStream("es.txt");
+			InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
+			BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+			message = bufferedReader.readLine();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		while (true) {
+			customerRabbitMQSender.customerSend(customerRoutingKey,message);
+		}
 	}
 
 	@Test
@@ -50,13 +67,13 @@ class DialogerApplicationTests {
 		log.error("error");
 	}
 
-	@Test
+	/*@Test
 	void threadPoolTest() throws InterruptedException {
 		for(int i=0;i<100;i++){
-			rabbitMQSender.send(""+i+"-->"+getJSON());
+			customerRabbitMQSender.customerSend(customerRoutingKey,""+i+"-->"+getJSON());
 		}
 		Thread.currentThread().join();
-	}
+	}*/
 
 	@Test
 	void protocolRegisterTest(){

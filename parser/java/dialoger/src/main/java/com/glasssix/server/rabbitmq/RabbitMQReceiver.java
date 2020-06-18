@@ -30,11 +30,4 @@ public class RabbitMQReceiver {
 
     }
 
-    @RabbitListener(bindings = {@QueueBinding(value = @Queue(value = "${rabbit.server.queue.name}", durable = "true"),
-            exchange = @Exchange(value = "${rabbit.server.topicExchange.name}", type = "topic"),
-            key = "${rabbit.server.queue.routingKey}")})
-    @RabbitHandler
-    public void backProcess(Message message){
-        log.info("back: "+new String(message.getBody(), StandardCharsets.UTF_8));
-    }
 }

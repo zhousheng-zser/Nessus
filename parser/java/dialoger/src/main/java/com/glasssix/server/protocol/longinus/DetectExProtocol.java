@@ -106,7 +106,7 @@ public class DetectExProtocol implements ProtocolInterface {
 
     @Override
     public String protocolProcess(String receivedRoutingKey,String correlationDate) {
-        try {
+        /*try {
             byte[] images = Base64.getDecoder().decode(image.getBytes());
             FileOutputStream fileOutputStream = new FileOutputStream("image\\" + UUID.randomUUID().toString().split("-")[0] + ".jpg");
             fileOutputStream.write(images);
@@ -116,7 +116,7 @@ public class DetectExProtocol implements ProtocolInterface {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
         return null;
     }
 

@@ -71,7 +71,7 @@ public class TaskContext {
             String backResult = transformToBackStr(receivedRoutingKey, correlationDate, result);
             String backRoutingKey = getBackRoutingKey(receivedRoutingKey);
             log.info(correlationDate);
-            rabbitMQSender.back(backRoutingKey,backResult,correlationDate);
+            rabbitMQSender.serverSend(backRoutingKey,backResult,correlationDate);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
