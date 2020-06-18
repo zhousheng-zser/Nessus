@@ -1,0 +1,8 @@
+protocol:
+  registers:
+    - name: detectEx #和客户发过来的event_id保持一致
+      start: true
+      entry: longinus.DetectExProtocol
+    - name: detectRetina
+      start: true
+      entry: loginus.DetectRetinaProtocol
