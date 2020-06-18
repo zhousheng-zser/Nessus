@@ -24,7 +24,8 @@ public class RabbitMQSender {
         this.rabbitTemplate.convertAndSend(rabbitConfig.getCustomerTopicExchange(),rabbitConfig.getCustomerRoutingKey(),message,correlationData);
     }
 
-    public void back(String serverRoutingKey,String message){
-        this.rabbitTemplate.convertAndSend(rabbitConfig.getServerTopicExchange(),serverRoutingKey,message);
+    public void back(String serverRoutingKey,String message,String correlationId){
+        CorrelationData correlationData = new CorrelationData(correlationId);
+        this.rabbitTemplate.convertAndSend(rabbitConfig.getServerTopicExchange(),serverRoutingKey,message,correlationData);
     }
 }

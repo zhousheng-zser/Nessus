@@ -78,7 +78,7 @@ public class RabbitConfig {
                 .with(ServerRoutingKey);
     }
 
-    /*@Bean
+    @Bean
     public RabbitTemplate rabbitTemplate(){
         connectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
         connectionFactory.setPublisherReturns(true);
@@ -102,7 +102,7 @@ public class RabbitConfig {
             }
         });
         return rabbitTemplate;
-    }*/
+    }
 
     public String getCustomerTopicExchange() {
         return CustomerTopicExchange;

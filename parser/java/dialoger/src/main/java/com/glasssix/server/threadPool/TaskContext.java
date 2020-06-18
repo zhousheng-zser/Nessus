@@ -70,7 +70,8 @@ public class TaskContext {
             String result = callJNI(params);//JNI调用
             String backResult = transformToBackStr(receivedRoutingKey, correlationDate, result);
             String backRoutingKey = getBackRoutingKey(receivedRoutingKey);
-            rabbitMQSender.back(backRoutingKey,backResult);
+            log.info(correlationDate);
+            rabbitMQSender.back(backRoutingKey,backResult,correlationDate);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
