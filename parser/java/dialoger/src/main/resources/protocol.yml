@@ -1,8 +1,56 @@
 protocol:
   registers:
-    - name: detectEx #和客户发过来的event_id保持一致
+    - name: detectEx #和客户发过来的RoutingKey的第6个字段保持一致
       start: true
       entry: longinus.DetectExProtocol
     - name: detectRetina
       start: true
       entry: loginus.DetectRetinaProtocol
+    - name: alignFace
+      start: true
+      entry: loginus.AlignFaceProtocol
+    - name: cassiusForward
+      start: true
+      entry: cassius.CassiusForwardProtocol
+    - name: gaiusForward
+      start: true
+      entry: gaius.GaiusForwardProtocol
+    - name: personDBAddRecord
+      start: true
+      entry: irisviel.PersonDBAddRecordProtocol
+    - name: personDBAddRecords
+      start: true
+      entry: irisviel.PersonDBAddRecordsProtocol
+    - name: personDBClear
+      start: true
+      entry: irisviel.PersonDBClearProtocol
+    - name: personDBDelete
+      start: true
+      entry: irisviel.PersonDBDeleteProtocol
+    - name: personDBInit
+      start: true
+      entry: irisviel.PersonDBInitProtocol
+    - name: personDBLoad
+      start: true
+      entry: irisviel.PersonDBLoadProtocol
+    - name: personDBQuery
+      start: true
+      entry: irisviel.PersonDBQueryProtocol
+    - name: personDBRemoveAll
+      start: true
+      entry: irisviel.PersonDBRemoveAllProtocol
+    - name: personDBRemoveRecord
+      start: true
+      entry: irisviel.PersonDBRemoveRecordProtocol
+    - name: personDBRemoveRecords
+      start: true
+      entry: irisviel.PersonDBRemoveRecordsProtocol
+    - name: personDBSearch
+      start: true
+      entry: irisviel.PersonDBSearchProtocol
+    - name: personDBUpdateRecord
+      start: true
+      entry: irisviel.PersonDBUpdateRecordProtocol
+    - name: personDBUpdateRecords
+      start: true
+      entry: irisviel.PersonDBUpdateRecordsProtocol

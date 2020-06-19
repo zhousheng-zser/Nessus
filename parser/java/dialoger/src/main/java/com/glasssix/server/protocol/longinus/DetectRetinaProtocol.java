@@ -1,8 +1,10 @@
 package com.glasssix.server.protocol.longinus;
 
 import com.glasssix.server.protocol.ProtocolInterface;
+import com.google.gson.annotations.SerializedName;
 
 public class DetectRetinaProtocol implements ProtocolInterface {
+    @SerializedName("even_id")
     private String eventId; //事件id
     private String image;   //三通道图片base64编码
     private String format;  //图片压缩格式RAW/JPEG/PNG

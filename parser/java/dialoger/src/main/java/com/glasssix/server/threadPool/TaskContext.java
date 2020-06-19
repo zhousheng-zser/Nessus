@@ -53,7 +53,7 @@ public class TaskContext {
             return;
         }
         String msg = new String(message.getBody(), StandardCharsets.UTF_8);
-        log.info("correlationData({})",correlationDate);
+        log.info("receive correlationData({})",correlationDate);
 
 
         try {
@@ -78,7 +78,7 @@ public class TaskContext {
     }
 
     private String callJNI(String params) {
-        log.info("JNI 调用，参数是:"+params);
+        log.info("JNI Interface call，params:"+params);
         return "wait"+ UUID.randomUUID();
     }
 
