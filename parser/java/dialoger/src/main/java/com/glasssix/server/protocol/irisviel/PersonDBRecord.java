@@ -2,14 +2,14 @@ package com.glasssix.server.protocol.irisviel;
 
 public class PersonDBRecord {
 
-    private String[] feature;
+    private double[] feature;
     private String key;
 
-    public String[] getFeature() {
+    public double[] getFeature() {
         return feature;
     }
 
-    public void setFeature(String[] feature) {
+    public void setFeature(double[] feature) {
         this.feature = feature;
     }
 

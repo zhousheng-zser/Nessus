@@ -64,6 +64,9 @@ class DialogerApplicationTests {
 	@Autowired
 	private PersonDBRemoveRecordProtocolTest removeRecordProtocolTest;
 
+	@Autowired
+	private PersonDBAddRecordsProtocolTest addRecordsProtocolTest;
+
 	private String customerRoutingKey = "Glasssix.Excalibur.V1.111.";
 
 
@@ -217,6 +220,12 @@ class DialogerApplicationTests {
 	@Test
 	void personRemoveRecord(){
 		removeRecordProtocolTest.sendPersonDBRemoveRecordProtocolData(customerRoutingKey);
+		waitMe();
+	}
+
+	@Test
+	void personDBAddRecords(){
+		addRecordsProtocolTest.sendPersonDBAddRecordsProtocolData(customerRoutingKey);
 		waitMe();
 	}
 
