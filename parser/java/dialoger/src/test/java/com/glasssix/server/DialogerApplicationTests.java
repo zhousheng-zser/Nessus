@@ -1,8 +1,10 @@
 package com.glasssix.server;
 
+import com.glasssix.server.protocol.longinus.DetectExProtocol;
 import com.glasssix.server.protocol.longinus.DetectRetinaProtocol;
 import com.glasssix.server.protocol.ProtocolConfig;
 import com.glasssix.server.protocol.ProtocolRegisterEntry;
+import com.glasssix.server.protocol.longinus.DetectRetinaProtocolTest;
 import com.glasssix.server.rabbitmq.CustomerRabbitMQSender;
 import com.glasssix.server.rabbitmq.RabbitMQSender;
 import com.google.gson.Gson;
@@ -27,7 +29,10 @@ class DialogerApplicationTests {
 	@Autowired
 	private ProtocolConfig protocolConfig;
 
-	private String customerRoutingKey = "Glasssix.Excalibur.V1.111.Longinus.detectEx";
+	@Autowired
+	private DetectRetinaProtocolTest detectRetinaProtocolTest;
+
+	private String customerRoutingKey = "Glasssix.Excalibur.V1.111.";
 
 
 
@@ -46,7 +51,7 @@ class DialogerApplicationTests {
 			e.printStackTrace();
 		}
 		while (true) {
-			customerRabbitMQSender.customerSend(customerRoutingKey,message);
+			customerRabbitMQSender.customerSend(customerRoutingKey+"Longinus.detectEx",message);
 		}
 	}
 
@@ -90,6 +95,34 @@ class DialogerApplicationTests {
 		detectRetinaProtocol.setImage("ZHNkZGRqZmFzbGRmc2RhYWZkbXNrYWZqYWRpc25jJTJDYWNud2ZrcWQ=");
 		String jsonStr = gson.toJson(detectRetinaProtocol);
 		return jsonStr;
+	}
+
+	public String getImage(){
+		String image = null;
+		try{
+			FileInputStream fileInputStream = new FileInputStream("es.txt");
+			InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream);
+			BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+			String message = bufferedReader.readLine();
+			DetectExProtocol detectExProtocol = gson.fromJson(message, DetectExProtocol.class);
+			image = detectExProtocol.getImage();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return image;
+	}
+
+	//--------------------------------------协议单元测试------------------------------------------------------------------
+	@Test
+	void DetectRetinaTest(){
+		detectRetinaProtocolTest.sendDetectRetinaProtocolData(customerRoutingKey,getImage());
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

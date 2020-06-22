@@ -5,10 +5,10 @@ protocol:
       entry: longinus.DetectExProtocol
     - name: detectRetina
       start: true
-      entry: loginus.DetectRetinaProtocol
+      entry: longinus.DetectRetinaProtocol
     - name: alignFace
       start: true
-      entry: loginus.AlignFaceProtocol
+      entry: longinus.AlignFaceProtocol
     - name: cassiusForward
       start: true
       entry: cassius.CassiusForwardProtocol
