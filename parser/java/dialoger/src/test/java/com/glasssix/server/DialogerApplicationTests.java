@@ -1,5 +1,6 @@
 package com.glasssix.server;
 
+import com.glasssix.server.protocol.gaius.GaiusForwardProtocolTest;
 import com.glasssix.server.protocol.irisviel.*;
 import com.glasssix.server.protocol.longinus.AlignFaceProtocolTest;
 import com.glasssix.server.protocol.longinus.DetectExProtocol;
@@ -75,6 +76,9 @@ class DialogerApplicationTests {
 
 	@Autowired
 	private PersonDBUpdateRecordsProtocolTest updateRecordsProtocolTest;
+
+	@Autowired
+	private GaiusForwardProtocolTest gaiusForwardProtocolTest;
 
 	private String customerRoutingKey = "Glasssix.Excalibur.V1.111.";
 
@@ -253,6 +257,12 @@ class DialogerApplicationTests {
 	@Test
 	void personDBUpdateRecords(){
 		updateRecordsProtocolTest.sendPersonDBUpdateRecordsProtocolData(customerRoutingKey);
+		waitMe();
+	}
+
+	@Test
+	void gaiusForward(){
+		gaiusForwardProtocolTest.sendGaiusForwardProtocolData(customerRoutingKey,getImage());
 		waitMe();
 	}
 
