@@ -67,6 +67,9 @@ class DialogerApplicationTests {
 	@Autowired
 	private PersonDBAddRecordsProtocolTest addRecordsProtocolTest;
 
+	@Autowired
+	private PersonDBAddRecordProtocolTest addRecordProtocolTest;
+
 	private String customerRoutingKey = "Glasssix.Excalibur.V1.111.";
 
 
@@ -226,6 +229,12 @@ class DialogerApplicationTests {
 	@Test
 	void personDBAddRecords(){
 		addRecordsProtocolTest.sendPersonDBAddRecordsProtocolData(customerRoutingKey);
+		waitMe();
+	}
+
+	@Test
+	void personAddRecord(){
+		addRecordProtocolTest.sendPersonDBAddRecordProtocolData(customerRoutingKey);
 		waitMe();
 	}
 
