@@ -1,9 +1,6 @@
 package com.glasssix.server;
 
-import com.glasssix.server.protocol.irisviel.PersonDBDeleteProtocolTest;
-import com.glasssix.server.protocol.irisviel.PersonDBInitProtocolTest;
-import com.glasssix.server.protocol.irisviel.PersonDBQueryProtocolTest;
-import com.glasssix.server.protocol.irisviel.PersonDBSearchProtocolTest;
+import com.glasssix.server.protocol.irisviel.*;
 import com.glasssix.server.protocol.longinus.AlignFaceProtocolTest;
 import com.glasssix.server.protocol.longinus.DetectExProtocol;
 import com.glasssix.server.protocol.longinus.DetectRetinaProtocol;
@@ -51,6 +48,9 @@ class DialogerApplicationTests {
 
 	@Autowired
 	private PersonDBSearchProtocolTest dbSearchProtocolTest;
+
+	@Autowired
+	private PersonDBClearProtocolTest dbClearProtocolTest;
 
 	private String customerRoutingKey = "Glasssix.Excalibur.V1.111.";
 
@@ -175,6 +175,12 @@ class DialogerApplicationTests {
 	@Test
 	void personDBSearch(){
 		dbSearchProtocolTest.sendPersonDBSearchProtocolData(customerRoutingKey);
+		waitMe();
+	}
+
+	@Test
+	void personDBClear(){
+		dbClearProtocolTest.sendPersonDBClearProtocolData(customerRoutingKey);
 		waitMe();
 	}
 
