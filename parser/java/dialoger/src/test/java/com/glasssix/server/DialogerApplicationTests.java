@@ -1,5 +1,6 @@
 package com.glasssix.server;
 
+import com.glasssix.server.protocol.irisviel.PersonDBInitProtocolTest;
 import com.glasssix.server.protocol.longinus.AlignFaceProtocolTest;
 import com.glasssix.server.protocol.longinus.DetectExProtocol;
 import com.glasssix.server.protocol.longinus.DetectRetinaProtocol;
@@ -35,6 +36,9 @@ class DialogerApplicationTests {
 
 	@Autowired
 	private AlignFaceProtocolTest alignFaceProtocolTest;
+
+	@Autowired
+	private PersonDBInitProtocolTest personDBInitProtocolTest;
 
 	private String customerRoutingKey = "Glasssix.Excalibur.V1.111.";
 
@@ -127,14 +131,20 @@ class DialogerApplicationTests {
 	}
 	//--------------------------------------协议单元测试------------------------------------------------------------------
 	@Test
-	void DetectRetinaTest(){
+	void detectRetinaTest(){
 		detectRetinaProtocolTest.sendDetectRetinaProtocolData(customerRoutingKey,getImage());
 		waitMe();
 	}
 
 	@Test
-	void AlignFaceTest(){
+	void alignFaceTest(){
 		alignFaceProtocolTest.sendAlignFaceProtocolData(customerRoutingKey);
+		waitMe();
+	}
+
+	@Test
+	void personDBInit(){
+		personDBInitProtocolTest.sendPersonDBInitProtocolData(customerRoutingKey);
 		waitMe();
 	}
 

@@ -9,9 +9,6 @@ import org.springframework.stereotype.Component;
 public class AlignFaceProtocolTest {
 
     @Autowired
-    private Gson gson;
-
-    @Autowired
     private CustomerRabbitMQSender customerRabbitMQSender;
 
     public String getAlignFaceProtocolData(){
