@@ -5,9 +5,10 @@ import com.google.gson.annotations.SerializedName;
 
 public class AlignFaceProtocol implements ProtocolInterface {
 
-    @SerializedName("even_id")
+    @SerializedName("event_id")
     private String eventId;	//  事件id
     private String gray;        //灰度图片像素
+    private String format;      //
     private int channel;        //图片通道数 灰度图为1
     private int height;	        //	图片高度
     private int width;	        //	图片宽度
@@ -29,6 +30,14 @@ public class AlignFaceProtocol implements ProtocolInterface {
 
     public void setGray(String gray) {
         this.gray = gray;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
     }
 
     public int getChannel() {

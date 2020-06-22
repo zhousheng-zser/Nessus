@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class PersonDBRemoveAllProtocol implements ProtocolInterface {
 
-    @SerializedName("even_id")
+    @SerializedName("event_id")
     private String eventId;	    //  事件id
 
     @SerializedName("instance_id")

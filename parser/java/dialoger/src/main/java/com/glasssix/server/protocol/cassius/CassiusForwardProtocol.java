@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class CassiusForwardProtocol implements ProtocolInterface {
 
-    @SerializedName("even_id")
+    @SerializedName("event_id")
     private String eventId;	    //  事件id
 
     private String alignedImage;//对齐生成的人脸三通道图片,每张图片为3x512x512个字节

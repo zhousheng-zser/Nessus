@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class DetectExProtocol implements ProtocolInterface {
 
-    @SerializedName("even_id")
+    @SerializedName("event_id")
     private String eventId;	//  事件id
     private String image;		//  三通道图片	base64编码
     private String format;	    //	图片压缩格式	RAW/JPEG/PNG
