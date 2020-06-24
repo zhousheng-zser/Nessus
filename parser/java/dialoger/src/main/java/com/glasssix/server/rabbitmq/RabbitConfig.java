@@ -40,12 +40,13 @@ public class RabbitConfig {
 
 
 
-    @Bean
+    /*@Bean
     public Queue createCustomerQueue(){
         Map<String,Object> args = new HashMap<String,Object>();
-        /*args.put("x-message-ttl",10000);
+        int ttl = 10000;
+        args.put("x-message-ttl",ttl);
         args.put("x-max-length",1000);
-        args.put("x-max-length-bytes",1024*1024*1024);*/
+        args.put("x-max-length-bytes",1024*1024*1024);
         return new Queue(CustomerQueue,true,false,false,args);
     }
 
@@ -54,16 +55,18 @@ public class RabbitConfig {
         return new TopicExchange(CustomerTopicExchange);
     }
 
-    @Bean
+    //@Bean
     public Binding bindCustomerQueue(){
         return BindingBuilder.bind(createCustomerQueue())
                 .to(createCustomerExchange())
                 .with(CustomerRoutingKey);
-    }
+    }*/
 
     @Bean
     public Queue createServerQueue(){
-        return new Queue(ServerQueue);
+        Map<String,Object> args = new HashMap<String,Object>();
+        //args.put("x-message-ttl",100000);
+        return new Queue(ServerQueue,true,false,false);
     }
 
     @Bean

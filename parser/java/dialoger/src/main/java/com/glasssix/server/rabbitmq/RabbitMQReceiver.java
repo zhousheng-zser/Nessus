@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 @Slf4j
 @Component
@@ -18,12 +19,13 @@ public class RabbitMQReceiver {
     private ApplicationContext context;
 
 
-    @RabbitListener(bindings = {@QueueBinding(value = @Queue(value = "${rabbit.customer.queue.name}", durable = "true"),
+    @RabbitListener(bindings = {@QueueBinding(value = @Queue(value = "${rabbit.customer.queue.name}",
+            durable = "true",arguments = {@Argument(name="x-message-ttl",value = "10000",type = "java.lang.Integer")}),
                                     exchange = @Exchange(value = "${rabbit.customer.topicExchange.name}", type = "topic"),
                                     key = "${rabbit.customer.queue.routingKey}")})
     @RabbitHandler
     public void process(Message message) {
-
+        System.out.println("start receive data date " + new Date());
         TaskContext taskContext = context.getBean(TaskContext.class);
         taskContext.setMessage(message);
         taskContext.runJNITask();
