@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30204.135
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PluginRegister", "PluginRegister.vcxproj", "{ACD5E95E-6AD6-4872-985A-E241B19949C5}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VisionService", "VisionService.vcxproj", "{78180B15-4FB6-4C4F-B9E7-806D8D96BF52}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -15,6 +17,10 @@ Global
 		{ACD5E95E-6AD6-4872-985A-E241B19949C5}.Debug|x64.Build.0 = Debug|x64
 		{ACD5E95E-6AD6-4872-985A-E241B19949C5}.Release|x64.ActiveCfg = Debug|x64
 		{ACD5E95E-6AD6-4872-985A-E241B19949C5}.Release|x64.Build.0 = Debug|x64
+		{78180B15-4FB6-4C4F-B9E7-806D8D96BF52}.Debug|x64.ActiveCfg = Debug|x64
+		{78180B15-4FB6-4C4F-B9E7-806D8D96BF52}.Debug|x64.Build.0 = Debug|x64
+		{78180B15-4FB6-4C4F-B9E7-806D8D96BF52}.Release|x64.ActiveCfg = Release|x64
+		{78180B15-4FB6-4C4F-B9E7-806D8D96BF52}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

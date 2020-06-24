@@ -1,6 +1,6 @@
 #pragma once
 
-#include "abi/consumer.hpp"
+#include <abi/consumer.hpp>
 
 namespace glasssix::exposing::nessus
 {
@@ -22,7 +22,7 @@ namespace glasssix::exposing::impl
 			virtual std::int32_t G6_ABI_CALL name(abi_out_t<param_string> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL get_available_functions(abi_out_t<param_vector<param_string>> result) noexcept = 0;
-			virtual std::int32_t G6_ABI_CALL execute(abi_in_t<param_string> function_name, abi_in_t<param_vector<unknown_object>> params, abi_out_t<unknown_object> result) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL execute(abi_in_t<param_string> function_name, abi_in_t<param_hash_map<param_string, unknown_object>> params, abi_out_t<unknown_object> result) noexcept = 0;
 		};
 	};
 
@@ -44,9 +44,9 @@ namespace glasssix::exposing::impl
 			return abi_safe_call([&] { *result = detach_abi(this->self().get_available_functions()); });
 		}
 
-		virtual std::int32_t G6_ABI_CALL execute(abi_in_t<param_string> function_name, abi_in_t<param_vector<unknown_object>> params, abi_out_t<unknown_object> result) noexcept override
+		virtual std::int32_t G6_ABI_CALL execute(abi_in_t<param_string> function_name, abi_in_t<param_hash_map<param_string, unknown_object>> params, abi_out_t<unknown_object> result) noexcept override
 		{
-			return abi_safe_call([&] { *result = detach_abi(this->self().execute(create_from_abi<param_string>(function_name), create_from_abi<param_vector<unknown_object>>(params))); });
+			return abi_safe_call([&] { *result = detach_abi(this->self().execute(create_from_abi<param_string>(function_name), create_from_abi<param_hash_map<param_string, unknown_object>>(params))); });
 		}
 	};
 
@@ -76,7 +76,7 @@ namespace glasssix::exposing::impl
 				return (check_abi_result(this->self_abi().get_available_functions(put_abi(result))), result);
 			}
 
-			unknown_object execute(const param_string& function_name, const param_vector<unknown_object>& params) const
+			unknown_object execute(const param_string& function_name, const param_hash_map<param_string, unknown_object>& params) const
 			{
 				unknown_object result{ nullptr };
 
