@@ -176,7 +176,7 @@ namespace glasssix::exposing::nessus
 				{
 					throw abi_invalid_argument{};
 				}
-
+				
 				return longinus_create_face_info_helper(face_info, size);
 			}
 
