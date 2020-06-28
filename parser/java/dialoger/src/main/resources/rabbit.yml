@@ -1,0 +1,17 @@
+rabbit:
+  customer:
+    topicExchange:
+      name: customerTopicExchange
+    queue:
+      name: customerQueue
+      routingKey: Glasssix.Excalibur.V1.*.*.*
+      routingKeyPrefix: Glasssix.Excalibur.V1.
+      timeToLive: 10000
+  server:
+    topicExchange:
+      name: serverTopicExchange
+    queue:
+      name: serverQueue
+      routingKeyPrefix: Glasssix.Excalibur.V1.
+      routingKeySuffix: .result
+      routingKey: Glasssix.Excalibur.V1.*.*.*

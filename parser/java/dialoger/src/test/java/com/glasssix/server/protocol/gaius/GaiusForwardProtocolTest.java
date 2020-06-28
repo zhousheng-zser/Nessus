@@ -1,0 +1,26 @@
+package com.glasssix.server.protocol.gaius;
+
+import com.glasssix.server.rabbitmq.CustomerRabbitMQSender;
+import com.google.gson.Gson;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class GaiusForwardProtocolTest {
+
+    @Autowired
+    private CustomerRabbitMQSender customerRabbitMQSender;
+    @Autowired
+    private Gson gson;
+
+    public String getGaiusForwardProtocolData(String image){
+        String data = "{\"event_id\":\"123456\",\"alignedImage\":\"\",\"num\":2,\"order\":0,\"reserved\":\"\"}";
+        GaiusForwardProtocol gaiusForwardProtocol = gson.fromJson(data, GaiusForwardProtocol.class);
+        gaiusForwardProtocol.setAlignedImage(image);
+        return gson.toJson(gaiusForwardProtocol);
+    }
+
+    public void sendGaiusForwardProtocolData(String customerRoutingKeyPrefix,String image){
+        customerRabbitMQSender.customerSend(customerRoutingKeyPrefix+"gaius.gaiusForward", getGaiusForwardProtocolData(image));
+    }
+}
