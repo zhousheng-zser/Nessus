@@ -6,6 +6,7 @@ rabbit:
       name: customerQueue
       routingKey: Glasssix.Excalibur.V1.*.*.*
       routingKeyPrefix: Glasssix.Excalibur.V1.
+      timeToLive: 10000
   server:
     topicExchange:
       name: serverTopicExchange

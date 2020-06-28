@@ -23,16 +23,37 @@ Configuration:
       ThresholdFilter:
         level: ${sys:log.level.console} # “sys:”表示：如果VM参数中没指定这个变量值，则使用本文件中定义的缺省全局变量值
         onMatch: ACCEPT
-        onMismatch: DENY
+        onMismatch: NEUTRAL
       PatternLayout:
         pattern: "%d{yyyy-MM-dd HH:mm:ss,SSS}:%4p %t (%F:%L) - %m%n"
     RollingFile: # 输出到文件，超过128MB归档
+      - name: ERROR_ROLLING_FILE
+        ignoreExceptions: false
+        fileName: ${log.path}/${project.name}-error.log
+        filePattern: "${log.path}/$${date:yyyy-MM}/${project.name}-%d{yyyy-MM-dd}-error-%i.log.gz"
+        PatternLayout:
+          pattern: "%d{yyyy-MM-dd HH:mm:ss,SSS}:%4p %t (%F:%L) - %m"
+        Filters:
+          ThresholdFilter:
+            - level: error
+              onMatch: ACCEPT
+              onMismatch: DENY
+        Policies:
+          SizeBasedTriggeringPolicy:
+            size: "128 MB"
+        DefaultRolloverStrategy:
+          max: 20
       - name: ROLLING_FILE
         ignoreExceptions: false
         fileName: ${log.path}/${project.name}.log
         filePattern: "${log.path}/$${date:yyyy-MM}/${project.name}-%d{yyyy-MM-dd}-%i.log.gz"
         PatternLayout:
-          pattern: "%d{yyyy-MM-dd HH:mm:ss,SSS}:%4p %t (%F:%L) - %m"
+          pattern: "%d{yyyy-MM-dd HH:mm:ss,SSS}:%4p %t (%F:%L) - %m%n"
+        Filters:
+          ThresholdFilter:
+            - level: error
+              onMatch: DENY
+              onMismatch: ACCEPT
         Policies:
           SizeBasedTriggeringPolicy:
             size: "128 MB"
@@ -45,6 +66,7 @@ Configuration:
       AppenderRef:
         - ref: CONSOLE
         - ref: ROLLING_FILE
+        - ref: ERROR_ROLLING_FILE
     Logger: # 为com.xjj包配置特殊的Log级别，方便调试
       - name: com.xjj
         additivity: false

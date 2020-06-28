@@ -49,7 +49,7 @@ public class TaskContext {
         String algorithmName = receivedRoutingKey.split("\\.")[5];
         String entryName = ProtocolCache.getEntryName(algorithmName);
         if(StringUtils.isEmpty(entryName)){
-            log.warn("correlationData({}) call algorithm({}) is not register",correlationDate,algorithmName);
+            log.error("correlationData({}) call algorithm({}) is not register",correlationDate,algorithmName);
             return;
         }
         String msg = new String(message.getBody(), StandardCharsets.UTF_8);
