@@ -72,7 +72,7 @@ namespace glasssix::exposing::impl
 	{
 		static constexpr guid value{ "47534958-0000-0000-0000-444F55424C45" };
 	};
-
+	
 	/// <summary>
 	/// A type identity.
 	/// </summary>
