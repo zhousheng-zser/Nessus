@@ -63,16 +63,6 @@ namespace glasssix::exposing::impl
 		static constexpr guid value{ "47534958-0000-0000-0000-55494E543634" };
 	};
 
-	template<> struct guid_storage<std::intptr_t>
-	{
-		static constexpr guid value{ "47534958-0000-0000-0000-696E74707472" };
-	};
-
-	template<> struct guid_storage<std::uintptr_t>
-	{
-		static constexpr guid value{ "47534958-0000-0000-0075-696E74707472" };
-	};
-
 	template<> struct guid_storage<float>
 	{
 		static constexpr guid value{ "47534958-0000-0000-0000-00464C4F4154" };

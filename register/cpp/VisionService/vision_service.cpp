@@ -14,6 +14,40 @@ namespace glasssix::exposing::nessus
 {
 	namespace
 	{
+		using namespace longinus;
+
+		unknown_object longinus_create_face_info_helper(face_rect_with_face_info* info, std::size_t size)
+		{
+			auto result = make_param_vector<param_hash_map<param_string, unknown_object>>();
+
+			for (auto ptr = info; ptr < info + size; ptr++)
+			{
+				auto landmarks = make_param_vector<int>();
+
+				for (std::size_t i = 0; i < sizeof(ptr->pts) / sizeof(ptr->pts[0]); i++)
+				{
+					landmarks.push_back(ptr->pts[i].x);
+					landmarks.push_back(ptr->pts[i].y);
+				}
+
+				result.push_back(make_param_hash_map<param_string, unknown_object>(
+					{
+						{ u8"x", box(ptr->x) },
+						{ u8"y", box(ptr->y) },
+						{ u8"width", box(ptr->width) },
+						{ u8"height", box(ptr->height) },
+						{ u8"confidence", box(ptr->confidence) },
+						{ u8"yaw", box(ptr->yaw) },
+						{ u8"pitch", box(ptr->pitch) },
+						{ u8"roll", box(ptr->roll) },
+						{ u8"landmark", landmarks }
+					}
+				));
+			}
+
+			return result;
+		}
+
 		irisviel_database_record_handle irisviel_create_record_helper(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto dimension = unbox<int>(params.get_value(u8"dimension"));
@@ -62,28 +96,35 @@ namespace glasssix::exposing::nessus
 		unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<int>(params.get_value(u8"device"));
+
+			return box(reinterpret_cast<std::uintptr_t>(::Longinus_NewInstance(device)));
 		}
 
 		unknown_object longinus_delete(const param_hash_map<param_string, unknown_object>& params)
 		{
-			if (auto instance = reinterpret_cast<void*>(unbox<std::uintptr_t>(params.get_value(u8"object_id"))))
+			if (auto instance = reinterpret_cast<LonginusDetector*>(unbox<std::uintptr_t>(params.get_value(u8"object_id"))))
 			{
-
+				::Longinus_ReleaseInstance(instance);
 			}
+
+			return nullptr;
 		}
 
 		unknown_object longinus_align_face(const param_hash_map<param_string, unknown_object>& params)
 		{
-			if (auto instance = reinterpret_cast<void*>(unbox<std::uintptr_t>(params.get_value(u8"object_id"))))
+			if (auto instance = reinterpret_cast<LonginusDetector*>(unbox<std::uintptr_t>(params.get_value(u8"object_id"))))
 			{
 				auto gray = unbox<param_string>(params.get_value(u8"gray"));
 				auto height = unbox<int>(params.get_value(u8"height"));
 				auto width = unbox<int>(params.get_value(u8"width"));
-				auto min_size = unbox<int>(params.get_value(u8"minSize"));
-				auto threshold = params.get_value(u8"threshold").as<param_vector<float>>();
-				auto factor = unbox<float>(params.get_value(u8"factor"));
-				auto stage = unbox<int>(params.get_value(u8"stage"));
-				auto order = unbox<int>(params.get_value(u8"order"));
+				auto bboxes = params.get_value(u8"minSize").as<param_vector<int>>();
+				auto landmarks = params.get_value(u8"threshold").as<param_vector<int>>();
+
+				std::vector<int> kernel_bboxes(begin(bboxes), end(bboxes));
+				std::vector<int> kernel_landmarks(begin(landmarks), end(landmarks));
+				auto result = ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data());
+
+				return box(param_string{ reinterpret_cast<const param_string::value_type*>(result), 3 * 128 * 128 });
 			}
 
 			throw abi_null_pointer{};
@@ -91,7 +132,7 @@ namespace glasssix::exposing::nessus
 
 		unknown_object longinus_detect_ex(const param_hash_map<param_string, unknown_object>& params)
 		{
-			if (auto instance = reinterpret_cast<void*>(unbox<std::uintptr_t>(params.get_value(u8"object_id"))))
+			if (auto instance = reinterpret_cast<LonginusDetector*>(unbox<std::uintptr_t>(params.get_value(u8"object_id"))))
 			{
 				auto image = unbox<param_string>(params.get_value(u8"image"));
 				auto height = unbox<int>(params.get_value(u8"height"));
@@ -101,6 +142,17 @@ namespace glasssix::exposing::nessus
 				auto factor = unbox<float>(params.get_value(u8"factor"));
 				auto stage = unbox<int>(params.get_value(u8"stage"));
 				auto order = unbox<int>(params.get_value(u8"order"));
+
+				face_rect_with_face_info* face_info = nullptr;
+				std::vector<float> kernel_threshold(begin(threshold), end(threshold));
+				std::size_t size = ::Longinus_detectEx(instance, &face_info, reinterpret_cast<const std::uint8_t*>(image.data()), height, width, min_size, kernel_threshold.data(), factor, stage, order);
+
+				if (size == 0 || face_info == nullptr)
+				{
+					throw abi_invalid_argument{};
+				}
+
+				return longinus_create_face_info_helper(face_info, size);
 			}
 
 			throw abi_null_pointer{};
@@ -108,7 +160,7 @@ namespace glasssix::exposing::nessus
 
 		unknown_object longinus_detect_retina(const param_hash_map<param_string, unknown_object>& params)
 		{
-			if (auto instance = reinterpret_cast<void*>(unbox<std::uintptr_t>(params.get_value(u8"object_id"))))
+			if (auto instance = reinterpret_cast<LonginusDetector*>(unbox<std::uintptr_t>(params.get_value(u8"object_id"))))
 			{
 				auto image = unbox<param_string>(params.get_value(u8"image"));
 				auto height = unbox<int>(params.get_value(u8"height"));
@@ -116,6 +168,16 @@ namespace glasssix::exposing::nessus
 				auto min_win = unbox<int>(params.get_value(u8"min_win"));
 				auto threshold = unbox<float>(params.get_value(u8"threshold"));
 				auto order = unbox<int>(params.get_value(u8"order"));
+
+				face_rect_with_face_info* face_info = nullptr;
+				std::size_t size = Longinus_detectRetina(instance, &face_info, reinterpret_cast<const std::uint8_t*>(image.data()), min_win, height, width, order, threshold);
+
+				if (size == 0 || face_info == nullptr)
+				{
+					throw abi_invalid_argument{};
+				}
+
+				return longinus_create_face_info_helper(face_info, size);
 			}
 
 			throw abi_null_pointer{};
@@ -134,6 +196,8 @@ namespace glasssix::exposing::nessus
 			{
 				::Cassius_ReleaseInstance(instance);
 			}
+
+			return nullptr;
 		}
 
 		unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
@@ -143,7 +207,7 @@ namespace glasssix::exposing::nessus
 				auto aligned_faces_data = unbox<param_string>(params.get_value(u8"aligned_faces_str"));
 				auto num = unbox<int>(params.get_value(u8"num"));
 				auto order = unbox<int>(params.get_value(u8"order"));
-				
+
 				::Cassius_Forward(instance, reinterpret_cast<const std::uint8_t*>(aligned_faces_data.data()), num, order);
 			}
 
@@ -163,6 +227,8 @@ namespace glasssix::exposing::nessus
 			{
 				::Cassius_ReleaseInstance(instance);
 			}
+
+			return nullptr;
 		}
 
 		unknown_object gaius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
@@ -194,6 +260,8 @@ namespace glasssix::exposing::nessus
 			{
 				::irisviel_free_instance(instance);
 			}
+
+			return nullptr;
 		}
 
 		unknown_object irisviel_clear(const param_hash_map<param_string, unknown_object>& params)
