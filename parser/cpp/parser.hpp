@@ -25,7 +25,8 @@ namespace glasssix
 			class parser : public singleton<parser>
 			{
 			public:
-				
+				friend singleton<parser>;
+
 				string parse(string& topic, string &jsonstr);
 				string query_all_instance()
 				{
@@ -112,7 +113,7 @@ namespace glasssix
 				}
 
 				unordered_map<string, std::tuple<string, uint64_t, std::shared_ptr<std::mutex>>> instance_map;
-				static unordered_map<string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, uint64_t&)>> protocol_map;
+				unordered_map<string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, uint64_t&)>> protocol_map;
 				simdjson::dom::parser parser_;
 
 				Json::FastWriter writer;
