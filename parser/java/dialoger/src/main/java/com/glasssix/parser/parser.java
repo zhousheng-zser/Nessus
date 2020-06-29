@@ -20,5 +20,7 @@ public class parser {
 	}
 	
 	private native void init();
+	
+	public native void initPlugin(String config_file_path);
 	public native String parse(String topic, String jstr);
 }

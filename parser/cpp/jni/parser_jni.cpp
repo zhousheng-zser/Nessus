@@ -77,7 +77,18 @@ JNIEXPORT jstring JNICALL Java_com_glasssix_parser_parser_parse(JNIEnv *env, job
 	return char2Jstring(env, result.c_str(), result.length());
 }
 
-
+JNIEXPORT void JNICALL Java_com_glasssix_parser_parser_initPlugin(JNIEnv *env, jobject thiz, jstring jstr)
+{
+	jclass clazz = env->GetObjectClass(thiz);
+	jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
+	jlong p = env->GetLongField(thiz, fid_mObject);
+	glasssix::exposing::nessus::parser *instance = (glasssix::exposing::nessus::parser *)p;
+	
+	std::string config_file_path = jstring2string(env, jstr);
+	env->DeleteLocalRef(clazz);
+	
+	instance->init_plugin(config_file_path);
+}
 
 #ifdef __cplusplus
 }
