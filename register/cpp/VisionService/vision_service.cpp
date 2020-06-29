@@ -360,10 +360,13 @@ namespace glasssix::exposing::nessus
 		functions_.insert_or_assign(u8"longinus.detectRetina", &longinus_detect_retina);
 		functions_.insert_or_assign(u8"gaius.new", &gaius_new);
 		functions_.insert_or_assign(u8"gaius.delete", &gaius_delete);
-		functions_.insert_or_assign(u8"gaius.Forward", &cassius_new);
-		functions_.insert_or_assign(u8"cassius.Forward", &cassius_delete);
+		functions_.insert_or_assign(u8"gaius.Forward", &gaius_extract_feature);
+		functions_.insert_or_assign(u8"cassius.new", &cassius_new);
+		functions_.insert_or_assign(u8"cassius.delete", &cassius_delete);
+		functions_.insert_or_assign(u8"cassius.Forward", &cassius_extract_feature);
 		functions_.insert_or_assign(u8"irisviel.new", &irisviel_new);
 		functions_.insert_or_assign(u8"irisviel.delete", &irisviel_delete);
+		functions_.insert_or_assign(u8"irisviel.clear", &irisviel_clear);
 		functions_.insert_or_assign(u8"irisviel.remove_all", &irisviel_remove_all);
 		functions_.insert_or_assign(u8"irisviel.load_databases", &irisviel_load_databases);
 		functions_.insert_or_assign(u8"irisviel.add_record", &irisviel_add_record);
