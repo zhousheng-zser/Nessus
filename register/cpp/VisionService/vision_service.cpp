@@ -9,6 +9,7 @@
 #include <cassius_c.h>
 #include <irisviel_c.h>
 #include <longinus_c.h>
+#include <memory.hpp>
 
 namespace glasssix::exposing::nessus
 {
@@ -122,9 +123,9 @@ namespace glasssix::exposing::nessus
 
 				std::vector<int> kernel_bboxes(begin(bboxes), end(bboxes));
 				std::vector<int> kernel_landmarks(begin(landmarks), end(landmarks));
-				auto result = ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data());
+				std::shared_ptr<std::uint8_t> result{ ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data()), &glasssix::memory::aligned_heap_free };
 
-				return box(param_string{ reinterpret_cast<const param_string::value_type*>(result), 3 * 128 * 128 });
+				return box(param_string{ reinterpret_cast<const param_string::value_type*>(result.get()), 3 * 128 * 128 });
 			}
 
 			throw abi_null_pointer{};
@@ -152,6 +153,8 @@ namespace glasssix::exposing::nessus
 					throw abi_invalid_argument{};
 				}
 
+				std::shared_ptr<face_rect_with_face_info> face_info_scope{ face_info, &glasssix::memory::aligned_heap_free };
+
 				return longinus_create_face_info_helper(face_info, size);
 			}
 
@@ -177,6 +180,8 @@ namespace glasssix::exposing::nessus
 					throw abi_invalid_argument{};
 				}
 				
+				std::shared_ptr<face_rect_with_face_info> face_info_scope{ face_info, &glasssix::memory::aligned_heap_free };
+
 				return longinus_create_face_info_helper(face_info, size);
 			}
 
@@ -359,6 +364,8 @@ namespace glasssix::exposing::nessus
 		functions_.insert_or_assign(u8"cassius.Forward", &cassius_delete);
 		functions_.insert_or_assign(u8"irisviel.new", &irisviel_new);
 		functions_.insert_or_assign(u8"irisviel.delete", &irisviel_delete);
+		functions_.insert_or_assign(u8"irisviel.remove_all", &irisviel_remove_all);
+		functions_.insert_or_assign(u8"irisviel.load_databases", &irisviel_load_databases);
 		functions_.insert_or_assign(u8"irisviel.add_record", &irisviel_add_record);
 		functions_.insert_or_assign(u8"irisviel.add_records", &irisviel_add_records);
 		functions_.insert_or_assign(u8"irisviel.update_record", &irisviel_update_record);
