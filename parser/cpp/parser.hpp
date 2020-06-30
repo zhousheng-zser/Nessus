@@ -25,7 +25,8 @@ namespace glasssix
 			class parser : public singleton<parser>
 			{
 			public:
-				
+				friend singleton<parser>;
+
 				string parse(string& topic, string &jsonstr);
 				string query_all_instance()
 				{
@@ -85,18 +86,18 @@ namespace glasssix
 				parser()
 				{
 					protocol_map["Logninus.new"] = &Longinus_new_json;
-					protocol_map["Logninus.release"] = &Longinus_delete_json;
+					protocol_map["Logninus.delete"] = &Longinus_delete_json;
 					protocol_map["Logninus.detectEx"] = &Longinus_detectEx_json;
 					protocol_map["Logninus.detectRetina"] = &Longinus_detectRetina_json;
 					protocol_map["Logninus.alignFace"] = &Longinus_alignFace_json;
 					protocol_map["Gaius.new"] = &Gaius_new_json;
-					protocol_map["Gaius.release"] = &Gaius_delete_json;
+					protocol_map["Gaius.delete"] = &Gaius_delete_json;
 					protocol_map["Gaius.Forward"] = &Gaius_Forward_json;
 					protocol_map["Cassius.new"] = &Cassius_new_json;
-					protocol_map["Cassius.release"] = &Cassius_delete_json;
+					protocol_map["Cassius.delete"] = &Cassius_delete_json;
 					protocol_map["Cassius.Forward"] = &Cassius_Forward_json;
 					protocol_map["Irisviel.new"] = &Irisviel_new_json;
-					protocol_map["Irisviel.release"] = &Irisviel_delete_json;
+					protocol_map["Irisviel.delete"] = &Irisviel_delete_json;
 					protocol_map["Irisviel.search"] = &Irisviel_search_json;
 					protocol_map["Irisviel.clear"] = &Irisviel_clear_json;
 					protocol_map["Irisviel.remove_all"] = &Irisviel_remove_all_json;
@@ -112,7 +113,7 @@ namespace glasssix
 				}
 
 				unordered_map<string, std::tuple<string, uint64_t, std::shared_ptr<std::mutex>>> instance_map;
-				static unordered_map<string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, uint64_t&)>> protocol_map;
+				unordered_map<string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, uint64_t&)>> protocol_map;
 				simdjson::dom::parser parser_;
 
 				Json::FastWriter writer;

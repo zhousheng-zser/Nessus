@@ -21,7 +21,7 @@ const char DecodeTable[] =
 //编码表
 const char EncodeTable[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-std::string CBase64_Encode(const char *Data, int DataByte)
+inline std::string CBase64_Encode(const char *Data, int DataByte)
 {
   //返回值
   std::string strEncode;
@@ -61,7 +61,7 @@ std::string CBase64_Encode(const char *Data, int DataByte)
   }
   return strEncode;
 }
-std::string CBase64_Decode(const char *Data, int DataByte/*, int &OutByte*/)
+inline std::string CBase64_Decode(const char *Data, int DataByte/*, int &OutByte*/)
 {
   //返回值
   std::string strDecode;

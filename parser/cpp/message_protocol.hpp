@@ -5,6 +5,7 @@
 #include "json.h"
 #include "c_base64.hpp"
 #include "plugin_interface.hpp"
+#include "parser_exception.hpp"
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -26,7 +27,7 @@ namespace glasssix
 							{u8"device", box(device)}
 						});
 
-					instance = plugin.execute(u8"longinus.new", param).as<uint64_t>();
+					instance = unbox<uint64_t>(plugin.execute(u8"longinus.new", param));
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -78,7 +79,7 @@ namespace glasssix
 						threshold.push_back(i.get<double>().value());
 
 					if (threshold.size() != 3)
-						throw std::exception("threshold size != 3");
+						throw parser_exception("threshold size != 3");
 
 					float factor = root["factor"].get<double>().value();
 					int stage = root["stage"].get<int64_t>().value();
@@ -290,7 +291,7 @@ namespace glasssix
 							{u8"device", box(device)}
 						});
 
-					instance = plugin.execute(u8"gaius.new", param).as<uint64_t>();
+					instance = unbox<uint64_t>(plugin.execute(u8"gaius.new", param));
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -391,7 +392,7 @@ namespace glasssix
 							{u8"device", box(device)}
 						});
 
-					instance = plugin.execute(u8"cassius.new", param).as<uint64_t>();
+					instance = unbox<uint64_t>(plugin.execute(u8"cassius.new", param));
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -497,7 +498,7 @@ namespace glasssix
 							{u8"working_directory", box(working_directory)}
 						});
 
-					instance = plugin.execute(u8"irsiviel.new", param).as<uint64_t>();
+					instance = unbox<uint64_t>(plugin.execute(u8"irsiviel.new", param));
 
 					value["status"] = Json::Value("OK");
 				}
@@ -568,11 +569,11 @@ namespace glasssix
 						for (int j = 0; j < feature.size(); j++)
 							jobj_data["feature"].append(Json::Value(feature[j]));
 
-						auto key = result[i].get_value(u8"key").as<param_string>();
+						auto key = unbox<param_string>(result[i].get_value(u8"key"));
 						jobj_data["key"] = Json::Value(to_narrow_string(key));
 
 						jobj_result["data"] = jobj_data;
-						jobj_result["similarity"] = Json::Value(result[i].get_value(u8"similarity").as<double>());
+						jobj_result["similarity"] = Json::Value(unbox<float>(result[i].get_value(u8"similarity")));
 
 						value["result"].append(jobj_result);
 					}
