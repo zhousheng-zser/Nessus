@@ -9,6 +9,7 @@
 #include "fundamental_semantics.hpp"
 
 #include <tuple>
+#include <mutex>
 #include <atomic>
 #include <cstdint>
 #include <utility>
@@ -25,7 +26,7 @@
 
 #define MAKE_ABI_STANDARD_EXPORT_FUNCTIONS(name, ...) \
 	inline constexpr glasssix::exposing::utf8_string_view dll_module_component_name{ name }; \
-	extern "C" template EXPORT_DIRECTIVE_FOR_MAKE_ABI_STANDARD_EXPORT_FUNCTIONS std::int32_t G6_ABI_CALL glasssix::exposing::dll_create_factory<dll_module_component_name, __VA_ARGS__>(void** factory) noexcept; \
+	extern "C" EXPORT_DIRECTIVE_FOR_MAKE_ABI_STANDARD_EXPORT_FUNCTIONS std::int32_t dll_create_factory(void** factory) noexcept { return glasssix::exposing::make_standard_export_functions<dll_module_component_name, __VA_ARGS__>::dll_create_factory_impl(factory); }; \
 	extern "C" EXPORT_DIRECTIVE_FOR_MAKE_ABI_STANDARD_EXPORT_FUNCTIONS bool dll_can_unload_now() noexcept { return glasssix::exposing::get_module_ref_count() == 0; };
 
 namespace glasssix::exposing
@@ -62,11 +63,16 @@ namespace glasssix::exposing
 			struct class_factory_impl : implements<class_factory_impl, class_factory>
 			{
 				inline static std::unordered_map<param_string, std::function<unknown_object()>> map;
-				inline static static_initializer initializer{ [&]
-					{
-						((map.insert_or_assign(impl::get_external_qualified_name_v<ComponentImpls>, &make_component_impl<ComponentImpls>), ...));
-					}
-				};
+
+				/// <summary>
+				/// Creates an instance.
+				/// </summary>
+				class_factory_impl()
+				{
+					static std::once_flag flag;
+
+					std::call_once(flag, [] { ((map.insert_or_assign(impl::get_external_qualified_name_v<ComponentImpls>, &make_component_impl<ComponentImpls>), ...)); });
+				}
 
 				/// <summary>
 				/// Creates an instance by a qualified name.
@@ -76,7 +82,7 @@ namespace glasssix::exposing
 				unknown_object create_instance(const param_string& qualified_name) const
 				{
 					auto iter = map.find(qualified_name);
-					
+
 					return iter != map.end() ? iter->second() : nullptr;
 				}
 
@@ -118,12 +124,4 @@ namespace glasssix::exposing
 	struct make_standard_export_functions : details::make_standard_export_functions_impl<ComponentName, std::tuple<ComponentImpls...>>
 	{
 	};
-
-	template<const utf8_string_view& ComponentName, typename... ComponentImpls>
-	std::int32_t G6_ABI_CALL dll_create_factory(void** factory) noexcept
-	{
-		using impl_type = make_standard_export_functions<ComponentName, ComponentImpls...>;
-
-		return impl_type::dll_create_factory_impl(factory);
-	}
 }
