@@ -5,12 +5,10 @@
 
 namespace glasssix::exposing::nessus
 {
-	inline constexpr utf8_string_view plugin_manager_qualified_name{ u8"glasssix.nessus.pluginManager" };
-
 	/// <summary>
 	/// An agent of the standard plugin manager.
 	/// </summary>
-	class plugin_manager_impl : public implements<plugin_manager_impl, plugin_manager>, public make_external_qualified_name<plugin_manager_qualified_name>
+	class plugin_manager_impl : public implements<plugin_manager_impl, plugin_manager>, public make_plugin_qualified_name
 	{
 	public:
 		void load_from_file(const param_string& path);

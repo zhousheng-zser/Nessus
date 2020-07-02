@@ -59,7 +59,7 @@ namespace glasssix::exposing::impl
 			{
 				param_string result{ nullptr };
 
-				return (check_abi_result(this->self_abi().version(put_abi(result))), result);
+				return (check_abi_result(this->self_abi().name(put_abi(result))), result);
 			}
 
 			param_string version() const
