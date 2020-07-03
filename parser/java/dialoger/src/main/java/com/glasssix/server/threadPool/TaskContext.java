@@ -103,6 +103,7 @@ public class TaskContext {
 
         JsonObject jsonObject = gson.fromJson(result, JsonObject.class);
         String status = jsonObject.get("status").getAsString();
+        log.info("JNI receive: "+result);
         if(ApplicationConstants.OK_STATIC.equals(status)){
             String[] routingItems = receivedRoutingKey.split("\\.");
             if("new".equals(routingItems[5])){

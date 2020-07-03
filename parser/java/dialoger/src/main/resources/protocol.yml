@@ -5,7 +5,7 @@ protocol:
       entry: NewProtocol
     - name: Longinus.delete
       start: true
-      entry: DeteleProtocol
+      entry: DeleteProtocol
     - name: Longinus.detectEx #和客户发过来的RoutingKey的第5，6个字段保持一致
       start: true
       entry: longinus.DetectExProtocol
@@ -21,7 +21,7 @@ protocol:
       entry: NewProtocol
     - name: Gasius.delete
       start: true
-      entry: DeteleProtocol
+      entry: DeleteProtocol
     - name: Gaius.Forward
       start: true
       entry: gaius.ForwardProtocol
@@ -31,7 +31,7 @@ protocol:
       entry: NewProtocol
     - name: Cassius.delete
       start: true
-      entry: DeteleProtocol
+      entry: DeleteProtocol
     - name: Cassius.Forward
       start: true
       entry: cassius.ForwardProtocol
@@ -41,7 +41,7 @@ protocol:
       entry: PersonDBNewProtocol
     - name: Irisviel.delete
       start: true
-      entry: DeteleProtocol
+      entry: DeleteProtocol
     - name: Irisviel.search
       start: true
       entry: irisviel.PersonDBSearchProtocol
