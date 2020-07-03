@@ -10,9 +10,7 @@
 
 namespace glasssix::exposing::nessus
 {
-	inline constexpr utf8_string_view vision_service_qualified_name{ u8"glasssix.nessus.visionService" };
-
-	class vision_service : public implements<vision_service, plugin_interface>, public make_external_qualified_name<vision_service_qualified_name>
+	class vision_service : public implements<vision_service, plugin_interface>, public make_plugin_qualified_name
 	{
 	public:
 		vision_service();
