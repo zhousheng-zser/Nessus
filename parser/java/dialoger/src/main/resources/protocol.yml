@@ -1,56 +1,78 @@
 protocol:
   registers:
-    - name: detectEx #和客户发过来的RoutingKey的第6个字段保持一致
+    - name: Longinus.new
+      start: true
+      entry: NewProtocol
+    - name: Longinus.delete
+      start: true
+      entry: DeteleProtocol
+    - name: Longinus.detectEx #和客户发过来的RoutingKey的第5，6个字段保持一致
       start: true
       entry: longinus.DetectExProtocol
-    - name: detectRetina
+    - name: Longinus.detectRetina
       start: true
       entry: longinus.DetectRetinaProtocol
-    - name: alignFace
+    - name: Longinus.alignFace
       start: true
       entry: longinus.AlignFaceProtocol
-    - name: cassiusForward
+
+    - name: Gaius.new
       start: true
-      entry: cassius.CassiusForwardProtocol
-    - name: gaiusForward
+      entry: NewProtocol
+    - name: Gasius.delete
       start: true
-      entry: gaius.GaiusForwardProtocol
-    - name: personDBAddRecord
+      entry: DeteleProtocol
+    - name: Gaius.Forward
       start: true
-      entry: irisviel.PersonDBAddRecordProtocol
-    - name: personDBAddRecords
+      entry: gaius.ForwardProtocol
+
+    - name: Cassius.new
       start: true
-      entry: irisviel.PersonDBAddRecordsProtocol
-    - name: personDBClear
+      entry: NewProtocol
+    - name: Cassius.delete
+      start: true
+      entry: DeteleProtocol
+    - name: Cassius.Forward
+      start: true
+      entry: cassius.ForwardProtocol
+
+    - name: Irisviel.new
+      start: true
+      entry: PersonDBNewProtocol
+    - name: Irisviel.delete
+      start: true
+      entry: DeteleProtocol
+    - name: Irisviel.search
+      start: true
+      entry: irisviel.PersonDBSearchProtocol
+    - name: Irisviel.clear
       start: true
       entry: irisviel.PersonDBClearProtocol
-    - name: personDBDelete
+    - name: Irisviel.remove_all
       start: true
-      entry: irisviel.PersonDBDeleteProtocol
-    - name: personDBInit
-      start: true
-      entry: irisviel.PersonDBInitProtocol
-    - name: personDBLoad
+      entry: irisviel.PersonDBRemoveAllProtocol
+    - name: Irisviel.load_databases
       start: true
       entry: irisviel.PersonDBLoadProtocol
+    - name: Irisviel.remove_records
+      start: true
+      entry: irisviel.PersonDBRemoveRecordsProtocol
+    - name: Irisviel.remove_record
+      start: true
+      entry: irisviel.PersonDBRemoveRecordProtocol
+    - name: Irisviel.add_records
+      start: true
+      entry: irisviel.PersonDBAddRecordsProtocol
+    - name: Irisviel.add_record
+      start: true
+      entry: irisviel.PersonDBAddRecordProtocol
+    - name: Irisviel.update_record
+      start: true
+      entry: irisviel.PersonDBUpdateRecordProtocol
+    - name: Irisviel.update_records
+      start: true
+      entry: irisviel.PersonDBUpdateRecordsProtocol
+
     - name: personDBQuery
       start: true
       entry: irisviel.PersonDBQueryProtocol
-    - name: personDBRemoveAll
-      start: true
-      entry: irisviel.PersonDBRemoveAllProtocol
-    - name: personDBRemoveRecord
-      start: true
-      entry: irisviel.PersonDBRemoveRecordProtocol
-    - name: personDBRemoveRecords
-      start: true
-      entry: irisviel.PersonDBRemoveRecordsProtocol
-    - name: personDBSearch
-      start: true
-      entry: irisviel.PersonDBSearchProtocol
-    - name: personDBUpdateRecord
-      start: true
-      entry: irisviel.PersonDBUpdateRecordProtocol
-    - name: personDBUpdateRecords
-      start: true
-      entry: irisviel.PersonDBUpdateRecordsProtocol

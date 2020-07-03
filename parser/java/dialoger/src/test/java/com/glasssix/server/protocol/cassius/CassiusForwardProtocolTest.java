@@ -1,6 +1,5 @@
 package com.glasssix.server.protocol.cassius;
 
-import com.glasssix.server.protocol.gaius.GaiusForwardProtocol;
 import com.glasssix.server.rabbitmq.CustomerRabbitMQSender;
 import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +15,9 @@ public class CassiusForwardProtocolTest {
 
     public String getCassiusForwardProtocolData(String image){
         String data = "{\"event_id\":\"123456\",\"alignedImage\":\"\",\"num\":2,\"order\":0,\"reserved\":\"\"}";
-        CassiusForwardProtocol cassiusForwardProtocol = gson.fromJson(data, CassiusForwardProtocol.class);
-        cassiusForwardProtocol.setAlignedImage(image);
-        return gson.toJson(cassiusForwardProtocol);
+        ForwardProtocol forwardProtocol = gson.fromJson(data, ForwardProtocol.class);
+        forwardProtocol.setAlignedImage(image);
+        return gson.toJson(forwardProtocol);
     }
 
     public void sendCassiusForwardProtocolData(String customerRoutingKeyPrefix,String image){
