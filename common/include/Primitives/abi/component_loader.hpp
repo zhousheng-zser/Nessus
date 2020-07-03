@@ -36,9 +36,9 @@ namespace glasssix::exposing::dll_routines
 	using dll_create_factory_handler_type = std::int32_t(G6_ABI_CALL*)(void** factory) noexcept;
 
 #ifdef _WIN32
-	inline constexpr utf8_string_view dll_extension{ u8".dll" };
+	inline constexpr std::string_view dll_extension{ u8".dll" };
 #elif defined(__linux__)
-	inline constexpr utf8_string_view dll_extension{ u8".so" };
+	inline constexpr std::string_view dll_extension{ u8".so" };
 #else
 #error "Unsupported Platform."
 #endif
@@ -183,10 +183,10 @@ namespace glasssix::exposing
 			return iter != factories_.end() ? iter->second : nullptr;
 		}
 	private:
-		template<bool recursive, typename Result, typename Callable>
+		template<bool Recursive, typename Result, typename Callable>
 		Result for_each_dll_files(utf8_string_view directory, Callable&& handler, Result&& initial_value) noexcept
 		{
-			using iterator_type = std::conditional_t<recursive, fs::recursive_directory_iterator, fs::directory_iterator>;
+			using iterator_type = std::conditional_t<Recursive, fs::recursive_directory_iterator, fs::directory_iterator>;
 
 			std::error_code code;
 			Result result{ std::forward<Result>(initial_value) };

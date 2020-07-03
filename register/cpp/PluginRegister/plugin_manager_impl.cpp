@@ -49,7 +49,7 @@ namespace glasssix::exposing::nessus
 	private:
 		void create_plugin(const class_factory& item)
 		{
-			auto plugin = item.create_instance(plugin_qualified_name).as<plugin_interface>();
+			if (auto plugin = item.create_instance(plugin_qualified_name).try_as<plugin_interface>())
 			{
 				std::lock_guard<std::mutex> lock{ lock_ };
 
