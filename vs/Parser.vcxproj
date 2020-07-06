@@ -22,11 +22,6 @@
     <ClCompile Include="..\parser\cpp\jsoncpp.cpp" />
     <ClCompile Include="..\parser\cpp\parser.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="simdjson.vcxproj">
-      <Project>{dfb64999-bb48-4cd5-a26e-f37bb9ab9d75}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{ECDD701A-668B-4BDD-9A96-5A0B619A4B14}</ProjectGuid>
@@ -62,13 +57,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>E:\Libs\jdk_include;E:\Libs\jdk_include\win32;$(IncludePath)</IncludePath>
+    <IncludePath>E:\Tools\jdk1.8.0_201\include;E:\Tools\jdk1.8.0_201\include\win32;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>E:\Libs\jdk_include;E:\Libs\jdk_include\win32;$(IncludePath)</IncludePath>
+    <IncludePath>E:\Tools\jdk1.8.0_201\include;E:\Tools\jdk1.8.0_201\include\win32;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
