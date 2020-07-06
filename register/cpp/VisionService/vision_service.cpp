@@ -123,9 +123,15 @@ namespace glasssix::exposing::nessus
 
 				std::vector<int> kernel_bboxes(begin(bboxes), end(bboxes));
 				std::vector<int> kernel_landmarks(begin(landmarks), end(landmarks));
-				std::shared_ptr<std::uint8_t> result{ ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data()), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
+				std::shared_ptr<std::uint8_t[]> kernel_result{ ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data()), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
+				auto result = make_param_vector<std::uint8_t>();
 
-				return box(param_string{ reinterpret_cast<const param_string::value_type*>(result.get()), 3 * 128 * 128 });
+				for (std::size_t i = 0; i < 3 * 128 * 128; i++)
+				{
+					result.set_at(i, kernel_result[i]);
+				}
+
+				return result;
 			}
 
 			throw abi_null_pointer{};
