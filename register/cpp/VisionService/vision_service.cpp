@@ -123,7 +123,7 @@ namespace glasssix::exposing::nessus
 
 				std::vector<int> kernel_bboxes(begin(bboxes), end(bboxes));
 				std::vector<int> kernel_landmarks(begin(landmarks), end(landmarks));
-				std::shared_ptr<std::uint8_t> result{ ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data()), &glasssix::memory::aligned_heap_free };
+				std::shared_ptr<std::uint8_t> result{ ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data()), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
 
 				return box(param_string{ reinterpret_cast<const param_string::value_type*>(result.get()), 3 * 128 * 128 });
 			}
@@ -173,7 +173,7 @@ namespace glasssix::exposing::nessus
 				auto order = unbox<int>(params.get_value(u8"order"));
 
 				face_rect_with_face_info* face_info = nullptr;
-				std::size_t size = Longinus_detectRetina(instance, &face_info, reinterpret_cast<const std::uint8_t*>(image.data()), min_win, height, width, order, threshold);
+				std::size_t size = ::Longinus_detectRetina(instance, &face_info, reinterpret_cast<const std::uint8_t*>(image.data()), min_win, height, width, order, threshold);
 
 				if (size == 0 || face_info == nullptr)
 				{
