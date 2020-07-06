@@ -6,6 +6,7 @@ import com.glasssix.server.util.SpringUtil;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -22,8 +23,9 @@ public abstract class ProtocolCommon {
 
     @Expose
     public AlgorithmFactory algorithmFactory;
-    public ProtocolCommon(){
-        algorithmFactory = (AlgorithmFactory)SpringUtil.getApplicationContext().getBean("algorithmFactory");
+    @Autowired
+    public ProtocolCommon(AlgorithmFactory algorithmFactory){
+        this.algorithmFactory = algorithmFactory;
     }
 
     public String getEventId() {
