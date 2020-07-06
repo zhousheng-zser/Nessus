@@ -22,11 +22,8 @@ public abstract class ProtocolCommon {
     public String reserved;    //	保留字段
 
     @Expose
-    public AlgorithmFactory algorithmFactory;
     @Autowired
-    public ProtocolCommon(AlgorithmFactory algorithmFactory){
-        this.algorithmFactory = algorithmFactory;
-    }
+    public AlgorithmFactory algorithmFactory;
 
     public String getEventId() {
         return eventId;
