@@ -15,9 +15,9 @@ public class GaiusForwardProtocolTest {
 
     public String getGaiusForwardProtocolData(String image){
         String data = "{\"event_id\":\"123456\",\"alignedImage\":\"\",\"num\":2,\"order\":0,\"reserved\":\"\"}";
-        GaiusForwardProtocol gaiusForwardProtocol = gson.fromJson(data, GaiusForwardProtocol.class);
-        gaiusForwardProtocol.setAlignedImage(image);
-        return gson.toJson(gaiusForwardProtocol);
+        ForwardProtocol forwardProtocol = gson.fromJson(data, ForwardProtocol.class);
+        forwardProtocol.setAlignedImage(image);
+        return gson.toJson(forwardProtocol);
     }
 
     public void sendGaiusForwardProtocolData(String customerRoutingKeyPrefix,String image){

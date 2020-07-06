@@ -1,12 +1,10 @@
 package com.glasssix.server.protocol.longinus;
 
-import com.glasssix.server.protocol.ProtocolInterface;
+import com.glasssix.server.protocol.ProtocolCommon;
 import com.google.gson.annotations.SerializedName;
 
-public class AlignFaceProtocol implements ProtocolInterface {
+public class AlignFaceProtocol extends ProtocolCommon {
 
-    @SerializedName("event_id")
-    private String eventId;	//  事件id
     private String gray;        //灰度图片像素
     private String format;      //
     private int channel;        //图片通道数 灰度图为1
@@ -14,15 +12,6 @@ public class AlignFaceProtocol implements ProtocolInterface {
     private int width;	        //	图片宽度
     @SerializedName("FaceRectwithFaceInfo_list")
     private FaceRectwithFaceInfo[] faceRectwithFaceInfos;//对象数组 人脸定位及信息
-    private String reserved;    //	保留字段
-
-    public String getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
-    }
 
     public String getGray() {
         return gray;
@@ -72,18 +61,6 @@ public class AlignFaceProtocol implements ProtocolInterface {
         this.faceRectwithFaceInfos = faceRectwithFaceInfos;
     }
 
-    public String getReserved() {
-        return reserved;
-    }
-
-    public void setReserved(String reserved) {
-        this.reserved = reserved;
-    }
-
-    @Override
-    public String protocolProcess(String receivedRoutingKey, String correlationDate) {
-        return null;
-    }
 
     class FaceRectwithFaceInfo{
         private int x;      //人脸x坐标

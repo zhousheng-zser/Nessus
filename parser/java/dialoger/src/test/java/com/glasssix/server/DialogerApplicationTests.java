@@ -3,12 +3,9 @@ package com.glasssix.server;
 import com.glasssix.server.protocol.cassius.CassiusForwardProtocolTest;
 import com.glasssix.server.protocol.gaius.GaiusForwardProtocolTest;
 import com.glasssix.server.protocol.irisviel.*;
-import com.glasssix.server.protocol.longinus.AlignFaceProtocolTest;
-import com.glasssix.server.protocol.longinus.DetectExProtocol;
-import com.glasssix.server.protocol.longinus.DetectRetinaProtocol;
+import com.glasssix.server.protocol.longinus.*;
 import com.glasssix.server.protocol.ProtocolConfig;
 import com.glasssix.server.protocol.ProtocolRegisterEntry;
-import com.glasssix.server.protocol.longinus.DetectRetinaProtocolTest;
 import com.glasssix.server.rabbitmq.CustomerRabbitMQSender;
 import com.glasssix.server.rabbitmq.RabbitMQSender;
 import com.google.gson.Gson;
@@ -83,6 +80,9 @@ class DialogerApplicationTests {
 
 	@Autowired
 	private CassiusForwardProtocolTest cassiusForwardProtocolTest;
+
+	@Autowired
+	private NewProtocolTest newProtocolTest;
 
 	private String customerRoutingKey = "Glasssix.Excalibur.V1.111.";
 
@@ -273,6 +273,12 @@ class DialogerApplicationTests {
 	@Test
 	void cassiusForward(){
 		cassiusForwardProtocolTest.sendCassiusForwardProtocolData(customerRoutingKey,getImage());
+		waitMe();
+	}
+
+	@Test
+	void longinusNewTest(){
+		newProtocolTest.sendNewProtocolData(customerRoutingKey);
 		waitMe();
 	}
 

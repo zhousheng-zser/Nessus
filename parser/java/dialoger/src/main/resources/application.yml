@@ -2,10 +2,14 @@ spring:
   application:
     name: dialoger
   rabbitmq:
-    host: 127.0.0.1
+    #host: 127.0.0.1
+    #port: 5672
+    #username: guest
+    #password: guest
+    host: 192.168.1.209
     port: 5672
-    username: guest
-    password: guest
+    username: admin
+    password: admin
   thread-pool:
     core-pool-size: 20
     max-pool-size: 40

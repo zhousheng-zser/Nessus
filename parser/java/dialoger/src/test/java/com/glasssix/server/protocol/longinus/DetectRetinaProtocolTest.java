@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
+import java.util.UUID;
 
 @Component
 public class DetectRetinaProtocolTest {
@@ -22,6 +23,8 @@ public class DetectRetinaProtocolTest {
                 "\"width\": 320,	\"min_win\": 48,	\"threshold\": 0.5,	\"order\": 1,	\"reserved\": \"\"}";
         DetectRetinaProtocol detectRetinaProtocol = gson.fromJson(data, DetectRetinaProtocol.class);
         detectRetinaProtocol.setImage(image);
+        detectRetinaProtocol.setEventId(UUID.randomUUID().toString());
+        detectRetinaProtocol.setAutoAssignmentInstance(0);
         return gson.toJson(detectRetinaProtocol);
     }
 

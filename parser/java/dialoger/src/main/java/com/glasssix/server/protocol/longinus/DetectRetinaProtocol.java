@@ -1,11 +1,9 @@
 package com.glasssix.server.protocol.longinus;
 
-import com.glasssix.server.protocol.ProtocolInterface;
+import com.glasssix.server.protocol.ProtocolCommon;
 import com.google.gson.annotations.SerializedName;
 
-public class DetectRetinaProtocol implements ProtocolInterface {
-    @SerializedName("event_id")
-    private String eventId; //事件id
+public class DetectRetinaProtocol extends ProtocolCommon {
     private String image;   //三通道图片base64编码
     private String format;  //图片压缩格式RAW/JPEG/PNG
     private int height;     //图片高度
@@ -13,16 +11,7 @@ public class DetectRetinaProtocol implements ProtocolInterface {
     private int minWin;
     private double threshold;   //模型阈值
     private int order;      //图片的像素排列方式(0:NCHW, 1:NHWC)
-    private String reserved;    //保留字段
 
-
-    public String getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
-    }
 
     public String getImage() {
         return image;
@@ -80,16 +69,4 @@ public class DetectRetinaProtocol implements ProtocolInterface {
         this.order = order;
     }
 
-    public String getReserved() {
-        return reserved;
-    }
-
-    public void setReserved(String reserved) {
-        this.reserved = reserved;
-    }
-
-    @Override
-    public String protocolProcess(String receivedRoutingKey, String correlationDate) {
-        return null;
-    }
 }

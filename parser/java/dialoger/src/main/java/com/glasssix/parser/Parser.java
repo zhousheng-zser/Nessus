@@ -1,26 +1,29 @@
 package com.glasssix.parser;
 
-public class parser {
+import org.springframework.stereotype.Component;
+
+@Component
+public class Parser {
     static {
 		System.loadLibrary("parser");
 	}
 	
 	private long mObject;
 	
-	private parser() {
+	private Parser() {
 		init();
 	}
 
 	private static class singleton {
-		private static final parser instance = new parser();
+		private static final Parser instance = new Parser();
 	}
 	
-	public static parser Instance() {
+	public static Parser Instance() {
 		return singleton.instance;
 	}
 	
 	private native void init();
 	
-	public native void initPlugin(String config_file_path);
+	public native String initPlugin(String config_file_path);
 	public native String parse(String topic, String jstr);
 }
