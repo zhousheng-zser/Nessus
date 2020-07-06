@@ -10,5 +10,6 @@
   <ItemGroup>
     <ClCompile Include="..\parser\cpp\jsoncpp.cpp" />
     <ClCompile Include="..\parser\cpp\parser.cpp" />
+    <ClCompile Include="..\parser\cpp\jni\parser_jni.cpp" />
   </ItemGroup>
 </Project>
