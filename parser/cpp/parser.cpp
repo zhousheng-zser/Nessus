@@ -105,11 +105,13 @@ string glasssix::exposing::nessus::parser::parse(string& protocol, string & json
 		if (value["status"] == "OK")
 		{
 			//根据instance生成guid
-			string instance_guid(to_char_array(create_guid_from_bytes(meta::to_array(instance))).data());
+			auto guid_array = to_char_array(create_guid_from_bytes(meta::to_array(instance)));
+			string instance_guid(guid_array.data(), guid_array.size());
 
 			std::lock_guard<std::mutex> lck(mut_instance_map);
 
 			instance_map[instance_guid] = std::tuple<string, uint64_t, std::shared_ptr<std::mutex>>(instance_type, instance, std::shared_ptr<std::mutex>(new std::mutex));
+			value["instance_guid"] = Json::Value(instance_guid);
 		}
 	}
 	else

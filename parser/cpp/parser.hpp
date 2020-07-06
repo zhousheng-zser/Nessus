@@ -49,46 +49,70 @@ namespace glasssix
 					return writer.write(value);
 				}
 
-				void init_plugin(string config_file_path)
+				string init_plugin(string config_file_path)
 				{
 					static std::once_flag flag;
 
+					string status = "{\"status\":\"Function 'init_plugin' has beed called and could be called one time\"}";
 					std::call_once(flag, [&]
 					{
 						std::ifstream f_config(config_file_path);
 						std::string buffer(std::istreambuf_iterator<char>{ f_config }, std::istreambuf_iterator<char>{});
 
-						simdjson::dom::element config = parser_.parse(buffer);
 						try
 						{
+							simdjson::dom::element config = parser_.parse(buffer);
 							string plugin_directory = string(config["plugin_directory"].get<std::string_view>().value());
 							string pluginManager_lib = string(config["pluginManager_lib"].get<std::string_view>().value());
 							auto factory = component_loader::instance().add_module_with_factory(to_param_string(plugin_directory + "/" + pluginManager_lib));
+							if(!factory)
+							{
+								ready=false;
+								status = "{\"status\":\"Get a nullptr 'class_factory' instance\"}";
+								return;
+							}
 							auto manager = factory.create_instance(u8"glasssix.nessus.pluginManager").as<plugin_manager>();
+							if(!manager)
+							{
+								ready=false;
+								status = "{\"status\":\"Get a nullptr 'plugin_manager' instance\"}";
+								return;
+							}
 							manager.load_from_directory(to_param_string(plugin_directory));
 
-							plugin = manager.lookup(u8"glasssix.nessus.visionService");
+							plugin = manager.lookup(u8"Glasssix Vision Service");
+							if(!plugin)
+							{
+								ready=false;
+								status = "{\"status\":\"Get a nullptr 'plugin_interface' instance\"}";
+								return;
+							}
 
 							ready = true;
+							status = "{\"status\":\"OK\"}";
 						}
 						catch (const std::exception& ex)
 						{
 							ready = false;
+							status = string("{\"status\":\"") + ex.what() + string("\"}");
 						}
 						catch (const abi_error& ex)
 						{
 							ready = false;
+							status = string("{\"status\":\"") + ex.what_to_narrow() + string("\"}");
 						}
 					});
+
+					return status;
 				}
 
 			private:
 				parser()
 				{
-					protocol_map["Logninus.new"] = &Longinus_new_json;
-					protocol_map["Logninus.delete"] = &Longinus_delete_json;
-					protocol_map["Logninus.detectEx"] = &Longinus_detectEx_json;
-					protocol_map["Logninus.detectRetina"] = &Longinus_detectRetina_json;
+					protocol_map["Longinus.new"] = &Longinus_new_json;
+					protocol_map["Longinus.delete"] = &Longinus_delete_json;
+					protocol_map["Longinus.detectEx"] = &Longinus_detectEx_json;
+					protocol_map["Longinus.detectRetina"] = &Longinus_detectRetina_json;
 					protocol_map["Logninus.alignFace"] = &Longinus_alignFace_json;
 					protocol_map["Gaius.new"] = &Gaius_new_json;
 					protocol_map["Gaius.delete"] = &Gaius_delete_json;
