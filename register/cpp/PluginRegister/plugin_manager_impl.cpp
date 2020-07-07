@@ -1,6 +1,7 @@
 #include "plugin_manager_impl.hpp"
 
 #include <mutex>
+#include <iostream>
 #include <unordered_map>
 
 namespace glasssix::exposing::nessus
