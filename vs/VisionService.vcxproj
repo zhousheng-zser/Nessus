@@ -11,11 +11,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="PluginRegister.vcxproj">
-      <Project>{acd5e95e-6ad6-4872-985a-e241b19949c5}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\register\cpp\VisionService\dllmain.cpp" />
     <ClCompile Include="..\register\cpp\VisionService\vision_service.cpp" />
   </ItemGroup>

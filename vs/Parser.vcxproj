@@ -79,7 +79,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>..\common\lib\libPrimitives.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\common\lib\libPrimitives.lib;$(TargetDir)simdjson.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)..\build\out\$(Configuration)\simdjson.lib</AdditionalDependencies>
@@ -102,7 +102,7 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>..\common\lib\libPrimitives.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\common\lib\libPrimitives.lib;$(TargetDir)simdjson.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)..\build\out\$(Configuration)\simdjson.lib</AdditionalDependencies>
