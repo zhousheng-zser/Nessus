@@ -123,7 +123,9 @@ namespace glasssix::exposing::nessus
 
 				std::vector<int> kernel_bboxes(begin(bboxes), end(bboxes));
 				std::vector<int> kernel_landmarks(begin(landmarks), end(landmarks));
-				std::shared_ptr<std::uint8_t[]> kernel_result{ ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data()), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
+				//llvm不支持shared_ptr数组泛型
+				//std::shared_ptr<std::uint8_t[]> kernel_result{ ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data()), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
+				std::unique_ptr<std::uint8_t[], void(*)(void *)> kernel_result{ ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data()), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
 				auto result = make_param_vector<std::uint8_t>();
 
 				for (std::size_t i = 0; i < 3 * 128 * 128; i++)
