@@ -18,6 +18,8 @@ endif()
 set(COMMON_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/../common/include 
 			${CMAKE_CURRENT_SOURCE_DIR}/../common/include/Primitives)
 
+set(VISION_LIBRARY_DIRECTORIES /home/build_slave/ZYF/Excalibur/cmake/build/lib)
+
 set(JNI_INCLUDE /home/build_slave/jdk1.8.0_221/include /home/build_slave/jdk1.8.0_221/include/linux)
 
 add_subdirectory(3rd-party/simdjson)
