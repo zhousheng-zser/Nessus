@@ -113,7 +113,7 @@ namespace glasssix
 					protocol_map["Longinus.delete"] = &Longinus_delete_json;
 					protocol_map["Longinus.detectEx"] = &Longinus_detectEx_json;
 					protocol_map["Longinus.detectRetina"] = &Longinus_detectRetina_json;
-					protocol_map["Logninus.alignFace"] = &Longinus_alignFace_json;
+					protocol_map["Longinus.alignFace"] = &Longinus_alignFace_json;
 					protocol_map["Gaius.new"] = &Gaius_new_json;
 					protocol_map["Gaius.delete"] = &Gaius_delete_json;
 					protocol_map["Gaius.Forward"] = &Gaius_Forward_json;

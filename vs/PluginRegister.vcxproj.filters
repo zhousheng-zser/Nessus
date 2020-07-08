@@ -10,7 +10,4 @@
     <ClInclude Include="..\register\cpp\PluginRegister\plugin_manager.hpp" />
     <ClInclude Include="..\register\cpp\PluginRegister\plugin_manager_impl.hpp" />
   </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="..\common\lib\libPrimitives.dll" />
-  </ItemGroup>
 </Project>

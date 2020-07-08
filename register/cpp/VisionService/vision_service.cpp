@@ -161,7 +161,7 @@ namespace glasssix::exposing::nessus
 					throw abi_invalid_argument{};
 				}
 
-				std::shared_ptr<face_rect_with_face_info> face_info_scope{ face_info, &glasssix::memory::aligned_heap_free };
+				std::shared_ptr<face_rect_with_face_info> face_info_scope{ face_info, static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
 
 				return longinus_create_face_info_helper(face_info, size);
 			}
@@ -188,7 +188,7 @@ namespace glasssix::exposing::nessus
 					throw abi_invalid_argument{};
 				}
 				
-				std::shared_ptr<face_rect_with_face_info> face_info_scope{ face_info, &glasssix::memory::aligned_heap_free };
+				std::shared_ptr<face_rect_with_face_info> face_info_scope{ face_info, static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
 
 				return longinus_create_face_info_helper(face_info, size);
 			}
