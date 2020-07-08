@@ -3,7 +3,7 @@
 
 #include "simdjson.h"
 #include "json.h"
-#include "c_base64.hpp"
+#include "base64.hpp"
 #include "plugin_interface.hpp"
 #include "parser_exception.hpp"
 #include <string>
@@ -69,7 +69,7 @@ namespace glasssix
 				{
 					std::string_view format_str = root["format"].get<std::string_view>().value();
 					std::string_view image_base64_str = root["image"].get<std::string_view>().value();
-					std::string_view image_str(CBase64_Decode(image_base64_str.data(), image_base64_str.size()));
+					auto image_str = base64_decode(image_base64_str.data(), image_base64_str.length());
 					int height = root["height"].get<int64_t>().value();
 					int width = root["width"].get<int64_t>().value();
 					int minSize = root["minSize"].get<int64_t>().value();
@@ -88,7 +88,7 @@ namespace glasssix
 					auto threold_array_param = make_param_vector<float>(threshold[0], threshold[1], threshold[2]);
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"image", box(image_str)},
+							{u8"image", box(std::string_view{ image_str.data(), image_str.size() })},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"minSize", box(minSize)},
@@ -110,10 +110,10 @@ namespace glasssix
 						jobj_rect["y"] = Json::Int(/*20*/unbox<int>(obj.get_value(u8"y")));
 						jobj_rect["width"] = Json::Int(/*260*/unbox<int>(obj.get_value(u8"width")));
 						jobj_rect["height"] = Json::Int(/*200*/unbox<int>(obj.get_value(u8"height")));
-						jobj_rect["confidence"] = Json::Value(/*0.99*/unbox<double>(obj.get_value(u8"confidence")));
-						jobj_rect["yaw"] = Json::Value(/*-15.2*/unbox<double>(obj.get_value(u8"yaw")));
-						jobj_rect["pitch"] = Json::Value(/*10.4*/unbox<double>(obj.get_value(u8"pitch")));
-						jobj_rect["roll"] = Json::Value(/*20.3*/unbox<double>(obj.get_value(u8"roll")));
+						jobj_rect["confidence"] = Json::Value(/*0.99*/unbox<float>(obj.get_value(u8"confidence")));
+						jobj_rect["yaw"] = Json::Value(/*-15.2*/unbox<float>(obj.get_value(u8"yaw")));
+						jobj_rect["pitch"] = Json::Value(/*10.4*/unbox<float>(obj.get_value(u8"pitch")));
+						jobj_rect["roll"] = Json::Value(/*20.3*/unbox<float>(obj.get_value(u8"roll")));
 						Json::Value jarray_landmark;
 
 						auto landmark_param_vec = obj.get_value(u8"landmark").as<param_vector<int>>();
@@ -150,7 +150,7 @@ namespace glasssix
 				{
 					std::string_view format_str = root["format"].get<std::string_view>().value();
 					std::string_view image_base64_str = root["image"].get<std::string_view>().value();
-					std::string_view image_str(CBase64_Decode(image_base64_str.data(), image_base64_str.size()));
+					auto image_str = base64_decode(image_base64_str.data(), image_base64_str.length());
 					int height = root["height"].get<int64_t>().value();
 					int width = root["width"].get<int64_t>().value();
 					int min_win = root["min_win"].get<int64_t>().value();
@@ -159,7 +159,7 @@ namespace glasssix
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"image", box(image_str)},
+							{u8"image", box(std::string_view{ image_str.data(), image_str.size() }) },
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"min_win", box(min_win)},
@@ -179,10 +179,10 @@ namespace glasssix
 						jobj_rect["y"] = Json::Int(/*20*/unbox<int>(obj.get_value(u8"y")));
 						jobj_rect["width"] = Json::Int(/*260*/unbox<int>(obj.get_value(u8"width")));
 						jobj_rect["height"] = Json::Int(/*200*/unbox<int>(obj.get_value(u8"height")));
-						jobj_rect["confidence"] = Json::Value(/*0.99*/unbox<double>(obj.get_value(u8"confidence")));
-						jobj_rect["yaw"] = Json::Value(/*-15.2*/unbox<double>(obj.get_value(u8"yaw")));
-						jobj_rect["pitch"] = Json::Value(/*10.4*/unbox<double>(obj.get_value(u8"pitch")));
-						jobj_rect["roll"] = Json::Value(/*20.3*/unbox<double>(obj.get_value(u8"roll")));
+						jobj_rect["confidence"] = Json::Value(/*0.99*/unbox<float>(obj.get_value(u8"confidence")));
+						jobj_rect["yaw"] = Json::Value(/*-15.2*/unbox<float>(obj.get_value(u8"yaw")));
+						jobj_rect["pitch"] = Json::Value(/*10.4*/unbox<float>(obj.get_value(u8"pitch")));
+						jobj_rect["roll"] = Json::Value(/*20.3*/unbox<float>(obj.get_value(u8"roll")));
 						Json::Value jarray_landmark;
 
 						auto landmark_param_vec = obj.get_value(u8"landmark").as<param_vector<int>>();
@@ -220,7 +220,7 @@ namespace glasssix
 				{
 					std::string_view format_str = root["format"].get<std::string_view>().value();
 					std::string_view gray_base64_str = root["gray"].get<std::string_view>().value();
-					std::string_view gray_str(CBase64_Decode(gray_base64_str.data(), gray_base64_str.size()));
+					auto gray_str = base64_decode(gray_base64_str.data(), gray_base64_str.length());
 					int height = root["height"].get<int64_t>().value();
 					int width = root["width"].get<int64_t>().value();
 					auto jarray_rect = root["facerectwithfaceinfo_list"].get<simdjson::dom::array>().value();
@@ -249,7 +249,7 @@ namespace glasssix
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"gray", box(gray_str)},
+							{u8"gray", box(std::string_view{ gray_str.data(), gray_str.size() })},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"bboxes", bboxes},
@@ -263,7 +263,7 @@ namespace glasssix
 					for (size_t i = 0; i < bboxes.size(); i++)
 					{
 						std::vector<unsigned char> buffer(begin(result), end(result));
-						std::string aligned_str = CBase64_Encode((char*)buffer.data() + i * 3 * 128 * 128, 3 * 128 * 128);
+						std::string aligned_str = base64_encode((char*)buffer.data() + i * 3 * 128 * 128, 3 * 128 * 128);
 						value["aligned_faces"].append(Json::Value(aligned_str));
 					}
 					value["status"] = Json::Value("OK");
@@ -342,7 +342,7 @@ namespace glasssix
 					for (auto i : aligned_face_array)
 					{
 						std::string_view aligned_face_base64_str = i.get<std::string_view>().value();
-						aligned_faces_str.append(CBase64_Decode(aligned_face_base64_str.data(), aligned_face_base64_str.size()));
+						aligned_faces_str.append(base64_decode(aligned_face_base64_str.data(), aligned_face_base64_str.length()));
 						num++;
 					}
 
@@ -441,7 +441,7 @@ namespace glasssix
 					for (auto i : aligned_face_array)
 					{
 						std::string_view aligned_face_base64_str = i.get<std::string_view>().value();
-						aligned_faces_str.append(CBase64_Decode(aligned_face_base64_str.data(), aligned_face_base64_str.size()));
+						aligned_faces_str.append(base64_decode(aligned_face_base64_str.data(), aligned_face_base64_str.length()));
 						num++;
 					}
 
