@@ -70,7 +70,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>E:\Tools\jdk1.8.0_201\include;E:\Tools\jdk1.8.0_201\include\win32;$(IncludePath)</IncludePath>
+    <IncludePath>E:\Libs\jdk1.8.0_251\include;E:\Libs\jdk1.8.0_251\include\win32;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">

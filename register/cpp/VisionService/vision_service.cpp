@@ -123,8 +123,7 @@ namespace glasssix::exposing::nessus
 
 				std::vector<int> kernel_bboxes(begin(bboxes), end(bboxes));
 				std::vector<int> kernel_landmarks(begin(landmarks), end(landmarks));
-				//llvm不支持shared_ptr数组泛型
-				//std::shared_ptr<std::uint8_t[]> kernel_result{ ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data()), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
+				
 				std::unique_ptr<std::uint8_t[], void(*)(void *)> kernel_result{ ::Longinus_alignFace(instance, reinterpret_cast<const std::uint8_t*>(gray.data()), 1, height, width, kernel_bboxes.data(), kernel_landmarks.data()), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
 				auto result = make_param_vector<std::uint8_t>();
 
@@ -220,8 +219,10 @@ namespace glasssix::exposing::nessus
 				auto aligned_faces_data = unbox<param_string>(params.get_value(u8"aligned_faces_str"));
 				auto num = unbox<int>(params.get_value(u8"num"));
 				auto order = unbox<int>(params.get_value(u8"order"));
+				param_span<float> kernel_feature{ ::Cassius_Forward(instance, reinterpret_cast<const std::uint8_t*>(aligned_faces_data.data()), num, order), 512 };
+				std::shared_ptr<float> kernel_feature_scope{ kernel_feature.data(), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
 
-				::Cassius_Forward(instance, reinterpret_cast<const std::uint8_t*>(aligned_faces_data.data()), num, order);
+				return make_param_vector<float>(kernel_feature);
 			}
 
 			throw abi_null_pointer{};
@@ -251,8 +252,10 @@ namespace glasssix::exposing::nessus
 				auto aligned_faces_data = unbox<param_string>(params.get_value(u8"aligned_faces_str"));
 				auto num = unbox<int>(params.get_value(u8"num"));
 				auto order = unbox<int>(params.get_value(u8"order"));
+				param_span<float> kernel_feature{ ::Gaius_Forward(instance, reinterpret_cast<const std::uint8_t*>(aligned_faces_data.data()), num, order, false), 128 };
+				std::shared_ptr<float> kernel_feature_scope{ kernel_feature.data(), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
 
-				::Gaius_Forward(instance, reinterpret_cast<const std::uint8_t*>(aligned_faces_data.data()), num, order, false);
+				return make_param_vector(kernel_feature);
 			}
 
 			throw abi_null_pointer{};
