@@ -100,9 +100,9 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>libPrimitives.lib;libLonginus.lib;libGaius.lib;libCassius.lib;libIrisviel.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libPrimitivesd.lib;libLonginusd.lib;libGaiusd.lib;libCassiusd.lib;libIrisvield.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">

@@ -70,7 +70,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>E:\Tools\jdk1.8.0_201\include;E:\Tools\jdk1.8.0_201\include\win32;$(IncludePath)</IncludePath>
+    <IncludePath>E:\Libs\jdk1.8.0_251\include;E:\Libs\jdk1.8.0_251\include\win32;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
@@ -99,7 +99,8 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>..\common\lib\libPrimitives.lib;$(TargetDir)simdjson.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\common\lib\libPrimitivesd.lib;$(TargetDir)simdjson.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)..\build\out\$(Configuration)\simdjson.lib</AdditionalDependencies>
@@ -115,6 +116,7 @@
       <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\include;..\common\include\Primitives;..\register\cpp\PluginRegister;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
