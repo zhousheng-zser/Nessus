@@ -414,6 +414,6 @@ namespace glasssix::exposing::nessus
 	{
 		auto iter = functions_.find(function_name);
 
-		return iter != functions_.end() ? iter->second(params) : throw abi_key_not_found{};
+		return iter != functions_.end() ? iter->second(params) : throw abi_key_not_found{ function_name };
 	}
 }

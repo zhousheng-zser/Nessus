@@ -498,7 +498,7 @@ namespace glasssix
 							{u8"working_directory", box(working_directory)}
 						});
 
-					instance = unbox<uint64_t>(plugin.execute(u8"irsiviel.new", param));
+					instance = unbox<uint64_t>(plugin.execute(u8"irisviel.new", param));
 
 					value["status"] = Json::Value("OK");
 				}
@@ -558,7 +558,7 @@ namespace glasssix
 							{u8"object_id", box(instance)}
 						});
 
-					auto result = plugin.execute(u8"irsiviel.search", param).as<param_vector<param_hash_map<param_string, unknown_object>>>();
+					auto result = plugin.execute(u8"irisviel.search", param).as<param_vector<param_hash_map<param_string, unknown_object>>>();
 
 					for (int i = 0; i < result.size(); i++)
 					{
@@ -600,7 +600,7 @@ namespace glasssix
 						{
 							{u8"object_id", box(instance)}
 						});
-					plugin.execute(u8"irsiviel.clear", param);
+					plugin.execute(u8"irisviel.clear", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -622,7 +622,7 @@ namespace glasssix
 						{
 							{u8"object_id", box(instance)}
 						});
-					plugin.execute(u8"irsiviel.remove_all", param);
+					plugin.execute(u8"irisviel.remove_all", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -645,7 +645,7 @@ namespace glasssix
 						{
 							{u8"object_id", box(instance)}
 						});
-					plugin.execute(u8"irsiviel.load_databases", param);
+					plugin.execute(u8"irisviel.load_databases", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -676,7 +676,7 @@ namespace glasssix
 							{u8"object_id", box(instance)}
 						});
 
-					plugin.execute(u8"irsiviel.remove_records", param);
+					plugin.execute(u8"irisviel.remove_records", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -704,7 +704,7 @@ namespace glasssix
 							{u8"object_id", box(instance)}
 						});
 
-					plugin.execute(u8"irsiviel.remove_record", param);
+					plugin.execute(u8"irisviel.remove_record", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)

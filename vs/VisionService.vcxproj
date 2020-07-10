@@ -115,12 +115,13 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>../register/cpp/VisionService;../register/cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>libPrimitives.lib;libLonginus.lib;libGaius.lib;libCassius.lib;libIrisviel.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libPrimitivesd.lib;libLonginusd.lib;libGaiusd.lib;libCassiusd.lib;libIrisvield.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
