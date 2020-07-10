@@ -19,18 +19,20 @@ public class PersonDBProtocolCommon extends ProtocolCommon {
                     .append(receivedRoutingKey)
                     .append("),please manual input the instance_guid which need to be remove");
             log.error(new String(resultBuffer));
+        }else{
+            String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon);
+            if(!algorithmFactory.consumerGuuidExist(guuidKey,protocolCommon.instanceGuid)){
+                resultBuffer = new StringBuffer("Manual assignment instanceGuid(")
+                        .append(instanceGuid)
+                        .append(") correlationDate(")
+                        .append(correlationDate)
+                        .append(") consumer(")
+                        .append(receivedRoutingKey)
+                        .append(") is not exist!");
+                log.error(new String(resultBuffer));
+            }
         }
-        String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon);
-        if(!algorithmFactory.consumerGuuidExist(guuidKey,protocolCommon.instanceGuid)){
-            resultBuffer = new StringBuffer("Manual assignment instanceGuid(")
-                    .append(instanceGuid)
-                    .append(") correlationDate(")
-                    .append(correlationDate)
-                    .append(") consumer(")
-                    .append(receivedRoutingKey)
-                    .append(") is not exist!");
-            log.error(new String(resultBuffer));
-        }
+
         return new String(resultBuffer);
     }
 }

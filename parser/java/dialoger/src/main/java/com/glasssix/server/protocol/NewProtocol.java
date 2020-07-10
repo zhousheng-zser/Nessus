@@ -1,6 +1,5 @@
 package com.glasssix.server.protocol;
 
-import com.glasssix.server.protocol.ProtocolCommon;
 import com.glasssix.server.util.ApplicationConstants;
 
 public class NewProtocol extends ProtocolCommon {

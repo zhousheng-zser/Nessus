@@ -14,6 +14,7 @@ public class DetectExProtocol extends ProtocolCommon {
     private double factor;	    //	缩放系数
     private int order;	        //	图片的像素排列方式	0:NCHW, 1:NHWC
     private int minSize;
+    private int stage;
 
 
     public String getImage() {
@@ -80,6 +81,11 @@ public class DetectExProtocol extends ProtocolCommon {
         this.minSize = minSize;
     }
 
+    public int getStage() {
+        return stage;
+    }
 
-
+    public void setStage(int stage) {
+        this.stage = stage;
+    }
 }

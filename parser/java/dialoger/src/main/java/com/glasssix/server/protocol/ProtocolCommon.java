@@ -7,10 +7,12 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Slf4j
+@Component
 public abstract class ProtocolCommon {
 
     @SerializedName("event_id")
@@ -21,9 +23,12 @@ public abstract class ProtocolCommon {
     public int device;         //设备索引   -1:CPU, 0:GPU0
     public String reserved;    //	保留字段
 
-    @Expose
+    public transient AlgorithmFactory algorithmFactory;
+
     @Autowired
-    public AlgorithmFactory algorithmFactory;
+    public ProtocolCommon(){
+        this.algorithmFactory = (AlgorithmFactory) SpringUtil.getApplicationContext().getBean("algorithmFactory");
+    }
 
     public String getEventId() {
         return eventId;

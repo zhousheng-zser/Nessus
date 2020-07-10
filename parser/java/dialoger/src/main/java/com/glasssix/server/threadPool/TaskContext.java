@@ -4,6 +4,7 @@ import com.glasssix.server.algorithm.AlgorithmFactory;
 import com.glasssix.parser.Parser;
 import com.glasssix.server.protocol.ProtocolCache;
 import com.glasssix.server.protocol.ProtocolCommon;
+import com.glasssix.server.protocol.longinus.DetectExProtocol;
 import com.glasssix.server.protocol.result.NewResultProtocol;
 import com.glasssix.server.rabbitmq.RabbitMQSender;
 import com.glasssix.server.util.ApplicationConstants;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 @Slf4j
 @Component
@@ -147,6 +149,7 @@ public class TaskContext {
      * @return
      */
     public String transformToCallJNIParam(String receivedRoutingKey, String correlationDate, ProtocolCommon protocolCommon) {
+        log.debug("CALL JNI JSON: "+gson.toJson(protocolCommon));
         return gson.toJson(protocolCommon);
     }
 

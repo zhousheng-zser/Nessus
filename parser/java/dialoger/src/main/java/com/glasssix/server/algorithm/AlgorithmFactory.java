@@ -15,7 +15,7 @@ public class AlgorithmFactory {
     private static Parser PARSER = Parser.Instance();
     private Map<String, List<String>> GuuidMap = new HashMap<>();
 
-    AlgorithmFactory(){
+    public AlgorithmFactory(){
         log.info("filePath:"+System.getProperties().getProperty("user.dir"));
         String initPluginResult = PARSER.initPlugin("plugin_configure.json");
         log.info("initPluginResult:"+initPluginResult);
@@ -58,7 +58,7 @@ public class AlgorithmFactory {
 
     public synchronized List<String> getConsumerGuuidList(String key){
         log.debug("getConsumerGuuidList({}",key);
-        log.debug("getConsumerGuuidList({} return ({})",key,GuuidMap.get(key).stream().collect(Collectors.joining("_")));
+        log.debug("getConsumerGuuidList({} return ({})",key,GuuidMap.get(key)==null? null:GuuidMap.get(key).stream().collect(Collectors.joining("_")));
         return GuuidMap.get(key);
     }
 

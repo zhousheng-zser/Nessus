@@ -278,6 +278,7 @@ class DialogerApplicationTests {
 
 	@Test
 	void longinusNewTest(){
+		log.debug("-------------------------------------------------");
 		newProtocolTest.sendNewProtocolData(customerRoutingKey);
 		waitMe();
 	}

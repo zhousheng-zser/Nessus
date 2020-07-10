@@ -38,10 +38,10 @@ protocol:
 
     - name: Irisviel.new
       start: true
-      entry: PersonDBNewProtocol
+      entry: irisviel.PersonDBNewProtocol
     - name: Irisviel.delete
       start: true
-      entry: DeleteProtocol
+      entry: irisviel.DeleteProtocol
     - name: Irisviel.search
       start: true
       entry: irisviel.PersonDBSearchProtocol

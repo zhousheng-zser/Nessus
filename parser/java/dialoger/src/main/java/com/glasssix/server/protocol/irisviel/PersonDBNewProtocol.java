@@ -1,9 +1,10 @@
 package com.glasssix.server.protocol.irisviel;
 
 import com.glasssix.server.protocol.ProtocolCommon;
+import com.glasssix.server.util.ApplicationConstants;
 import com.google.gson.annotations.SerializedName;
 
-public class PersonDBNewProtocol extends ProtocolCommon {
+public class PersonDBNewProtocol extends PersonDBProtocolCommon {
 
 
     @SerializedName("single_database_capacity")
@@ -35,5 +36,10 @@ public class PersonDBNewProtocol extends ProtocolCommon {
 
     public void setWorkingDirectory(String workingDirectory) {
         this.workingDirectory = workingDirectory;
+    }
+
+    @Override
+    public String protocolProcess(String receivedRoutingKey,String correlationDate,ProtocolCommon protocolCommon){
+        return ApplicationConstants.OK_STATIC;
     }
 }

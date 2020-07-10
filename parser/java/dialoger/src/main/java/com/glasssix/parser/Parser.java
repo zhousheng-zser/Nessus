@@ -1,11 +1,11 @@
 package com.glasssix.parser;
 
-import org.springframework.stereotype.Component;
+//import org.springframework.stereotype.Component;
 
-@Component
+//@Component
 public class Parser {
     static {
-		System.loadLibrary("parser");
+		System.loadLibrary("libParser");
 	}
 	
 	private long mObject;
@@ -13,6 +13,8 @@ public class Parser {
 	private Parser() {
 		init();
 	}
+
+
 
 	private static class singleton {
 		private static final Parser instance = new Parser();

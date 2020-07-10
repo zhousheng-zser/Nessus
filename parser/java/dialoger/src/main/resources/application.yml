@@ -32,4 +32,4 @@ spring:
 
 
 logging:
-  config: classpath:log4j2.yml
+  config: classpath:log4j2-test.yml

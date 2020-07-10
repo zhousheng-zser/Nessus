@@ -1,0 +1,4 @@
+{
+	"plugin_directory" : ".",
+	"pluginManager_lib" : "libPluginRegister.dll"
+}
