@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: dialoger
+  rabbitmq:
+    #host: 127.0.0.1
+    #port: 5672
+    #username: guest
+    #password: guest
+    host: 192.168.1.209
+    port: 5672
+    username: admin
+    password: admin
+  thread-pool:
+    core-pool-size: 20
+    max-pool-size: 40
+    queue-capacity: 200
+    keep-alive-seconds: 60
+    thread-name-prefix: JNI-Thread-
+
+  gson:
+    date-format: yyyy-MM-dd HH:mm:ss # 序列化日期对象时使用的格式
+    disable-html-escaping: true # 是否禁用HTML字符转义，如“<”、“>”等
+    disable-inner-class-serialization: true # 是否在序列化期间排除内部类。
+    enable-complex-map-key-serialization: false # 是否启用复杂映射键（即非原语）的序列化。
+    exclude-fields-without-expose-annotation: true # 是否排除所有没有“expose”注释的字段进行序列化或反序列化。
+    field-naming-policy: UPPER_CAMEL_CASE # 在序列化和反序列化期间应用于对象字段的命名策略。
+    generate-non-executable-json: true # 是否通过在输出前添加一些特殊文本来生成不可执行的JSON。
+    lenient: true # 对于解析不符合RFC 4627的JSON是否宽容。
+    long-serialization-policy: DEFAULT
+    pretty-printing: true
+    serialize-nulls: true
+
+
+logging:
+  config: classpath:log4j2-test.yml
+algorithm:
+  protocol:
+    config: protocol.yml
+  libParserName: libParser
