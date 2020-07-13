@@ -35,8 +35,8 @@ static jstring char2Jstring(JNIEnv* env, const char* pat, size_t len)
 {
 	jclass strClazz = env->FindClass("java/lang/String");
 	jmethodID mid_String_constructor = env->GetMethodID(strClazz, "<init>", "([BLjava/lang/String;)V");
-	jbyteArray bytes = env->NewByteArray(len);
-	env->SetByteArrayRegion(bytes, 0, len, (jbyte*)pat);
+	jbyteArray bytes = env->NewByteArray(static_cast<jsize>(len));
+	env->SetByteArrayRegion(bytes, 0, static_cast<jsize>(len), (jbyte*)pat);
 	jstring encoding = env->NewStringUTF("utf-8");
 
 	jstring jstr = (jstring)env->NewObject(strClazz, mid_String_constructor, bytes, encoding);

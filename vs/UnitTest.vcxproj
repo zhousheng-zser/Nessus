@@ -28,6 +28,14 @@
       <Project>{78180b15-4fb6-4c4f-b9e7-806d8d96bf52}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\tests\data\alignface.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\tests\data\Longinus_detectEx.message">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{CCA2237E-CB02-4550-8D58-7562595A0819}</ProjectGuid>

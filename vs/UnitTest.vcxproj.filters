@@ -3,4 +3,8 @@
   <ItemGroup>
     <ClCompile Include="..\tests\cpp\parser.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="..\tests\data\alignface.txt" />
+    <CopyFileToFolders Include="..\tests\data\Longinus_detectEx.message" />
+  </ItemGroup>
 </Project>
