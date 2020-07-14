@@ -69,7 +69,7 @@ string glasssix::exposing::nessus::parser::parse(string& protocol, string & json
 		std::lock_guard<std::mutex> lck(mut_parse);
 		root = parser_.parse(jsonstr);
 	}
-	catch (const std::exception& ex)
+	catch (const std::exception&)
 	{
 		value["status"] = Json::Value("parse json error");
 		return writer.write(value);
@@ -121,7 +121,7 @@ string glasssix::exposing::nessus::parser::parse(string& protocol, string & json
 		{
 			instance_guid = string(root["instance_guid"].get<std::string_view>().value());
 		}
-		catch (const std::exception& ex)
+		catch (const std::exception&)
 		{
 			value["status"] = Json::Value("Lack of \"instance_guid\"");
 			return writer.write(value);
@@ -133,7 +133,7 @@ string glasssix::exposing::nessus::parser::parse(string& protocol, string & json
 			std::lock_guard<std::mutex> lck(mut_instance_map);
 			mut_instance = std::get<2>(instance_map.at(instance_guid));
 		}
-		catch (const std::exception& ex)
+		catch (const std::exception&)
 		{
 			value["status"] = Json::Value(instance_guid + " instance not found");
 			return writer.write(value);
@@ -145,10 +145,9 @@ string glasssix::exposing::nessus::parser::parse(string& protocol, string & json
 			std::lock_guard<std::mutex> lck_instance(*mut_instance);
 			try
 			{
-				std::lock_guard<std::mutex> lck(mut_instance_map);
 				auto &instance_tuple = instance_map.at(instance_guid);
 			}
-			catch (const std::exception& ex)
+			catch (const std::exception&)
 			{
 				value["status"] = Json::Value(instance_guid + " instance not found");
 				return writer.write(value);
@@ -159,7 +158,7 @@ string glasssix::exposing::nessus::parser::parse(string& protocol, string & json
 			{
 				func = protocol_map.at(protocol);
 			}
-			catch (const std::exception& ex)
+			catch (const std::exception&)
 			{
 				value["status"] = Json::Value("Function of the topic not register");
 				return writer.write(value);
@@ -176,7 +175,7 @@ string glasssix::exposing::nessus::parser::parse(string& protocol, string & json
 				std::lock_guard<std::mutex> lck(mut_instance_map);
 				auto &instance_tuple = instance_map.at(instance_guid);
 			}
-			catch (const std::exception& ex)
+			catch (const std::exception&)
 			{
 				value["status"] = Json::Value(instance_guid + " instance not found");
 				return writer.write(value);
@@ -187,7 +186,7 @@ string glasssix::exposing::nessus::parser::parse(string& protocol, string & json
 			{
 				func = protocol_map.at(protocol);
 			}
-			catch (const std::exception& ex)
+			catch (const std::exception&)
 			{
 				value["status"] = Json::Value("Function of the topic not register");
 				return writer.write(value);

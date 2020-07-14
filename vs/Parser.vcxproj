@@ -40,7 +40,7 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -76,14 +76,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>E:\Tools\jdk1.8.0_201\include;E:\Tools\jdk1.8.0_201\include\win32;E:\Libs\opencv\build\include;$(IncludePath)</IncludePath>
+    <IncludePath>E:\Libs\jdk1.8.0_251\include;E:\Libs\jdk1.8.0_251\include\win32;E:\Libs\opencv\build\include;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
     <LibraryPath>E:\Libs\opencv\build\x64\vc15\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>E:\Tools\jdk1.8.0_201\include;E:\Tools\jdk1.8.0_201\include\win32;$(IncludePath)</IncludePath>
+    <IncludePath>E:\Libs\jdk1.8.0_251\include;E:\Libs\jdk1.8.0_251\include\win32;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -116,11 +116,11 @@
       <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\include;..\common\include\Primitives;..\register\cpp\PluginRegister;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>..\common\lib\libPrimitives.lib;$(TargetDir)simdjson.lib;opencv_world430d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\common\lib\libPrimitivesd.lib;$(TargetDir)simdjson.lib;opencv_world430d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)..\build\out\$(Configuration)\simdjson.lib</AdditionalDependencies>
