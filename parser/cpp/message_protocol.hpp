@@ -866,8 +866,7 @@ namespace glasssix
 							{
 								{u8"dimension", box(dimension)},
 								{u8"key", box(key)},
-								{u8"feature", feature},
-								{u8"object_id", box(instance)}
+								{u8"feature", feature}
 							});
 
 						vec.push_back(data);
@@ -875,7 +874,8 @@ namespace glasssix
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"records", vec}
+							{u8"records", vec},
+							{u8"object_id", box(instance)}
 						});
 
 					plugin.execute(u8"irisviel.update_records", param);

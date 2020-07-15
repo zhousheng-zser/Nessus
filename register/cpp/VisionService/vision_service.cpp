@@ -394,7 +394,8 @@ namespace glasssix::exposing::nessus
 				result.push_back(make_param_hash_map<param_string, unknown_object>(
 					{
 						{ u8"key", box(to_param_string(std::string_view{ content.key, content.key_size })) },
-						{ u8"feature", make_param_vector<float>(param_span<float>{ content.feature, content.feature_size }) }
+						{ u8"feature", make_param_vector<float>(param_span<float>{ content.feature, content.feature_size }) },
+						{ u8"similarity", box(search_result[i].similarity) }
 					}));
 			}
 
