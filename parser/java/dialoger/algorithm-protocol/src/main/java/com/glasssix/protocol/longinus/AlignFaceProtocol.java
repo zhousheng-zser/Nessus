@@ -10,7 +10,7 @@ public class AlignFaceProtocol extends ProtocolCommon {
     private int channel;        //图片通道数 灰度图为1
     private int height;	        //	图片高度
     private int width;	        //	图片宽度
-    @SerializedName("FaceRectwithFaceInfo_list")
+    @SerializedName("facerectwithfaceinfo_list")
     private FaceRectwithFaceInfo[] faceRectwithFaceInfos;//对象数组 人脸定位及信息
 
     public String getGray() {

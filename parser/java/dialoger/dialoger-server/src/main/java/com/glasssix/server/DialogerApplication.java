@@ -3,7 +3,6 @@ package com.glasssix.server;
 import com.glasssix.algorithm.AlgorithmFactory;
 import com.glasssix.common.util.YamlPropertySourceFactory;
 import com.glasssix.init.InitAlgorithmProtocol;
-import com.glasssix.protocol.ProtocolCache;
 import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;

@@ -10,10 +10,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>algorithm-protocol</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>com.glasssix</groupId>
             <artifactId>excalibur</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.glasssix</groupId>
+            <artifactId>common</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>

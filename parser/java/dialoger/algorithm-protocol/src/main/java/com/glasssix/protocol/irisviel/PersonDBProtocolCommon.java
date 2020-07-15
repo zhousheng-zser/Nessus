@@ -1,8 +1,8 @@
 package com.glasssix.protocol.irisviel;
 
 import com.glasssix.algorithm.AlgorithmFactory;
-import com.glasssix.protocol.ProtocolCommon;
 import com.glasssix.common.util.ApplicationConstants;
+import com.glasssix.protocol.ProtocolCommon;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 

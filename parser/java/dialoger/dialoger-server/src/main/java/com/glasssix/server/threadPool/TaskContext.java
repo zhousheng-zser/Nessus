@@ -1,12 +1,12 @@
 package com.glasssix.server.threadPool;
 
 import com.glasssix.algorithm.AlgorithmFactory;
+import com.glasssix.common.util.ApplicationConstants;
 import com.glasssix.parser.Parser;
 import com.glasssix.protocol.ProtocolCache;
 import com.glasssix.protocol.ProtocolCommon;
 import com.glasssix.protocol.result.NewResultProtocol;
 import com.glasssix.server.rabbitmq.RabbitMQSender;
-import com.glasssix.common.util.ApplicationConstants;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
@@ -158,7 +158,7 @@ public class TaskContext {
      * @return
      */
     public String transformToBackStr(String receivedRoutingKey, String correlationDate, String JNIResult,String eventId) {
-        return JNIResult.substring(0,JNIResult.length()-2)+",\"event_id\":"+eventId+"}";
+        return JNIResult.substring(0,JNIResult.length()-2)+",\"event_id\":\""+eventId+"\"}";
     }
 
 

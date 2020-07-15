@@ -17,7 +17,6 @@ public class CassiusForwardProtocolTest {
     public String getCassiusForwardProtocolData(String image){
         String data = "{\"event_id\":\"123456\",\"alignedImage\":\"\",\"num\":2,\"order\":0,\"reserved\":\"\"}";
         ForwardProtocol forwardProtocol = gson.fromJson(data, ForwardProtocol.class);
-        forwardProtocol.setAlignedImage(image);
         return gson.toJson(forwardProtocol);
     }
 

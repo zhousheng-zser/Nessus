@@ -19,7 +19,7 @@ protocol:
     - name: Gaius.new
       start: true
       entry: NewProtocol
-    - name: Gasius.delete
+    - name: Gaius.delete
       start: true
       entry: DeleteProtocol
     - name: Gaius.Forward
@@ -41,7 +41,7 @@ protocol:
       entry: irisviel.PersonDBNewProtocol
     - name: Irisviel.delete
       start: true
-      entry: irisviel.DeleteProtocol
+      entry: irisviel.PersonDBDeleteProtocol
     - name: Irisviel.search
       start: true
       entry: irisviel.PersonDBSearchProtocol

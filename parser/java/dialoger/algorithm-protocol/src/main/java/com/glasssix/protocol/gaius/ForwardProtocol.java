@@ -1,20 +1,22 @@
 package com.glasssix.protocol.gaius;
 
 import com.glasssix.protocol.ProtocolCommon;
+import com.google.gson.annotations.SerializedName;
 
 public class ForwardProtocol extends ProtocolCommon {
 
-    private String alignedImage;//对齐生成的人脸三通道图片,每张图片为3x128x128个字节
+    @SerializedName("aligned_images")
+    private String[] alignedImages;//对齐生成的人脸三通道图片,每张图片为3x128x128个字节
     private int num;            //alignedImage包含的图片数
     private int order;	        //	图片的像素排列方式	0:NCHW, 1:NHWC
 
 
-    public String getAlignedImage() {
-        return alignedImage;
+    public String[] getAlignedImages() {
+        return alignedImages;
     }
 
-    public void setAlignedImage(String alignedImage) {
-        this.alignedImage = alignedImage;
+    public void setAlignedImages(String[] alignedImages) {
+        this.alignedImages = alignedImages;
     }
 
     public int getNum() {

@@ -1,7 +1,7 @@
 package com.glasssix.protocol.irisviel;
 
-import com.glasssix.protocol.ProtocolCommon;
 import com.glasssix.common.util.ApplicationConstants;
+import com.glasssix.protocol.ProtocolCommon;
 import com.google.gson.annotations.SerializedName;
 
 public class PersonDBNewProtocol extends PersonDBProtocolCommon {

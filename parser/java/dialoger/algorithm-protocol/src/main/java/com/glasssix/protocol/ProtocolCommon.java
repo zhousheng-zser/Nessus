@@ -2,11 +2,8 @@ package com.glasssix.protocol;
 
 import com.glasssix.algorithm.AlgorithmFactory;
 import com.glasssix.common.util.ApplicationConstants;
-import com.glasssix.common.util.SpringUtil;
 import com.google.gson.annotations.SerializedName;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 

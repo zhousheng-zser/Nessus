@@ -1,6 +1,7 @@
 package com.glasssix.protocol.longinus;
 
 import com.glasssix.protocol.ProtocolCommon;
+import com.google.gson.annotations.SerializedName;
 
 public class DetectExProtocol extends ProtocolCommon {
 
@@ -12,6 +13,7 @@ public class DetectExProtocol extends ProtocolCommon {
     private double[] threshold;	//  Double数组	模型阈值
     private double factor;	    //	缩放系数
     private int order;	        //	图片的像素排列方式	0:NCHW, 1:NHWC
+    @SerializedName("min_size")
     private int minSize;
     private int stage;
 
