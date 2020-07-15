@@ -218,10 +218,17 @@ namespace glasssix::exposing::nessus
 				auto aligned_faces_data = unbox<param_string>(params.get_value(u8"aligned_faces_str"));
 				auto num = unbox<int>(params.get_value(u8"num"));
 				auto order = unbox<int>(params.get_value(u8"order"));
-				param_span<float> kernel_feature{ ::Cassius_Forward(instance, reinterpret_cast<const std::uint8_t*>(aligned_faces_data.data()), num, order), 512 };
+				param_span<float> kernel_feature{ ::Cassius_Forward(instance, reinterpret_cast<const std::uint8_t*>(aligned_faces_data.data()), num, order), 512ULL * num };
 				std::shared_ptr<float> kernel_feature_scope{ kernel_feature.data(), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
 
-				return make_param_vector<float>(kernel_feature);
+				auto result = make_param_vector<param_vector<float>>();
+
+				for (std::size_t i = 0; i < num; i++)
+				{
+					result.push_back(make_param_vector(kernel_feature.sub_span(i * 512, 512)));
+				}
+				
+				return result;
 			}
 
 			throw abi_null_pointer{ u8"The object ID does not exist." };
@@ -249,10 +256,17 @@ namespace glasssix::exposing::nessus
 				auto aligned_faces_data = unbox<param_string>(params.get_value(u8"aligned_faces_str"));
 				auto num = unbox<int>(params.get_value(u8"num"));
 				auto order = unbox<int>(params.get_value(u8"order"));
-				param_span<float> kernel_feature{ ::Gaius_Forward(instance, reinterpret_cast<const std::uint8_t*>(aligned_faces_data.data()), num, order, false), 128 };
+				param_span<float> kernel_feature{ ::Gaius_Forward(instance, reinterpret_cast<const std::uint8_t*>(aligned_faces_data.data()), num, order, false), 128ULL * num };
 				std::shared_ptr<float> kernel_feature_scope{ kernel_feature.data(), static_cast<void(*)(void*)>(&glasssix::memory::heap_free) };
 
-				return make_param_vector(kernel_feature);
+				auto result = make_param_vector<param_vector<float>>();
+
+				for (std::size_t i = 0; i < num; i++)
+				{
+					result.push_back(make_param_vector(kernel_feature.sub_span(i * 128, 128)));
+				}
+				
+				return result;
 			}
 
 			throw abi_null_pointer{ u8"The object ID does not exist." };

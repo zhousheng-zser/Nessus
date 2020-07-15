@@ -336,7 +336,7 @@ namespace glasssix
 
 				try
 				{
-					auto aligned_face_array = root["aligned_faces"].get<simdjson::dom::array>().value();
+					auto aligned_face_array = root["aligned_images"].get<simdjson::dom::array>().value();
 					std::string aligned_faces_str;
 					int num = 0;
 					for (auto i : aligned_face_array)
@@ -435,7 +435,7 @@ namespace glasssix
 				Json::Value value;
 				try
 				{
-					auto aligned_face_array = root["aligned_faces"].get<simdjson::dom::array>().value();
+					auto aligned_face_array = root["aligned_images"].get<simdjson::dom::array>().value();
 					std::string aligned_faces_str;
 					int num = 0;
 					for (auto i : aligned_face_array)

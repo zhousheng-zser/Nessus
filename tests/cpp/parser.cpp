@@ -406,5 +406,47 @@ namespace glasssix::unit_test
 			Logger::WriteMessage(raw_json.c_str());
 			Assert::AreEqual("OK", result["status"].asCString());
 		}
+
+		TEST_METHOD(test_gaius_forward)
+		{
+			std::string topic_new = "Gaius.new";
+			std::string topic_Forward = "Gaius.Forward";
+			Json::Value params_Forward;
+			Json::Value result;
+			Json::Reader reader;
+			std::string raw_json;
+			std::string json_new = R"({"device":-1})";
+
+			Logger::WriteMessage(parser::instance().init_plugin("plugin_configure.json").c_str());
+			reader.parse(raw_json = parser::instance().parse(topic_new, json_new), result);
+			Logger::WriteMessage(raw_json.c_str());
+			Assert::AreEqual("OK", result["status"].asCString());
+			reader.parse(get_file_bytes("forward.txt"), params_Forward);
+			params_Forward["instance_guid"] = result["instance_guid"];
+			reader.parse(raw_json = parser::instance().parse(topic_Forward, params_Forward.toStyledString()), result);
+			Logger::WriteMessage(raw_json.c_str());
+			Assert::AreEqual("OK", result["status"].asCString());
+		}
+
+		TEST_METHOD(test_cassius_forward)
+		{
+			std::string topic_new = "Cassius.new";
+			std::string topic_Forward = "Cassius.Forward";
+			Json::Value params_Forward;
+			Json::Value result;
+			Json::Reader reader;
+			std::string raw_json;
+			std::string json_new = R"({"device":-1})";
+
+			Logger::WriteMessage(parser::instance().init_plugin("plugin_configure.json").c_str());
+			reader.parse(raw_json = parser::instance().parse(topic_new, json_new), result);
+			Logger::WriteMessage(raw_json.c_str());
+			Assert::AreEqual("OK", result["status"].asCString());
+			reader.parse(get_file_bytes("forward.txt"), params_Forward);
+			params_Forward["instance_guid"] = result["instance_guid"];
+			reader.parse(raw_json = parser::instance().parse(topic_Forward, params_Forward.toStyledString()), result);
+			Logger::WriteMessage(raw_json.c_str());
+			Assert::AreEqual("OK", result["status"].asCString());
+		}
 	};
 }
