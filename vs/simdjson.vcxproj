@@ -15,64 +15,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\3rd-party\cpp\simdjson\src\implementation.cpp" />
     <ClCompile Include="..\3rd-party\cpp\simdjson\src\simdjson.cpp" />
-    <ClCompile Include="..\3rd-party\cpp\simdjson\src\stage1_find_marks.cpp" />
-    <ClCompile Include="..\3rd-party\cpp\simdjson\src\stage2_build_tape.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\arm64\bitmanipulation.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\arm64\bitmask.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\arm64\implementation.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\arm64\intrinsics.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\arm64\numberparsing.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\arm64\simd.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\arm64\stage1_find_marks.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\arm64\stage2_build_tape.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\arm64\stringparsing.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\document_parser_callbacks.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\fallback\bitmanipulation.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\fallback\implementation.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\fallback\numberparsing.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\fallback\stage1_find_marks.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\fallback\stage2_build_tape.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\fallback\stringparsing.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\atomparsing.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\buf_block_reader.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\json_minifier.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\json_scanner.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\json_string_scanner.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\json_structural_indexer.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\numberparsing.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\stage2_build_tape.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\stage2_streaming_build_tape.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\stringparsing.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\utf8_fastvalidate_algorithm.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\utf8_lookup2_algorithm.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\utf8_lookup_algorithm.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\utf8_range_algorithm.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\generic\utf8_zwegner_algorithm.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\haswell\bitmanipulation.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\haswell\bitmask.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\haswell\implementation.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\haswell\intrinsics.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\haswell\numberparsing.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\haswell\simd.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\haswell\stage1_find_marks.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\haswell\stage2_build_tape.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\haswell\stringparsing.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\isadetection.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\jsoncharutils.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\simdprune_tables.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\westmere\bitmanipulation.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\westmere\bitmask.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\westmere\implementation.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\westmere\intrinsics.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\westmere\numberparsing.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\westmere\simd.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\westmere\stage1_find_marks.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\westmere\stage2_build_tape.h" />
-    <ClInclude Include="..\3rd-party\cpp\simdjson\src\westmere\stringparsing.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -136,7 +79,7 @@
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\src;..\3rd-party\cpp\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;SIMDJSON_THREADS_ENABLED;SIMDJSON_EXCEPTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4005;4996;4267;4244;4113</DisableSpecificWarnings>
       <CompileAs>Default</CompileAs>
@@ -157,7 +100,7 @@
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\src;..\3rd-party\cpp\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;SIMDJSON_THREADS_ENABLED;SIMDJSON_EXCEPTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4005;4996;4267;4244;4113</DisableSpecificWarnings>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
@@ -176,7 +119,7 @@
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\src;..\3rd-party\cpp\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;SIMDJSON_THREADS_ENABLED;SIMDJSON_EXCEPTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4005;4996;4267;4244;4113</DisableSpecificWarnings>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>

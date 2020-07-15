@@ -4,28 +4,41 @@
 #include "simdjson.h"
 #include <limits>
 
-namespace simdjson::fallback {
+namespace simdjson {
+namespace fallback {
 
-#ifndef _MSC_VER
+#if defined(_MSC_VER) && !defined(_M_ARM64) && !defined(_M_X64)
+static inline unsigned char _BitScanForward64(unsigned long* ret, uint64_t x) {
+  unsigned long x0 = (unsigned long)x, top, bottom;
+  _BitScanForward(&top, (unsigned long)(x >> 32));
+  _BitScanForward(&bottom, x0);
+  *ret = x0 ? bottom : 32 + top;
+  return x != 0;
+}
+static unsigned char _BitScanReverse64(unsigned long* ret, uint64_t x) {
+  unsigned long x1 = (unsigned long)(x >> 32), top, bottom;
+  _BitScanReverse(&top, x1);
+  _BitScanReverse(&bottom, (unsigned long)x);
+  *ret = x1 ? top + 32 : bottom;
+  return x != 0;
+}
+#endif
+
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
-// Sadly, sanitizers are not smart enough to figure it out. 
-__attribute__((no_sanitize("undefined"))) // this is deliberate
-#endif // _MSC_VER
-/* result might be undefined when input_num is zero */
+// Sadly, sanitizers are not smart enough to figure it out.
+NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
-
 #ifdef _MSC_VER
   unsigned long ret;
   // Search the mask data from least significant bit (LSB) 
   // to the most significant bit (MSB) for a set bit (1).
   _BitScanForward64(&ret, input_num);
   return (int)ret;
-#else
+#else // _MSC_VER
   return __builtin_ctzll(input_num);
 #endif // _MSC_VER
-
-} // namespace simdjson::arm64
+}
 
 /* result might be undefined when input_num is zero */
 really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
@@ -58,6 +71,7 @@ really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *resu
   return value2 > 0 && value1 > std::numeric_limits<uint64_t>::max() / value2;
 }
 
-} // namespace simdjson::fallback
+} // namespace fallback
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_BITMANIPULATION_H

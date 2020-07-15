@@ -17,6 +17,7 @@ endif()
 
 set(COMMON_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/../common/include 
 			${CMAKE_CURRENT_SOURCE_DIR}/../common/include/Primitives)
+set(COMMON_LIB_PATH /home/build_slave/ZYF/Excalibur/cmake/build/lib)
 
 set(VISION_LIBRARY_DIRECTORIES /home/build_slave/ZYF/Excalibur/cmake/build/lib)
 
