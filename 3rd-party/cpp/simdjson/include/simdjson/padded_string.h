@@ -1,5 +1,6 @@
 #ifndef SIMDJSON_PADDED_STRING_H
 #define SIMDJSON_PADDED_STRING_H
+
 #include "simdjson/portability.h"
 #include "simdjson/common_defs.h" // for SIMDJSON_PADDING
 #include "simdjson/error.h"
@@ -7,6 +8,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <ostream>
 
 namespace simdjson {
 
@@ -43,7 +45,7 @@ struct padded_string final {
   /**
    * Create a new padded string by copying the given input.
    *
-   * @param str_ the string to copy
+   * @param sv_ the string to copy
    */
   inline padded_string(std::string_view sv_) noexcept;
   /**
@@ -105,10 +107,32 @@ private:
   padded_string &operator=(const padded_string &o) = delete;
   padded_string(const padded_string &o) = delete;
 
-  size_t viable_size;
+  size_t viable_size{0};
   char *data_ptr{nullptr};
 
 }; // padded_string
+
+/**
+ * Send padded_string instance to an output stream.
+ *
+ * @param out The output stream.
+ * @param s The padded_string instance.
+ * @throw if there is an error with the underlying output stream. simdjson itself will not throw.
+ */
+inline std::ostream& operator<<(std::ostream& out, const padded_string& s) { return out << s.data(); }
+
+#if SIMDJSON_EXCEPTIONS
+/**
+ * Send padded_string instance to an output stream.
+ *
+ * @param out The output stream.
+ * @param s The padded_string instance.
+  * @throw simdjson_error if the result being printed has an error. If there is an error with the
+ *        underlying output stream, that error will be propagated (simdjson_error will not be
+ *        thrown).
+ */
+inline std::ostream& operator<<(std::ostream& out, simdjson_result<padded_string> &s) noexcept(false) { return out << s.value(); }
+#endif
 
 } // namespace simdjson
 
@@ -117,7 +141,8 @@ inline simdjson::padded_string operator "" _padded(const char *str, size_t len) 
   return simdjson::padded_string(str, len);
 }
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
 // low-level function to allocate memory with padding so we can read past the
 // "length" bytes safely. if you must provide a pointer to some data, create it
@@ -125,6 +150,7 @@ namespace simdjson::internal {
 // responsible to free the memory (free(...))
 inline char *allocate_padded_buffer(size_t length) noexcept;
 
-} // namespace simdjson::internal;
+} // namespace internal
+} // namespace simdjson
 
 #endif // SIMDJSON_PADDED_STRING_H

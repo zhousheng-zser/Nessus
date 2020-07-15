@@ -3,7 +3,6 @@
 
 #include "simdjson/common_defs.h"
 #include <string>
-#include <utility>
 
 namespace simdjson {
 
@@ -12,7 +11,6 @@ namespace simdjson {
  */
 enum error_code {
   SUCCESS = 0,              ///< No error
-  SUCCESS_AND_HAS_MORE,     ///< @private No error and buffer still has more data
   CAPACITY,                 ///< This parser can't support a document that big
   MEMALLOC,                 ///< Error allocating memory, most likely out of memory
   TAPE_ERROR,               ///< Something went wrong while writing to the tape (stage 2), this is a generic error
@@ -44,7 +42,8 @@ enum error_code {
  * Get the error message for the given error code.
  *
  *   dom::parser parser;
- *   auto [doc, error] = parser.parse("foo");
+ *   dom::element doc;
+ *   auto error = parser.parse("foo").get(doc);
  *   if (error) { printf("Error: %s\n", error_message(error)); }
  *
  * @return The error message.
@@ -121,8 +120,18 @@ struct simdjson_result_base : public std::pair<T, error_code> {
 
   /**
    * Move the value and the error to the provided variables.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   * @param error The variable to assign the error to. Set to SUCCESS if there is no error.
    */
   really_inline void tie(T &value, error_code &error) && noexcept;
+
+  /**
+   * Move the value to the provided variable.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   */
+  really_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.
@@ -183,8 +192,18 @@ struct simdjson_result : public internal::simdjson_result_base<T> {
 
   /**
    * Move the value and the error to the provided variables.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   * @param error The variable to assign the error to. Set to SUCCESS if there is no error.
    */
-  really_inline void tie(T& t, error_code & e) && noexcept;
+  really_inline void tie(T &value, error_code &error) && noexcept;
+
+  /**
+   * Move the value to the provided variable.
+   *
+   * @param value The variable to assign the value to. May not be set if there is an error.
+   */
+  WARN_UNUSED really_inline error_code get(T &value) && noexcept;
 
   /**
    * The error.

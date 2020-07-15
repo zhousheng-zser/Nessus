@@ -18,7 +18,8 @@ void found_float(double result, const uint8_t *buf);
 
 
 TARGET_WESTMERE
-namespace simdjson::westmere {
+namespace simdjson {
+namespace westmere {
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   // this actually computes *16* values so we are being wasteful.
   const __m128i ascii0 = _mm_set1_epi8('0');
@@ -39,9 +40,11 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 #define SWAR_NUMBER_PARSING
 
-#include "generic/numberparsing.h"
+#include "generic/stage2/numberparsing.h"
 
-} // namespace simdjson::westmere
+} // namespace westmere
+
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif //  SIMDJSON_WESTMERE_NUMBERPARSING_H

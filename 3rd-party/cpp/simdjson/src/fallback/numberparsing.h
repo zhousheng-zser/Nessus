@@ -14,7 +14,8 @@ void found_unsigned_integer(uint64_t result, const uint8_t *buf);
 void found_float(double result, const uint8_t *buf);
 #endif
 
-namespace simdjson::fallback {
+namespace simdjson {
+namespace fallback {
 static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
   uint32_t result = 0;
   for (int i=0;i<8;i++) {
@@ -25,8 +26,10 @@ static inline uint32_t parse_eight_digits_unrolled(const char *chars) {
 
 #define SWAR_NUMBER_PARSING
 
-#include "generic/numberparsing.h"
+#include "generic/stage2/numberparsing.h"
 
-} // namespace simdjson::fallback
+} // namespace fallback
+
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_NUMBERPARSING_H

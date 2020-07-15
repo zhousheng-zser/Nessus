@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <utility>
 #include <mutex>
+#include <fstream>
 #include "singleton.hpp"
 #include "simdjson.h"
 
@@ -64,6 +65,7 @@ namespace glasssix
 							simdjson::dom::element config = parser_.parse(buffer);
 							string plugin_directory = string(config["plugin_directory"].get<std::string_view>().value());
 							string pluginManager_lib = string(config["pluginManager_lib"].get<std::string_view>().value());
+
 							auto factory = component_loader::instance().add_module_with_factory(to_param_string(plugin_directory + "/" + pluginManager_lib));
 							if(!factory)
 							{
@@ -78,7 +80,11 @@ namespace glasssix
 								status = "{\"status\":\"Get a nullptr 'plugin_manager' instance\"}";
 								return;
 							}
-							manager.load_from_directory(to_param_string(plugin_directory));
+							//manager.load_from_directory(to_param_string(plugin_directory));
+							for (auto plugin_item : config["plugin_list"].get<simdjson::dom::array>().value())
+							{
+								manager.load_from_file(to_param_string(plugin_item.get<std::string_view>().value()));
+							}
 
 							plugin = manager.lookup(u8"Glasssix Vision Service");
 							if(!plugin)

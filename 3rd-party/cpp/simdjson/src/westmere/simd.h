@@ -9,7 +9,9 @@
 
 
 TARGET_WESTMERE
-namespace simdjson::westmere::simd {
+namespace simdjson {
+namespace westmere {
+namespace simd {
 
   template<typename Child>
   struct base {
@@ -60,7 +62,7 @@ namespace simdjson::westmere::simd {
   // SIMD byte mask type (returned by things like eq and gt)
   template<>
   struct simd8<bool>: base8<bool> {
-    static really_inline simd8<bool> splat(bool _value) { return _mm_set1_epi8(-(!!_value)); }
+    static really_inline simd8<bool> splat(bool _value) { return _mm_set1_epi8(uint8_t(-(!!_value))); }
 
     really_inline simd8<bool>() : base8() {}
     really_inline simd8<bool>(const __m128i _value) : base8<bool>(_value) {}
@@ -122,8 +124,8 @@ namespace simdjson::westmere::simd {
     really_inline void compress(uint16_t mask, L * output) const {
       // this particular implementation was inspired by work done by @animetosho
       // we do it in two steps, first 8 bytes and then second 8 bytes
-      uint8_t mask1 = static_cast<uint8_t>(mask); // least significant 8 bits
-      uint8_t mask2 = static_cast<uint8_t>(mask >> 8); // most significant 8 bits
+      uint8_t mask1 = uint8_t(mask); // least significant 8 bits
+      uint8_t mask2 = uint8_t(mask >> 8); // most significant 8 bits
       // next line just loads the 64-bit values thintable_epi8[mask1] and
       // thintable_epi8[mask2] into a 128-bit register, using only
       // two instructions on most compilers.
@@ -276,10 +278,10 @@ namespace simdjson::westmere::simd {
     }
 
     really_inline void compress(uint64_t mask, T * output) const {
-      this->chunks[0].compress(mask, output);
-      this->chunks[1].compress(mask >> 16, output + 16 - count_ones(mask & 0xFFFF));
-      this->chunks[2].compress(mask >> 32, output + 32 - count_ones(mask & 0xFFFFFFFF));
-      this->chunks[3].compress(mask >> 48, output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
+      this->chunks[0].compress(uint16_t(mask), output);
+      this->chunks[1].compress(uint16_t(mask >> 16), output + 16 - count_ones(mask & 0xFFFF));
+      this->chunks[2].compress(uint16_t(mask >> 32), output + 32 - count_ones(mask & 0xFFFFFFFF));
+      this->chunks[3].compress(uint16_t(mask >> 48), output + 48 - count_ones(mask & 0xFFFFFFFFFFFF));
     }
 
     template <typename F>
@@ -290,45 +292,8 @@ namespace simdjson::westmere::simd {
       each(3);
     }
 
-    template <typename F>
-    really_inline void each(F const& each_chunk) const
-    {
-      each_chunk(this->chunks[0]);
-      each_chunk(this->chunks[1]);
-      each_chunk(this->chunks[2]);
-      each_chunk(this->chunks[3]);
-    }
-
-    template <typename F, typename R=bool>
-    really_inline simd8x64<R> map(F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0]),
-        map_chunk(this->chunks[1]),
-        map_chunk(this->chunks[2]),
-        map_chunk(this->chunks[3])
-      );
-    }
-
-    template <typename F, typename R=bool>
-    really_inline simd8x64<R> map(const simd8x64<uint8_t> b, F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0], b.chunks[0]),
-        map_chunk(this->chunks[1], b.chunks[1]),
-        map_chunk(this->chunks[2], b.chunks[2]),
-        map_chunk(this->chunks[3], b.chunks[3])
-      );
-    }
-
-    template <typename F>
-    really_inline simd8<T> reduce(F const& reduce_pair) const {
-      return reduce_pair(
-        reduce_pair(this->chunks[0], this->chunks[1]),
-        reduce_pair(this->chunks[2], this->chunks[3])
-      );
-    }
-
     really_inline uint64_t to_bitmask() const {
-      uint64_t r0 = static_cast<uint32_t>(this->chunks[0].to_bitmask());
+      uint64_t r0 = uint32_t(this->chunks[0].to_bitmask());
       uint64_t r1 =                       this->chunks[1].to_bitmask();
       uint64_t r2 =                       this->chunks[2].to_bitmask();
       uint64_t r3 =                       this->chunks[3].to_bitmask();
@@ -337,21 +302,39 @@ namespace simdjson::westmere::simd {
 
     really_inline simd8x64<T> bit_or(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a | mask; } );
+      return simd8x64<T>(
+        this->chunks[0] | mask,
+        this->chunks[1] | mask,
+        this->chunks[2] | mask,
+        this->chunks[3] | mask
+      );
     }
 
     really_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a == mask; } ).to_bitmask();
+      return  simd8x64<bool>(
+        this->chunks[0] == mask,
+        this->chunks[1] == mask,
+        this->chunks[2] == mask,
+        this->chunks[3] == mask
+      ).to_bitmask();
     }
 
     really_inline uint64_t lteq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
+      return  simd8x64<bool>(
+        this->chunks[0] <= mask,
+        this->chunks[1] <= mask,
+        this->chunks[2] <= mask,
+        this->chunks[3] <= mask
+      ).to_bitmask();
     }
   }; // struct simd8x64<T>
 
-} // namespace simdjson::westmere::simd
+} // namespace simd
+
+} // namespace westmere
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_WESTMERE_SIMD_INPUT_H
