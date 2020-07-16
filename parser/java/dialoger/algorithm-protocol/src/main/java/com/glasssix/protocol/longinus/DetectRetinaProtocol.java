@@ -8,8 +8,8 @@ public class DetectRetinaProtocol extends ProtocolCommon {
     private String format;  //图片压缩格式RAW/JPEG/PNG
     private int height;     //图片高度
     private int width;      //图片宽度
-    @SerializedName("min_win")
-    private int minWin;
+    @SerializedName("min_size")
+    private int minSize;
     private double threshold;   //模型阈值
     private int order;      //图片的像素排列方式(0:NCHW, 1:NHWC)
 
@@ -46,12 +46,12 @@ public class DetectRetinaProtocol extends ProtocolCommon {
         this.width = width;
     }
 
-    public int getMinWin() {
-        return minWin;
+    public int getMinSize() {
+        return minSize;
     }
 
-    public void setMinWin(int minWin) {
-        this.minWin = minWin;
+    public void setMinSize(int minSize) {
+        this.minSize = minSize;
     }
 
     public double getThreshold() {
