@@ -107,11 +107,11 @@ public class TaskContext {
         if(ApplicationConstants.OK_STATIC.equals(status)){
             String[] routingItems = receivedRoutingKey.split("\\.");
             if("new".equals(routingItems[5])){
-                addGuuid(algorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon),
+                addGuuid(algorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon.getDevice()),
                         jsonObject.get("instance_guid").getAsString());
             }
             if("delete".equals(routingItems[5])){
-                deleteGuuid(algorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon),
+                deleteGuuid(algorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon.getDevice()),
                         protocolCommon);
             }
         }else {

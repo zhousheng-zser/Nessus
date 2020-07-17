@@ -1,5 +1,6 @@
 package com.glasssix.server.rabbitmq;
 
+import com.glasssix.server.pipeline.PipelineContext;
 import com.glasssix.server.threadPool.TaskContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -22,9 +23,17 @@ public class RabbitMQReceiver {
                                     key = "${rabbit.customer.queue.routingKey}")})
     @RabbitHandler
     public void process(Message message) {
-        TaskContext taskContext = context.getBean(TaskContext.class);
-        taskContext.setMessage(message);
-        taskContext.runJNITask();
+        String receivedRoutingKey = message.getMessageProperties().getReceivedRoutingKey();
+        if(receivedRoutingKey.contains("pipeline")){
+            PipelineContext pipelineContext = context.getBean(PipelineContext.class);
+            pipelineContext.setMessage(message);
+            pipelineContext.runPipeline();
+        }else{
+            TaskContext taskContext = context.getBean(TaskContext.class);
+            taskContext.setMessage(message);
+            taskContext.runJNITask();
+        }
+
 
     }
 

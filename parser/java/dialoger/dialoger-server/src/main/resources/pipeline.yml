@@ -1,0 +1,17 @@
+pipeline:
+  lineNodes:
+    - name: detect
+      order: 1
+      valves:
+        - name: detectEx
+          valveClass: longinus.DetectExValve
+          instanceTopic: longinus.detectEx
+        - name: detectRetina
+          valveClass: longinus.DetectRetinaValue
+          instanceTopic: longinus.detectRetina
+    - name: align
+      order: 2
+      valves:
+        - name: alignFace
+          valveClass: longinus.AlignFaceValue
+          instanceTopic: longinus.alignFace

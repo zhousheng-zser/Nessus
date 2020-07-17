@@ -85,7 +85,7 @@ public abstract class ProtocolCommon {
      * @return
      */
     public String protocolProcess(String receivedRoutingKey,String correlationDate,ProtocolCommon protocolCommon){
-        String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon);
+        String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon.getDevice());
         String processResult;
         switch (autoAssignmentInstance){
             case 0:

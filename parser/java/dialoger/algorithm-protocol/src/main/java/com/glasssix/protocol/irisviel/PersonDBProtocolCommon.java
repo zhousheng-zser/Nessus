@@ -20,7 +20,7 @@ public class PersonDBProtocolCommon extends ProtocolCommon {
                     .append("),please manual input the instance_guid which need to be remove");
             log.error(new String(resultBuffer));
         }else{
-            String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon);
+            String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon.getDevice());
             if(!ALGORITHM_FACTORY.consumerGuuidExist(guuidKey,protocolCommon.instanceGuid)){
                 resultBuffer = new StringBuffer("Manual assignment instanceGuid(")
                         .append(instanceGuid)

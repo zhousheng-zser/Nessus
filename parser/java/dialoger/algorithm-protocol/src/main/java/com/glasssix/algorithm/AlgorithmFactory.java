@@ -24,15 +24,15 @@ public class AlgorithmFactory {
         return PARSER;
     }
 
-    public static String getGuuidKey(String receivedRoutingKey, ProtocolCommon protocolCommon){
-        log.debug("getGuuidKey({},{})",receivedRoutingKey,protocolCommon);
+    public static String getGuuidKey(String receivedRoutingKey,int device){
+        log.debug("getGuuidKey({})",receivedRoutingKey);
         String[] routingItems = receivedRoutingKey.split("\\.");
         StringBuffer resultBuffer = new StringBuffer(routingItems[3])
                 .append(".")
                 .append(routingItems[4])
                 .append(".")
-                .append(protocolCommon.device == -1? "CPU":"GPU");
-        log.debug("getGuuidKey({},{}) return ({})",receivedRoutingKey,protocolCommon,new String(resultBuffer));
+                .append(device == -1? "CPU":"GPU");
+        log.debug("getGuuidKey({},{}) return ({})",receivedRoutingKey,new String(resultBuffer));
         return new String(resultBuffer);
     }
 
