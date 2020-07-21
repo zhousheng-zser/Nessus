@@ -5,13 +5,13 @@ pipeline:
       valves:
         - name: detectEx
           valveClass: longinus.DetectExValve
-          instanceTopic: longinus.detectEx
+          instanceTopic: Longinus.detectEx
         - name: detectRetina
           valveClass: longinus.DetectRetinaValue
-          instanceTopic: longinus.detectRetina
+          instanceTopic: Longinus.detectRetina
     - name: align
       order: 2
       valves:
         - name: alignFace
           valveClass: longinus.AlignFaceValue
-          instanceTopic: longinus.alignFace
+          instanceTopic: Longinus.alignFace

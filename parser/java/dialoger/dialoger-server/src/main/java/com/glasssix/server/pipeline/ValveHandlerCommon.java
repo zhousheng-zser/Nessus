@@ -1,44 +1,51 @@
 package com.glasssix.server.pipeline;
 
 import com.glasssix.algorithm.AlgorithmFactory;
-import com.glasssix.common.util.SpringUtil;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
 
 public abstract class ValveHandlerCommon {
-    @Autowired
-    private AlgorithmFactory algorithmFactory;
 
-    @Autowired
-    private Gson gson;
+    protected Gson gson;
     private String instanceTopic;
 
-    public String handler(String receivedRoutingKey, String correlationDate, JsonObject jsonObject){
-        String instanceGuid = getInstanceGuid(receivedRoutingKey,instanceTopic.split("\\.")[0],jsonObject.get("device").getAsInt());
-        jsonObject.addProperty("instance_guid",instanceGuid);
-        return AlgorithmFactory.getPARSER().parse(instanceTopic,gson.toJson(jsonObject));
+    public ValveHandlerCommon(){
+        gson = new Gson();
     }
+
+    public String handler(String receivedRoutingKey, String correlationDate, JsonObject jsonObject) {
+        String instanceGuid = getInstanceGuid();
+        if (instanceGuid == null) {
+            return null;
+        }
+        jsonObject.addProperty("instance_guid", instanceGuid);
+        return AlgorithmFactory.getPARSER().parse(instanceTopic, gson.toJson(jsonObject));
+    }
+
+    public void addPropertyAsInput(JsonObject jsonObject, JsonObject oldJsonObject) {
+        if(oldJsonObject == null){
+            return;
+        }
+        Iterator<Map.Entry<String, JsonElement>> iterator = oldJsonObject.entrySet().iterator();
+        while (iterator.hasNext()){
+            Map.Entry<String, JsonElement> next = iterator.next();
+            String key = next.getKey();
+            if(jsonObject.get(key)==null && !"image".equals(key)){
+                jsonObject.add(key,next.getValue());
+            }
+        }
+    }
+
     public abstract int estimate();
 
-    public String getInstanceGuid(String receivedRoutingKey,String instanceName,int device) {
-        String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey,device)+"."+instanceName;
-        List<String> consumerGuuidList = algorithmFactory.getConsumerGuuidList(guuidKey);
-        if(consumerGuuidList == null || consumerGuuidList.size() == 0){
-            createInstance(instanceName);
-            consumerGuuidList = algorithmFactory.getConsumerGuuidList(guuidKey);
-        }
-        String guuid = null;
-        synchronized (Object.class){
-            guuid = consumerGuuidList.remove(0);
-            consumerGuuidList.add(guuid);
-        }
-        return guuid;
-    }
+    public abstract String getInstanceGuid();
 
-    public abstract void createInstance(String instanceName);
+    public abstract String createInstance();
 
     public String getInstanceTopic() {
         return instanceTopic;

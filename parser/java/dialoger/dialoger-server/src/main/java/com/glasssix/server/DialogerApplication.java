@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.Scope;
 
-@PropertySource(value = {"classpath:rabbit.yml","classpath:protocol.yml"},factory = YamlPropertySourceFactory.class)
+@PropertySource(value = {"classpath:rabbit.yml","classpath:protocol.yml","pipeline.yml"},factory = YamlPropertySourceFactory.class)
 @ConfigurationProperties
 @SpringBootApplication
 public class DialogerApplication{

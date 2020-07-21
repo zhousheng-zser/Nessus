@@ -7,9 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-@ConfigurationProperties(prefix = "pipeline")
 @Component
+@ConfigurationProperties(prefix = "pipeline")
 public class PipelineRegistListCache {
+
 
     private List<PipelineRegistEntry> lineNodes = new ArrayList<>();
 
