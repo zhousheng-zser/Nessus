@@ -7,11 +7,20 @@ pipeline:
           valveClass: longinus.DetectExValve
           instanceTopic: Longinus.detectEx
         - name: detectRetina
-          valveClass: longinus.DetectRetinaValue
+          valveClass: longinus.DetectRetinaValve
           instanceTopic: Longinus.detectRetina
     - name: align
       order: 2
       valves:
         - name: alignFace
-          valveClass: longinus.AlignFaceValue
+          valveClass: longinus.AlignFaceValve
           instanceTopic: Longinus.alignFace
+    - name: forward
+      order: 3
+      valves:
+        - name: gaiusForward
+          valveClass: gaius.ForwardValve
+          instanceTopic: Gaius.Forward
+        - name: cassiusForward
+          valveClass: cassius.ForwardValve
+          instanceTopic: Cassius.Forward

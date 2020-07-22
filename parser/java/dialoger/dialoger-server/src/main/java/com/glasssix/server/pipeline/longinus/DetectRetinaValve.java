@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class DetectRetinaValue extends ValveHandlerCommon {
+public class DetectRetinaValve extends ValveHandlerCommon {
 
     @Override
     public int estimate() {

@@ -18,7 +18,7 @@ import static org.opencv.core.CvType.CV_8UC3;
 
 @Slf4j
 @Component
-public class AlignFaceValue extends ValveHandlerCommon {
+public class AlignFaceValve extends ValveHandlerCommon {
 
 
     @Override
@@ -39,7 +39,7 @@ public class AlignFaceValue extends ValveHandlerCommon {
     public String createInstance() {
         NewProtocol newProtocol = new NewProtocol();
         newProtocol.setDevice(-1);
-        String jsonStr = AlgorithmFactory.getPARSER().parse("longinus.new", gson.toJson(newProtocol));
+        String jsonStr = AlgorithmFactory.getPARSER().parse("Longinus.new", gson.toJson(newProtocol));
         NewResultProtocol newResultProtocol = gson.fromJson(jsonStr, NewResultProtocol.class);
         if (ApplicationConstants.OK_STATIC.equals(newResultProtocol.getStatus())) {
             ThreadLocalResource.longinusInstance.set(newResultProtocol.getInstanceGuid());
