@@ -12,6 +12,10 @@ import com.glasssix.server.rabbitmq.CustomerRabbitMQSender;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -282,6 +286,15 @@ class DialogerApplicationTests {
 		log.debug("-------------------------------------------------");
 		newProtocolTest.sendNewProtocolData(customerRoutingKey);
 		waitMe();
+	}
+
+	@Test
+	void  opencvTest(){
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+		Mat srcImage = Imgcodecs.imread("C:\\zhanglaos\\test.jpg");
+		Mat dstImage = new Mat();
+		Imgproc.cvtColor(srcImage, dstImage, Imgproc.COLOR_BGR2GRAY,0);
+		Imgcodecs.imwrite("gray.jpg",dstImage);
 	}
 
 }

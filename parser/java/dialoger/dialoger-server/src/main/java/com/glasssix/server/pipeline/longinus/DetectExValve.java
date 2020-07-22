@@ -37,7 +37,7 @@ public class DetectExValve extends ValveHandlerCommon {
             ThreadLocalResource.longinusInstance.set(newResultProtocol.getInstanceGuid());
             return newResultProtocol.getInstanceGuid();
         }
-        //log.error("longinus.new return error: {}",newResultProtocol==null? null:newResultProtocol.getStatus());
+        log.error("longinus.new return error: {}",newResultProtocol==null? null:newResultProtocol.getStatus());
         return null;
     }
 }
