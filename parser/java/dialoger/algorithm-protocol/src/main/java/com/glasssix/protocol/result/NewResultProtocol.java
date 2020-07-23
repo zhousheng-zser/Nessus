@@ -3,10 +3,10 @@ package com.glasssix.protocol.result;
 import com.google.gson.annotations.SerializedName;
 
 public class NewResultProtocol {
-
     private String status;
     @SerializedName("instance_guid")
     private String instanceGuid;
+
 
     @SerializedName("event_id")
     public String eventId;	    //  事件id

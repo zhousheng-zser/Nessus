@@ -35,7 +35,7 @@ public abstract class ValveHandlerCommon {
         while (iterator.hasNext()){
             Map.Entry<String, JsonElement> next = iterator.next();
             String key = next.getKey();
-            if(jsonObject.get(key)==null && !"image".equals(key)){
+            if((jsonObject.get(key)==null && !"image".equals(key))||"instance_guid".equals(key)){
                 jsonObject.add(key,next.getValue());
             }
         }

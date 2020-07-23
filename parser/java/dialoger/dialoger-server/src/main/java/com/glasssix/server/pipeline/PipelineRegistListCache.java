@@ -13,6 +13,7 @@ public class PipelineRegistListCache {
 
 
     private List<PipelineRegistEntry> lineNodes = new ArrayList<>();
+    private List<ValveConfigEntry> signleNodes = new ArrayList<>();
 
 
 
@@ -22,5 +23,13 @@ public class PipelineRegistListCache {
 
     public void setLineNodes(List<PipelineRegistEntry> lineNodes) {
         this.lineNodes = lineNodes;
+    }
+
+    public List<ValveConfigEntry> getSignleNodes() {
+        return signleNodes;
+    }
+
+    public void setSignleNodes(List<ValveConfigEntry> signleNodes) {
+        this.signleNodes = signleNodes;
     }
 }

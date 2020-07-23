@@ -45,6 +45,7 @@ public class ForwardValve extends ValveHandlerCommon {
     public void addPropertyAsInput(JsonObject jsonObject, JsonObject oldJsonObject) {
         super.addPropertyAsInput(jsonObject,oldJsonObject);
         jsonObject.add("aligned_images",jsonObject.get("aligned_faces"));
+        jsonObject.add("order",oldJsonObject.get("order"));
         jsonObject.remove("aligned_faces");
         jsonObject.remove("image");
     }
