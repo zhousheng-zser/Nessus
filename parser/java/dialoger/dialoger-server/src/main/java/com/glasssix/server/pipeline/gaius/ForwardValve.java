@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ForwardValve extends ValveHandlerCommon {
     @Override
     public int estimate() {
-        return 0;
+        return 1;
     }
 
     @Override

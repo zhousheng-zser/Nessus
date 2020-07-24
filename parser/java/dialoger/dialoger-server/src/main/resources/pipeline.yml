@@ -47,7 +47,7 @@ pipeline:
       valveClass: irisviel.PersonDBUpdateRecordsValve
       instanceTopic: Irisviel.update_records
     - name: remove
-      valveClass: irisviel.PersonDBRemoveValve
+      valveClass: irisviel.PersonDBRemoveRecordValve
       instanceTopic: Irisviel.remove_record
     - name: removes
       valveClass: irisviel.PersonDBRemoveRecordsValve
@@ -55,3 +55,6 @@ pipeline:
     - name: load
       valveClass: irisviel.PersonDBLoadValve
       instanceTopic: Irisviel.load_databases
+    - name: remove_all
+      valveClass: irisviel.PersonDBRemoveAllValve
+      instanceTopic: Irisviel.remove_all

@@ -5,6 +5,7 @@ import com.glasssix.protocol.result.NewResultProtocol;
 import com.glasssix.server.pipeline.irisviel.PersonDBValveCommon;
 import com.glasssix.server.rabbitmq.RabbitMQSender;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -65,7 +66,8 @@ public class PipelineContext {
         onlyNeedSignleNode.add(EndPointEnum.REMOVE);
         onlyNeedSignleNode.add(EndPointEnum.REMOVES);
         onlyNeedSignleNode.add(EndPointEnum.DELETE);
-        onlyNeedSignleNode.add(EndPointEnum.Load);
+        onlyNeedSignleNode.add(EndPointEnum.LOAD);
+        onlyNeedSignleNode.add(EndPointEnum.REMOVE_ALL);
 
         needLineAndSignleNode.add(EndPointEnum.ADD);
         needLineAndSignleNode.add(EndPointEnum.SEARCH);
@@ -84,9 +86,14 @@ public class PipelineContext {
         JsonObject jsonObject = gson.fromJson(msg, JsonObject.class);
         String endPoint = jsonObject.get("endPoint").getAsString();
         EndPointEnum endPointEnum = EndPointEnum.valueOf(endPoint.toUpperCase());
-        String result = selectNodes(endPointEnum,jsonObject.get("event_id").getAsString(),jsonObject.get("instance_guid").getAsString());
+        JsonElement instance_guid = jsonObject.get("instance_guid");
+        String result = selectNodes(endPointEnum,jsonObject.get("event_id").getAsString(),instance_guid== null? null:instance_guid.getAsString());
         if (ApplicationConstants.OK_STATIC.equals(result)) {
             result = executorPipeline(receivedRoutingKey, correlationDate, jsonObject);
+        }else{
+            NewResultProtocol newResultProtocol = new NewResultProtocol();
+            newResultProtocol.setStatus(result);
+            newResultProtocol.setEventId(jsonObject.get("event_id").getAsString());
         }
         rabbitMQSender.serverSend(receivedRoutingKey, result, correlationDate);
 
@@ -95,14 +102,11 @@ public class PipelineContext {
     private String selectNodes(EndPointEnum endPointEnum, String eventId,String instanceGuid) {
         String result = null;
         if(endPointEnum == null){
-            NewResultProtocol newResultProtocol = new NewResultProtocol();
-            newResultProtocol.setStatus("endPoint: "+endPointEnum.getEndPointName()+" is not exist!");
-            newResultProtocol.setEventId(eventId);
-            return gson.toJson(newResultProtocol);
+            return "endPoint: "+endPointEnum.getEndPointName()+" is not exist!";
         }
 
         if(onlyNeedSignleNode.contains(endPointEnum)){
-            configSignleNode(endPointEnum,instanceGuid);
+            result = configSignleNode(endPointEnum,instanceGuid);
         }else{
             if(onlyNeedLineNode.contains(endPointEnum)){
                 result = configValveList(endPointEnum.getEndPointName());
@@ -117,7 +121,7 @@ public class PipelineContext {
     private String configLineNodesAndSignleNode(EndPointEnum endPointEnum,String instanceGuid){
         String result = configValveList(EndPointEnum.FORWARD.getEndPointName());
         if (ApplicationConstants.OK_STATIC.equals(result)) {
-            result = "endPoint is not exist!";
+            result = "endPoint "+endPointEnum.getEndPointName()+" is not exist!";
             for(ValveConfigEntry v:signleNodes){
                 if(endPointEnum.getEndPointName().equals(v.getName())){
                     List<ValveHandlerCommon> valves = new ArrayList<>();
@@ -134,7 +138,7 @@ public class PipelineContext {
     }
 
     private String configSignleNode(EndPointEnum endPointEnum,String instanceGuid){
-        StringBuffer resultBuffer = new StringBuffer("endPoint is not exist!");
+        StringBuffer resultBuffer = new StringBuffer("endPoint ").append(endPointEnum.getEndPointName()).append(" is not exist!");
         pipeline = new ArrayList<>();
         for(ValveConfigEntry v:signleNodes){
             if(endPointEnum.getEndPointName().equals(v.getName())){
@@ -151,7 +155,7 @@ public class PipelineContext {
     }
 
     private String configValveList(String endPoint) {
-        StringBuffer resultBuffer = new StringBuffer("endPoint is not exist!");
+        StringBuffer resultBuffer = new StringBuffer("endPoint ").append(endPoint).append(" is not exist!");
         pipeline = new ArrayList<>();
         for (PipelineRegistEntry p : lineNodes) {
             ArrayList<ValveHandlerCommon> valveHandlers = new ArrayList<>();

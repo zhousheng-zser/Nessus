@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 public class ForwardValve extends ValveHandlerCommon {
     @Override
     public int estimate() {
-        return 1;
+        return 0;
     }
 
     @Override
