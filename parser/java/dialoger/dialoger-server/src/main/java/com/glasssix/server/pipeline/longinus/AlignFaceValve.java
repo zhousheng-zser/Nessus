@@ -10,6 +10,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,6 @@ import static org.opencv.core.CvType.CV_8UC3;
 @Scope("prototype")
 public class AlignFaceValve extends ValveHandlerCommon {
 
-
     @Override
     public int estimate() {
         return 0;
@@ -39,18 +39,23 @@ public class AlignFaceValve extends ValveHandlerCommon {
     @Override
     public String getInstanceGuid() {
         String instanceGuid = null;
-        String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey, device);
+        String guuidKey = getGuuidKey(receivedRoutingKey, device);
         synchronized (algorithmFactory) {
             List<String> consumerGuuidList = algorithmFactory.getConsumerGuuidList(guuidKey);
             if (CollectionUtils.isEmpty(consumerGuuidList)) {
                 instanceGuid = createInstance();
                 algorithmFactory.setConsumerGuuid(guuidKey, instanceGuid);
-            }else {
+            } else {
                 instanceGuid = consumerGuuidList.remove(0);
                 consumerGuuidList.add(instanceGuid);
             }
         }
         return instanceGuid;
+    }
+
+    private String getGuuidKey(String receivedRoutingKey, int device) {
+        String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey, device);
+        return guuidKey+".Longinus";
     }
 
     @Override

@@ -6,6 +6,9 @@ import com.glasssix.init.InitAlgorithmProtocol;
 import com.google.gson.Gson;
 import org.opencv.core.Core;
 import org.springframework.beans.factory.annotation.Value;
+//import org.springframework.boot.SpringApplication;
+//import org.springframework.boot.autoconfigure.SpringBootApplication;
+//import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.Scope;
@@ -15,24 +18,17 @@ import org.springframework.stereotype.Component;
 //@ConfigurationProperties
 //@SpringBootApplication
 @Component
-public class DialogerServerApplication {
+public class DialogerServerConfig {
 	@Value("${algorithm.protocol.config}")
 	private String protocolConfigFileName;
 
 	@Value("${algorithm.libParserName}")
 	private String libParserName;
 
-	static {
-		try {
-			System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		}catch (UnsatisfiedLinkError ignore) {
 
-		}
 
-	}
-
-	/*public static void main(String[] args) {
-		SpringApplication.run(DialogerApplication.class, args);
+/*	public static void main(String[] args) {
+		SpringApplication.run(DialogerServerApplication.class, args);
 	}*/
 
 	@Bean

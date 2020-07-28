@@ -188,13 +188,17 @@ public class PipelineContext {
         ValveHandlerCommon valve = null;
         try {
             Class<?> objectClass = Class.forName("com.glasssix.server.pipeline." + valveClass);
-            //valve = (ValveHandlerCommon) objectClass.newInstance();
+ //           valve = (ValveHandlerCommon) objectClass.newInstance();
             valve = (ValveHandlerCommon) SpringUtil.getApplicationContext().getBean(objectClass);
             valve.setInstanceTopic(instanceTopic);
         } catch (ClassNotFoundException e) {
             log.error("valve class {} is not exist!", valveClass);
             e.printStackTrace();
-        }
+        } /*catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        }*/
         return valve;
     }
 

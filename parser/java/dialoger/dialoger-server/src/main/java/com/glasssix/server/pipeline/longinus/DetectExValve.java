@@ -31,7 +31,7 @@ public class DetectExValve extends ValveHandlerCommon {
     @Override
     public String getInstanceGuid() {
         String instanceGuid = null;
-        String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey, device);
+        String guuidKey = getGuuidKey(receivedRoutingKey, device);
         synchronized (algorithmFactory) {
             List<String> consumerGuuidList = algorithmFactory.getConsumerGuuidList(guuidKey);
             if (CollectionUtils.isEmpty(consumerGuuidList)) {
@@ -43,6 +43,11 @@ public class DetectExValve extends ValveHandlerCommon {
             }
         }
         return instanceGuid;
+    }
+
+    private String getGuuidKey(String receivedRoutingKey, int device) {
+        String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey, device);
+        return guuidKey+".Longinus";
     }
 
     @Override
