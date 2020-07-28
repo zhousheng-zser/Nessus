@@ -8,23 +8,39 @@ import com.glasssix.server.pipeline.ThreadLocalResource;
 import com.glasssix.server.pipeline.ValveHandlerCommon;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
+@Component("cassiusForward")
+@Scope("prototype")
 public class ForwardValve extends ValveHandlerCommon {
+
     @Override
     public int estimate() {
         return 0;
     }
+    @Autowired
+    private AlgorithmFactory algorithmFactory;
 
     @Override
     public String getInstanceGuid() {
-        String gasiusInstanceGuid = ThreadLocalResource.cassiusInstance.get();
-        if(gasiusInstanceGuid == null){
-            gasiusInstanceGuid = createInstance();
-            ThreadLocalResource.cassiusInstance.set(gasiusInstanceGuid);
+        String instanceGuid = null;
+        String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey, device);
+        synchronized (algorithmFactory) {
+            List<String> consumerGuuidList = algorithmFactory.getConsumerGuuidList(guuidKey);
+            if (CollectionUtils.isEmpty(consumerGuuidList)) {
+                algorithmFactory.setConsumerGuuid(guuidKey, createInstance());
+            }
+            instanceGuid = consumerGuuidList.remove(0);
+            consumerGuuidList.add(instanceGuid);
         }
-        return gasiusInstanceGuid;
+        return instanceGuid;
     }
 
     @Override
@@ -34,7 +50,6 @@ public class ForwardValve extends ValveHandlerCommon {
         String jsonStr = AlgorithmFactory.getPARSER().parse("Cassius.new", gson.toJson(newProtocol));
         NewResultProtocol newResultProtocol = gson.fromJson(jsonStr, NewResultProtocol.class);
         if (ApplicationConstants.OK_STATIC.equals(newResultProtocol.getStatus())) {
-            ThreadLocalResource.cassiusInstance.set(newResultProtocol.getInstanceGuid());
             return newResultProtocol.getInstanceGuid();
         }
         log.error("Cassius.new return error: {}", newResultProtocol == null ? null : newResultProtocol.getStatus());

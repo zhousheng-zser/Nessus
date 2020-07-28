@@ -6,6 +6,7 @@
         <module>algorithm-protocol</module>
 		<module>dialoger-server</module>
 		<module>common</module>
+		<module>dialoger-web</module>
 	</modules>
     <parent>
 		<groupId>org.springframework.boot</groupId>

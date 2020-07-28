@@ -1,6 +1,7 @@
 package com.glasssix.server.pipeline;
 
 import com.glasssix.common.util.ApplicationConstants;
+import com.glasssix.common.util.SpringUtil;
 import com.glasssix.protocol.result.NewResultProtocol;
 import com.glasssix.server.pipeline.irisviel.PersonDBValveCommon;
 import com.glasssix.server.rabbitmq.RabbitMQSender;
@@ -12,6 +13,7 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +25,7 @@ import java.util.List;
 
 @Slf4j
 @Component
+@Scope("prototype")
 public class PipelineContext {
     @Autowired
     private Gson gson;
@@ -84,22 +87,29 @@ public class PipelineContext {
         String correlationDate = (String) messageProperties.getHeaders().get("spring_returned_message_correlation");
         String msg = new String(message.getBody());
         JsonObject jsonObject = gson.fromJson(msg, JsonObject.class);
+        String execResult = exec(receivedRoutingKey, correlationDate,jsonObject);
+        rabbitMQSender.serverSend(receivedRoutingKey, execResult, correlationDate);
+
+    }
+
+    public String exec(String receivedRoutingKey,String correlationDate,JsonObject jsonObject){
         String endPoint = jsonObject.get("endPoint").getAsString();
-        EndPointEnum endPointEnum = EndPointEnum.valueOf(endPoint.toUpperCase());
+        String event_id = jsonObject.get("event_id").getAsString();
         JsonElement instance_guid = jsonObject.get("instance_guid");
-        String result = selectNodes(endPointEnum,jsonObject.get("event_id").getAsString(),instance_guid== null? null:instance_guid.getAsString());
+        EndPointEnum endPointEnum = EndPointEnum.valueOf(endPoint.toUpperCase());
+        String result = selectNodes(endPointEnum,instance_guid== null? null:instance_guid.getAsString());
         if (ApplicationConstants.OK_STATIC.equals(result)) {
             result = executorPipeline(receivedRoutingKey, correlationDate, jsonObject);
         }else{
             NewResultProtocol newResultProtocol = new NewResultProtocol();
             newResultProtocol.setStatus(result);
-            newResultProtocol.setEventId(jsonObject.get("event_id").getAsString());
+            newResultProtocol.setEventId(event_id);
+            result = gson.toJson(newResultProtocol);
         }
-        rabbitMQSender.serverSend(receivedRoutingKey, result, correlationDate);
-
+        return result;
     }
 
-    private String selectNodes(EndPointEnum endPointEnum, String eventId,String instanceGuid) {
+    private String selectNodes(EndPointEnum endPointEnum, String instanceGuid) {
         String result = null;
         if(endPointEnum == null){
             return "endPoint: "+endPointEnum.getEndPointName()+" is not exist!";
@@ -178,14 +188,11 @@ public class PipelineContext {
         ValveHandlerCommon valve = null;
         try {
             Class<?> objectClass = Class.forName("com.glasssix.server.pipeline." + valveClass);
-            valve = (ValveHandlerCommon) objectClass.newInstance();
+            //valve = (ValveHandlerCommon) objectClass.newInstance();
+            valve = (ValveHandlerCommon) SpringUtil.getApplicationContext().getBean(objectClass);
             valve.setInstanceTopic(instanceTopic);
         } catch (ClassNotFoundException e) {
             log.error("valve class {} is not exist!", valveClass);
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
             e.printStackTrace();
         }
         return valve;
@@ -210,6 +217,11 @@ public class PipelineContext {
             }
             valveHandlerCommon.addPropertyAsInput(jsonObject,oldJsonObject);
             currentInstanceTopic = valveHandlerCommon.getInstanceTopic();
+            JsonElement device = jsonObject.get("device");
+            if(device != null){
+                valveHandlerCommon.setDevice(device.getAsInt());
+            }
+            valveHandlerCommon.setReceivedRoutingKey(receivedRoutingKey);
             handlerResult = valveHandlerCommon.handler(receivedRoutingKey, correlationDate, jsonObject);
             oldJsonObject = jsonObject;
             if (handlerResult != null) {

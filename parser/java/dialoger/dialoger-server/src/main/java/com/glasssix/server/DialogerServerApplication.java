@@ -5,19 +5,17 @@ import com.glasssix.common.util.YamlPropertySourceFactory;
 import com.glasssix.init.InitAlgorithmProtocol;
 import com.google.gson.Gson;
 import org.opencv.core.Core;
-import org.opencv.core.Mat;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 @PropertySource(value = {"classpath:rabbit.yml","classpath:protocol.yml","pipeline.yml"},factory = YamlPropertySourceFactory.class)
-@ConfigurationProperties
-@SpringBootApplication
-public class DialogerApplication{
+//@ConfigurationProperties
+//@SpringBootApplication
+@Component
+public class DialogerServerApplication {
 	@Value("${algorithm.protocol.config}")
 	private String protocolConfigFileName;
 
@@ -33,9 +31,9 @@ public class DialogerApplication{
 
 	}
 
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 		SpringApplication.run(DialogerApplication.class, args);
-	}
+	}*/
 
 	@Bean
 	@Scope("prototype")

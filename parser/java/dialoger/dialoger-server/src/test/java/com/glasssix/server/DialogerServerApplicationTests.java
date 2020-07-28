@@ -24,7 +24,7 @@ import java.util.List;
 
 @SpringBootTest
 @Slf4j
-class DialogerApplicationTests {
+class DialogerServerApplicationTests {
 
 	@Autowired
 	private CustomerRabbitMQSender customerRabbitMQSender;

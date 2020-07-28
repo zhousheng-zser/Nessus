@@ -1,7 +1,11 @@
 package com.glasssix.server.pipeline.irisviel;
 
 import com.google.gson.JsonObject;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
+@Component
+@Scope("prototype")
 public class PersonDBUpdateRecordValve extends PersonDBValveCommon {
     @Override
     public void addPropertyAsInput(JsonObject jsonObject, JsonObject oldJsonObject) {

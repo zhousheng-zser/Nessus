@@ -4,6 +4,7 @@ import com.glasssix.parser.Parser;
 import com.glasssix.protocol.ProtocolCommon;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,12 +38,15 @@ public class AlgorithmFactory {
     }
 
     public synchronized boolean setConsumerGuuid(String key,String guuid){
+        if(guuid == null){
+            return false;
+        }
         boolean flag = true;
         log.debug("setConsumerGuuid({},{})",key,guuid);
         List<String> consumerGuuidList = GuuidMap.get(key);
         if(consumerGuuidList == null){
             log.debug("consumerGuuidList is empty with key{}",key);
-            consumerGuuidList = Collections.synchronizedList(new ArrayList<String>());
+            consumerGuuidList = Collections.synchronizedList(new LinkedList<String>());
             GuuidMap.put(key,consumerGuuidList);
         }
         if(consumerGuuidExist(key,guuid)){
@@ -83,6 +87,14 @@ public class AlgorithmFactory {
         List<String> guuidList = GuuidMap.get(key);
         guuidList.remove(guuid);
         log.debug("deleteConsumerGuuid({},{}) is success",key,guuid);
+    }
+
+    public synchronized boolean existGuid(String key){
+        List<String> consumerGuuidList = GuuidMap.get(key);
+        if(CollectionUtils.isEmpty(consumerGuuidList)){
+            return false;
+        }
+        return true;
     }
 
 
