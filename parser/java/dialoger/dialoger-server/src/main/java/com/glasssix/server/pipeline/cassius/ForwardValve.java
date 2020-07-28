@@ -35,10 +35,12 @@ public class ForwardValve extends ValveHandlerCommon {
         synchronized (algorithmFactory) {
             List<String> consumerGuuidList = algorithmFactory.getConsumerGuuidList(guuidKey);
             if (CollectionUtils.isEmpty(consumerGuuidList)) {
-                algorithmFactory.setConsumerGuuid(guuidKey, createInstance());
+                instanceGuid = createInstance();
+                algorithmFactory.setConsumerGuuid(guuidKey, instanceGuid);
+            }else {
+                instanceGuid = consumerGuuidList.remove(0);
+                consumerGuuidList.add(instanceGuid);
             }
-            instanceGuid = consumerGuuidList.remove(0);
-            consumerGuuidList.add(instanceGuid);
         }
         return instanceGuid;
     }
