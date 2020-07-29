@@ -259,12 +259,12 @@ namespace glasssix
 
 					auto result = plugin.execute(u8"longinus.alignFace", param).as<param_vector<unsigned char>>();
 
-					value["aligned_faces"] = Json::Value(Json::arrayValue);
+					value["aligned_images"] = Json::Value(Json::arrayValue);
 					for (size_t i = 0; i < bboxes.size(); i++)
 					{
 						std::vector<unsigned char> buffer(begin(result), end(result));
 						std::string aligned_str = base64_encode((char*)buffer.data() + i * 3 * 128 * 128, 3 * 128 * 128);
-						value["aligned_faces"].append(Json::Value(aligned_str));
+						value["aligned_images"].append(Json::Value(aligned_str));
 					}
 					value["status"] = Json::Value("OK");
 				}
