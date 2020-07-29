@@ -21,11 +21,11 @@ public class pipelineController {
 
     @RequestMapping("exec")
     @ResponseBody
-    public String executor(@NotNull String receivedRoutingKey, @NotNull String message){
+    public String executor(@NotNull String routingKey, @NotNull String message){
         JsonObject jsonObject = gson.fromJson(message,JsonObject.class);
         String correlationDate = "HTTP"+ UUID.randomUUID().toString();
         jsonObject.addProperty("event_id", "HTTP"+ UUID.randomUUID().toString());
-        String execResult = pipelineContext.exec(receivedRoutingKey, correlationDate, jsonObject);
+        String execResult = pipelineContext.exec(routingKey, correlationDate, jsonObject);
         return execResult;
     }
 }
