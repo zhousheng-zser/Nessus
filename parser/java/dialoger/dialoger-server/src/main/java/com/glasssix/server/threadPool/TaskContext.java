@@ -6,6 +6,9 @@ import com.glasssix.parser.Parser;
 import com.glasssix.protocol.ProtocolCache;
 import com.glasssix.protocol.ProtocolCommon;
 import com.glasssix.protocol.result.NewResultProtocol;
+import com.glasssix.server.instancemap.ConsumerMapFileOption;
+import com.glasssix.server.instancemap.InstanceFileOption;
+import com.glasssix.server.instancemap.InstanceMapFileOption;
 import com.glasssix.server.rabbitmq.RabbitMQSender;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -17,9 +20,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -31,6 +36,13 @@ public class TaskContext {
 
     @Autowired
     private Gson gson;
+
+    @Autowired
+    protected InstanceMapFileOption instanceMapFileOption;
+    @Autowired
+    protected InstanceFileOption instanceFileOption;
+    @Autowired
+    protected ConsumerMapFileOption consumerMapFileOption;
 
     @Value("${rabbit.server.queue.routingKeyPrefix}")
     private String serverRoutingKeyPrefix;
@@ -77,12 +89,15 @@ public class TaskContext {
                 return;
             }
             ProtocolCommon protocolCommon = (ProtocolCommon) algorithmObject;
+            String guuidKey = AlgorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon.getDevice());
+            String uuid = protocolCommon.getInstanceGuid();
+            loadOldInstance(guuidKey,protocolCommon);
             String processResult = protocolCommon.protocolProcess(receivedRoutingKey,correlationDate,protocolCommon);
             String backResult = null;
             if(ApplicationConstants.OK_STATIC.equals(processResult)){
                 String params = transformToCallJNIParam(receivedRoutingKey, correlationDate, protocolCommon);
                 String result = parser.parse(algorithmName,params);
-                resultProcess(result,receivedRoutingKey,correlationDate,protocolCommon);
+                result = resultProcess(result,receivedRoutingKey,correlationDate,protocolCommon,uuid);
                 backResult = transformToBackStr(receivedRoutingKey, correlationDate, result,protocolCommon.eventId);
             }else{
                 NewResultProtocol newResultProtocol = new NewResultProtocol();
@@ -98,8 +113,33 @@ public class TaskContext {
         }
     }
 
-    private void resultProcess(String result, String receivedRoutingKey, String correlationDate,
-                               ProtocolCommon protocolCommon) {
+    private void loadOldInstance(String guuidKey, ProtocolCommon protocolCommon) {
+        List<String> uuids = consumerMapFileOption.getUUIDs(guuidKey);
+        if(CollectionUtils.isEmpty(uuids)){
+            return;
+        }
+        for(String id: uuids){
+            String instanceId = instanceMapFileOption.getInstanceId(id);
+            if(instanceId != null && !algorithmFactory.consumerGuuidExist(guuidKey,instanceId)){
+                String context = instanceFileOption.getContext(id);
+                String instanceName = guuidKey.split("\\.")[1];
+                String result = AlgorithmFactory.getPARSER().parse(instanceName+ ".new", context);
+                NewResultProtocol newResultProtocol = gson.fromJson(result, NewResultProtocol.class);
+                if(ApplicationConstants.OK_STATIC.equals(newResultProtocol.getStatus())){
+                    String instanceGuid = newResultProtocol.getInstanceGuid();
+                    instanceMapFileOption.update(id, instanceGuid);
+                    algorithmFactory.setConsumerGuuid(guuidKey,instanceGuid);
+                }
+            }
+        }
+        if(protocolCommon.autoAssignmentInstance == 1){
+            protocolCommon.setInstanceGuid(instanceMapFileOption.getInstanceId(protocolCommon.getInstanceGuid()));
+        }
+
+    }
+
+    private String resultProcess(String result, String receivedRoutingKey, String correlationDate,
+                               ProtocolCommon protocolCommon,String uuid) {
 
         JsonObject jsonObject = gson.fromJson(result, JsonObject.class);
         String status = jsonObject.get("status").getAsString();
@@ -107,16 +147,26 @@ public class TaskContext {
         if(ApplicationConstants.OK_STATIC.equals(status)){
             String[] routingItems = receivedRoutingKey.split("\\.");
             if("new".equals(routingItems[5])){
-                addGuuid(algorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon.getDevice()),
-                        jsonObject.get("instance_guid").getAsString());
+                String instanceGuid = jsonObject.get("instance_guid").getAsString();
+                String guuidKey = algorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon.getDevice());
+                addGuuid(guuidKey, instanceGuid);
+                String newUUID = instanceMapFileOption.getUUId();
+                instanceMapFileOption.add(newUUID,instanceGuid);
+                instanceFileOption.add(newUUID,gson.toJson(protocolCommon));
+                consumerMapFileOption.add(guuidKey,newUUID);
+                jsonObject.addProperty("instance_guid",newUUID);
             }
-            if("delete".equals(routingItems[5])){
-                deleteGuuid(algorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon.getDevice()),
-                        protocolCommon);
+            if("delete".equals(routingItems[5]) || "remove_all".equals(routingItems[5])){
+                String guuidKey = algorithmFactory.getGuuidKey(receivedRoutingKey,protocolCommon.getDevice());
+                deleteGuuid(guuidKey, protocolCommon);
+                instanceMapFileOption.delete(uuid);
+                instanceFileOption.delete(uuid);
+                consumerMapFileOption.delete(guuidKey,uuid);
             }
         }else {
             log.error("correlationDate({}) back message:{}",correlationDate,result);
         }
+        return gson.toJson(jsonObject);
     }
 
 
@@ -158,7 +208,7 @@ public class TaskContext {
      * @return
      */
     public String transformToBackStr(String receivedRoutingKey, String correlationDate, String JNIResult,String eventId) {
-        return JNIResult.substring(0,JNIResult.length()-2)+",\"event_id\":\""+eventId+"\"}";
+        return JNIResult.substring(0,JNIResult.length()-1)+",\"event_id\":\""+eventId+"\"}";
     }
 
 

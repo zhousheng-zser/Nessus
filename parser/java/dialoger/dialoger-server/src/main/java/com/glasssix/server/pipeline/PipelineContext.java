@@ -1,8 +1,10 @@
 package com.glasssix.server.pipeline;
 
+import com.glasssix.algorithm.AlgorithmFactory;
 import com.glasssix.common.util.ApplicationConstants;
 import com.glasssix.common.util.SpringUtil;
 import com.glasssix.protocol.result.NewResultProtocol;
+import com.glasssix.server.instancemap.InstanceMapFileOption;
 import com.glasssix.server.pipeline.irisviel.PersonDBValveCommon;
 import com.glasssix.server.rabbitmq.RabbitMQSender;
 import com.google.gson.Gson;
@@ -44,6 +46,10 @@ public class PipelineContext {
 
     @Autowired
     private RabbitMQSender rabbitMQSender;
+    @Autowired
+    private InstanceMapFileOption instanceMapFileOption;
+    @Autowired
+    private AlgorithmFactory algorithmFactory;
 
     @Autowired
     public PipelineContext(PipelineRegistListCache pipelineRegistListCache) {
@@ -109,26 +115,26 @@ public class PipelineContext {
         return result;
     }
 
-    private String selectNodes(EndPointEnum endPointEnum, String instanceGuid) {
+    private String selectNodes(EndPointEnum endPointEnum, String uuid) {
         String result = null;
+        String instanceGuid = instanceMapFileOption.getInstanceId(uuid);
         if(endPointEnum == null){
             return "endPoint: "+endPointEnum.getEndPointName()+" is not exist!";
         }
 
         if(onlyNeedSignleNode.contains(endPointEnum)){
-            result = configSignleNode(endPointEnum,instanceGuid);
+            result = configSignleNode(endPointEnum,instanceGuid,uuid);
         }else{
             if(onlyNeedLineNode.contains(endPointEnum)){
                 result = configValveList(endPointEnum.getEndPointName());
             }else{
-                result = configLineNodesAndSignleNode(endPointEnum,instanceGuid);
+                result = configLineNodesAndSignleNode(endPointEnum,instanceGuid,uuid);
             }
         }
-
         return result;
     }
 
-    private String configLineNodesAndSignleNode(EndPointEnum endPointEnum,String instanceGuid){
+    private String configLineNodesAndSignleNode(EndPointEnum endPointEnum,String instanceGuid,String uuid){
         String result = configValveList(EndPointEnum.FORWARD.getEndPointName());
         if (ApplicationConstants.OK_STATIC.equals(result)) {
             result = "endPoint "+endPointEnum.getEndPointName()+" is not exist!";
@@ -137,6 +143,8 @@ public class PipelineContext {
                     List<ValveHandlerCommon> valves = new ArrayList<>();
                     PersonDBValveCommon vc = (PersonDBValveCommon) createValveHandlerCommon(v.getValveClass(),v.getInstanceTopic());
                     vc.setIrisvielInstanceGuid(instanceGuid);
+                    vc.setUuid(uuid);
+                    vc.setAlgorithmFactory(algorithmFactory);
                     valves.add(vc);
                     pipeline.add(valves);
                     result = ApplicationConstants.OK_STATIC;
@@ -147,7 +155,7 @@ public class PipelineContext {
         return result;
     }
 
-    private String configSignleNode(EndPointEnum endPointEnum,String instanceGuid){
+    private String configSignleNode(EndPointEnum endPointEnum,String instanceGuid,String uuid){
         StringBuffer resultBuffer = new StringBuffer("endPoint ").append(endPointEnum.getEndPointName()).append(" is not exist!");
         pipeline = new ArrayList<>();
         for(ValveConfigEntry v:signleNodes){
@@ -155,6 +163,8 @@ public class PipelineContext {
                 List<ValveHandlerCommon> valves = new ArrayList<>();
                 PersonDBValveCommon vc = (PersonDBValveCommon) createValveHandlerCommon(v.getValveClass(),v.getInstanceTopic());
                 vc.setIrisvielInstanceGuid(instanceGuid);
+                vc.setUuid(uuid);
+                vc.setAlgorithmFactory(algorithmFactory);
                 valves.add(vc);
                 pipeline.add(valves);
                 resultBuffer = new StringBuffer(ApplicationConstants.OK_STATIC);
