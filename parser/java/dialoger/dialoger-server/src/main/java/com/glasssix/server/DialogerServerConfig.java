@@ -4,17 +4,17 @@ import com.glasssix.algorithm.AlgorithmFactory;
 import com.glasssix.common.util.YamlPropertySourceFactory;
 import com.glasssix.init.InitAlgorithmProtocol;
 import com.google.gson.Gson;
-import org.opencv.core.Core;
 import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.boot.SpringApplication;
-//import org.springframework.boot.autoconfigure.SpringBootApplication;
-//import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-@PropertySource(value = {"classpath:rabbit.yml","classpath:protocol.yml","pipeline.yml"},factory = YamlPropertySourceFactory.class)
+//import org.springframework.boot.SpringApplication;
+//import org.springframework.boot.autoconfigure.SpringBootApplication;
+//import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@PropertySource(value = {"classpath:rabbit.yml","classpath:protocol.yml","classpath:pipeline.yml"},factory = YamlPropertySourceFactory.class)
 //@ConfigurationProperties
 //@SpringBootApplication
 @Component

@@ -22,6 +22,12 @@ public class pipelineController {
     @RequestMapping("exec")
     @ResponseBody
     public String executor(@NotNull String routingKey, @NotNull String message){
+        if(routingKey == null){
+            return "routingKey is empty";
+        }
+        if(message == null){
+            return "message is null";
+        }
         JsonObject jsonObject = gson.fromJson(message,JsonObject.class);
         String correlationDate = "HTTP"+ UUID.randomUUID().toString();
         jsonObject.addProperty("event_id", "HTTP"+ UUID.randomUUID().toString());

@@ -37,3 +37,4 @@ algorithm:
   protocol:
     config: protocol.yml
   libParserName: libParser
+  #libParserName: Parser

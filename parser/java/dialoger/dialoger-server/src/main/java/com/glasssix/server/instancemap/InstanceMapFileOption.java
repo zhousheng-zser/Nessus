@@ -18,6 +18,9 @@ public class InstanceMapFileOption {
     @PostConstruct
     private void init(){
         file = new File("instanceMap.txt");
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        System.out.println("file Path: "+file.getAbsolutePath());
+        System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         instanceIdMap = new HashMap<>();
         BufferedReader bufferedReader = null;
         try {
