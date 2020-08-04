@@ -6,6 +6,7 @@ import com.glasssix.protocol.NewProtocol;
 import com.glasssix.protocol.result.NewResultProtocol;
 import com.glasssix.server.pipeline.ThreadLocalResource;
 import com.glasssix.server.pipeline.ValveHandlerCommon;
+import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -61,5 +62,13 @@ public class DetectExValve extends ValveHandlerCommon {
         }
         log.error("longinus.new return error: {}",newResultProtocol==null? null:newResultProtocol.getStatus());
         return null;
+    }
+
+    @Override
+    public void addPropertyAsInput(JsonObject jsonObject, JsonObject oldJsonObject) {
+        super.addPropertyAsInput(jsonObject,oldJsonObject);
+        jsonObject.addProperty("factor",1/0.709);
+        jsonObject.addProperty("stage",3);
+        jsonObject.addProperty("order",1);
     }
 }

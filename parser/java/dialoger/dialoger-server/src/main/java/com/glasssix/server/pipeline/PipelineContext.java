@@ -8,6 +8,7 @@ import com.glasssix.server.instancemap.InstanceMapFileOption;
 import com.glasssix.server.pipeline.irisviel.PersonDBValveCommon;
 import com.glasssix.server.rabbitmq.RabbitMQSender;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
@@ -101,6 +102,9 @@ public class PipelineContext {
     public String exec(String receivedRoutingKey,String correlationDate,JsonObject jsonObject){
         String endPoint = jsonObject.get("endPoint").getAsString();
         String event_id = jsonObject.get("event_id").getAsString();
+        if(!receivedRoutingKey.endsWith("22") && !receivedRoutingKey.endsWith("new")){
+            jsonObject = transformFromLevelToFlat(jsonObject);
+        }
         JsonElement instance_guid = jsonObject.get("instance_guid");
         EndPointEnum endPointEnum = EndPointEnum.valueOf(endPoint.toUpperCase());
         String result = selectNodes(endPointEnum,instance_guid== null? null:instance_guid.getAsString());
@@ -114,6 +118,8 @@ public class PipelineContext {
         }
         return result;
     }
+
+
 
     private String selectNodes(EndPointEnum endPointEnum, String uuid) {
         String result = null;
@@ -254,6 +260,72 @@ public class PipelineContext {
         }
         jsonObject.addProperty("event_id", eventId);
         return gson.toJson(jsonObject);
+    }
+
+
+    private JsonObject transformFromLevelToFlat(JsonObject jsonObject) {
+        JsonObject newJSONObject = new JsonObject();
+        newJSONObject.add("event_id",jsonObject.get("event_id"));
+        String endPoint = jsonObject.get("endPoint").getAsString();
+        newJSONObject.addProperty("endPoint",endPoint);
+
+        JsonElement imageElement = jsonObject.get("image");
+        if(imageElement != null){
+            JsonObject image = imageElement.getAsJsonObject();
+            newJSONObject.add("image",image.get("base64"));
+            newJSONObject.add("format",image.get("format"));
+            newJSONObject.add("height",image.get("height"));
+            newJSONObject.add("width",image.get("width"));
+        }
+        JsonElement faceDetectElement = jsonObject.get("faceDetect");
+        if(faceDetectElement != null){
+            JsonObject faceDetect = faceDetectElement.getAsJsonObject();
+            newJSONObject.add("min_size",faceDetect.get("min_size"));
+            newJSONObject.add("algorithm",faceDetect.get("algorithm"));
+            newJSONObject.add("device",faceDetect.get("device"));
+            newJSONObject.add("threshold",faceDetect.get("threshold"));
+        }
+
+        JsonElement libraryElement = jsonObject.get("library");
+        if(libraryElement != null){
+            JsonObject library = libraryElement.getAsJsonObject();
+            JsonElement initElement = library.get("init");
+            if(initElement != null){
+                JsonObject init =initElement.getAsJsonObject();
+                newJSONObject.add("single_database_capacity",init.get("single_database_capacity"));
+                newJSONObject.add("dimension",init.get("dimension"));
+            }
+            newJSONObject.add("instance_guid",library.get("instance_guid"));
+            JsonElement searchConditionElement = library.get("searchCondition");
+            if(searchConditionElement != null){
+                JsonObject searchCondition = searchConditionElement.getAsJsonObject();
+                newJSONObject.add("top",searchCondition.get("top"));
+            }
+
+            JsonElement removesElement = library.get("removes");
+            if(removesElement != null){
+                JsonArray removes = removesElement.getAsJsonArray();
+                if(EndPointEnum.REMOVE.getEndPointName().equals(endPoint)){
+                    newJSONObject.add("key",removes.get(0));
+                }else{
+                    newJSONObject.add("keys",removes);
+                }
+            }
+
+            JsonElement updatesElement = library.get("updates");
+            if(updatesElement != null){
+                JsonArray updates =updatesElement.getAsJsonArray();
+                if(EndPointEnum.UPDATE.getEndPointName().equals(endPoint) || EndPointEnum.ADD.getEndPointName().equals(endPoint)){
+                    JsonObject up = updates.get(0).getAsJsonObject();
+                    newJSONObject.add("key",up.get("key"));
+                }
+                if(EndPointEnum.UPDATES.getEndPointName().equals(endPoint) || EndPointEnum.ADDS.getEndPointName().equals(endPoint)){
+                    newJSONObject.add("data",updates);
+                }
+            }
+        }
+        return newJSONObject;
+
     }
 
     public Message getMessage() {

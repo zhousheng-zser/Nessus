@@ -6,9 +6,18 @@ import com.google.gson.JsonObject;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 @Scope("prototype")
 public class PersonDBNewValve extends PersonDBValveCommon {
+
+    @Override
+    public void addPropertyAsInput(JsonObject jsonObject, JsonObject oldJsonObject) {
+        super.addPropertyAsInput(jsonObject,oldJsonObject);
+        jsonObject.addProperty("device",-1);
+        jsonObject.addProperty("working_directory","irisvielData\\"+ UUID.randomUUID().toString());
+    }
 
     @Override
     public String handler(String receivedRoutingKey, String correlationDate, JsonObject jsonObject) {
