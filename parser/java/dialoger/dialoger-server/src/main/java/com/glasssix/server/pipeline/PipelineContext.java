@@ -107,7 +107,7 @@ public class PipelineContext {
         }
         JsonElement instance_guid = jsonObject.get("instance_guid");
         EndPointEnum endPointEnum = EndPointEnum.valueOf(endPoint.toUpperCase());
-        String result = selectNodes(endPointEnum,instance_guid== null? null:instance_guid.getAsString());
+        String result = selectNodes(endPointEnum,(instance_guid== null || instance_guid.isJsonNull())? null:instance_guid.getAsString());
         if (ApplicationConstants.OK_STATIC.equals(result)) {
             result = executorPipeline(receivedRoutingKey, correlationDate, jsonObject);
         }else{
