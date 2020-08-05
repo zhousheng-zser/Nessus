@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <utility>
 #include <mutex>
+#include <fstream>
+#include <filesystem.hpp>
 #include "singleton.hpp"
 #include "simdjson.h"
 
@@ -49,47 +51,75 @@ namespace glasssix
 					return writer.write(value);
 				}
 
-				void init_plugin(string config_file_path)
+				string init_plugin(string config_file_path)
 				{
 					static std::once_flag flag;
 
+					string status = "{\"status\":\"Function 'init_plugin' has beed called and could be called one time\"}";
 					std::call_once(flag, [&]
 					{
 						std::ifstream f_config(config_file_path);
 						std::string buffer(std::istreambuf_iterator<char>{ f_config }, std::istreambuf_iterator<char>{});
 
-						simdjson::dom::element config = parser_.parse(buffer);
 						try
 						{
-							string plugin_directory = string(config["plugin_directory"].get<std::string_view>().value());
+							simdjson::dom::element config = parser_.parse(buffer);
+							fs::path plugin_directory = (config["plugin_directory"].get<std::string_view>().value());
 							string pluginManager_lib = string(config["pluginManager_lib"].get<std::string_view>().value());
-							auto factory = component_loader::instance().add_module_with_factory(to_param_string(plugin_directory + "/" + pluginManager_lib));
-							auto manager = factory.create_instance(u8"glasssix.nessus.pluginManager").as<plugin_manager>();
-							manager.load_from_directory(to_param_string(plugin_directory));
 
-							plugin = manager.lookup(u8"glasssix.nessus.visionService");
+							auto factory = component_loader::instance().add_module_with_factory(to_param_string((plugin_directory / pluginManager_lib).string()));
+							if(!factory)
+							{
+								ready=false;
+								status = "{\"status\":\"Get a nullptr 'class_factory' instance\"}";
+								return;
+							}
+							auto manager = factory.create_instance(u8"glasssix.nessus.pluginManager").as<plugin_manager>();
+							if(!manager)
+							{
+								ready=false;
+								status = "{\"status\":\"Get a nullptr 'plugin_manager' instance\"}";
+								return;
+							}
+							//manager.load_from_directory(to_param_string(plugin_directory));
+							for (auto plugin_item : config["plugin_list"].get<simdjson::dom::array>().value())
+							{
+								manager.load_from_file(to_param_string((plugin_directory / plugin_item.get<std::string_view>().value()).string()));
+							}
+
+							plugin = manager.lookup(u8"Glasssix Vision Service");
+							if(!plugin)
+							{
+								ready=false;
+								status = "{\"status\":\"Get a nullptr 'plugin_interface' instance\"}";
+								return;
+							}
 
 							ready = true;
+							status = "{\"status\":\"OK\"}";
 						}
 						catch (const std::exception& ex)
 						{
 							ready = false;
+							status = string("{\"status\":\"") + ex.what() + string("\"}");
 						}
 						catch (const abi_error& ex)
 						{
 							ready = false;
+							status = string("{\"status\":\"") + ex.what_to_narrow() + string("\"}");
 						}
 					});
+
+					return status;
 				}
 
-			private:
 				parser()
 				{
-					protocol_map["Logninus.new"] = &Longinus_new_json;
-					protocol_map["Logninus.delete"] = &Longinus_delete_json;
-					protocol_map["Logninus.detectEx"] = &Longinus_detectEx_json;
-					protocol_map["Logninus.detectRetina"] = &Longinus_detectRetina_json;
-					protocol_map["Logninus.alignFace"] = &Longinus_alignFace_json;
+					protocol_map["Longinus.new"] = &Longinus_new_json;
+					protocol_map["Longinus.delete"] = &Longinus_delete_json;
+					protocol_map["Longinus.detectEx"] = &Longinus_detectEx_json;
+					protocol_map["Longinus.detectRetina"] = &Longinus_detectRetina_json;
+					protocol_map["Longinus.alignFace"] = &Longinus_alignFace_json;
 					protocol_map["Gaius.new"] = &Gaius_new_json;
 					protocol_map["Gaius.delete"] = &Gaius_delete_json;
 					protocol_map["Gaius.Forward"] = &Gaius_Forward_json;
@@ -111,6 +141,7 @@ namespace glasssix
 
 					ready = false;
 				}
+			private:
 
 				unordered_map<string, std::tuple<string, uint64_t, std::shared_ptr<std::mutex>>> instance_map;
 				unordered_map<string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, uint64_t&)>> protocol_map;

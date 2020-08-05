@@ -4,7 +4,8 @@
 #include "simdjson.h"
 #include "jsoncharutils.h"
 
-namespace simdjson::fallback {
+namespace simdjson {
+namespace fallback {
 
 // Holds backslashes and quotes locations.
 struct backslash_and_quote {
@@ -26,8 +27,9 @@ really_inline backslash_and_quote backslash_and_quote::copy_and_find(const uint8
   return { src[0] };
 }
 
-#include "generic/stringparsing.h"
+#include "generic/stage2/stringparsing.h"
 
-} // namespace simdjson::fallback
+} // namespace fallback
+} // namespace simdjson
 
 #endif // SIMDJSON_FALLBACK_STRINGPARSING_H

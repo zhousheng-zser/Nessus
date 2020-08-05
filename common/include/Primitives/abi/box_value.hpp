@@ -4,6 +4,7 @@
 #include "base_abi.hpp"
 #include "implements.hpp"
 #include "exceptions.hpp"
+#include "param_span.hpp"
 #include "param_string.hpp"
 #include "param_vector.hpp"
 
@@ -103,6 +104,14 @@ namespace glasssix::exposing::impl
 			set(value);
 		}
 
+		~box_value_impl()
+		{
+			if (initialized_)
+			{
+				std::launder(reinterpret_cast<const T*>(&buffer_))->~T();
+			}
+		}
+
 		bool has_value() const
 		{
 			return initialized_;
@@ -132,7 +141,7 @@ namespace glasssix::exposing
 	/// <typeparam name="T">The primitive type or string type</typeparam>
 	/// <param name="value">The value</param>
 	/// <returns>The boxed value</returns>
-	template<typename T, typename = std::enable_if_t<std::disjunction_v<impl::is_primitive<std::decay_t<T>>, std::is_convertible<T, param_string>>>>
+	template<typename T, typename = std::enable_if_t<std::disjunction_v<impl::is_primitive<std::decay_t<T>>, std::is_convertible<T, param_string>, impl::is_param_span<std::decay_t<T>>>>>
 	auto box(T&& value)
 	{
 		using boxed_type = std::conditional_t<std::is_convertible_v<T, param_string>, param_string, std::decay_t<T>>;
@@ -146,7 +155,7 @@ namespace glasssix::exposing
 	/// <typeparam name="T">The primitive type or string type</typeparam>
 	/// <param name="obj">The object</param>
 	/// <returns>The unboxed value</returns>
-	template<typename T, typename = std::enable_if_t<std::disjunction_v<impl::is_primitive<T>, std::is_same<T, param_string>>>>
+	template<typename T, typename = std::enable_if_t<std::disjunction_v<impl::is_primitive<T>, std::is_same<T, param_string>, impl::is_param_span<T>>>>
 	T unbox(const unknown_object& obj)
 	{
 		return obj.as<box_value<T>>().get();

@@ -9,7 +9,8 @@
 #include <memory>
 #include <string>
 
-namespace simdjson::internal {
+namespace simdjson {
+namespace internal {
 
 // low-level function to allocate memory with padding so we can read past the
 // "length" bytes safely. if you must provide a pointer to some data, create it
@@ -20,7 +21,12 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   // return (char *) malloc(length + SIMDJSON_PADDING);
   // However, we might as well align to cache lines...
   size_t totalpaddedlength = length + SIMDJSON_PADDING;
+#if defined(_MSC_VER) && _MSC_VER < 1910
+  // For legacy Visual Studio 2015 since it does not have proper C++11 support
+  char *padded_buffer = new[totalpaddedlength];
+#else
   char *padded_buffer = aligned_malloc_char(64, totalpaddedlength);
+#endif
 #ifndef NDEBUG
   if (padded_buffer == nullptr) {
     return nullptr;
@@ -30,11 +36,10 @@ inline char *allocate_padded_buffer(size_t length) noexcept {
   return padded_buffer;
 } // allocate_padded_buffer()
 
-} // namespace simdjson::internal
+} // namespace internal
 
-namespace simdjson {
 
-inline padded_string::padded_string() noexcept : viable_size(0), data_ptr(nullptr) {}
+inline padded_string::padded_string() noexcept {}
 inline padded_string::padded_string(size_t length) noexcept
     : viable_size(length), data_ptr(internal::allocate_padded_buffer(length)) {
   if (data_ptr != nullptr)
@@ -102,7 +107,11 @@ inline padded_string::operator std::string_view() const { return std::string_vie
 
 inline simdjson_result<padded_string> padded_string::load(const std::string &filename) noexcept {
   // Open the file
+  SIMDJSON_PUSH_DISABLE_WARNINGS
+  SIMDJSON_DISABLE_DEPRECATED_WARNING // Disable CRT_SECURE warning on MSVC: manually verified this is safe
   std::FILE *fp = std::fopen(filename.c_str(), "rb");
+  SIMDJSON_POP_DISABLE_WARNINGS
+
   if (fp == nullptr) {
     return IO_ERROR;
   }

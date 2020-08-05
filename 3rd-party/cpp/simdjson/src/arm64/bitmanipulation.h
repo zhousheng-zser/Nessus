@@ -4,28 +4,24 @@
 #include "simdjson.h"
 #include "arm64/intrinsics.h"
 
-namespace simdjson::arm64 {
+namespace simdjson {
+namespace arm64 {
 
-#ifndef _MSC_VER
 // We sometimes call trailing_zero on inputs that are zero,
 // but the algorithms do not end up using the returned value.
-// Sadly, sanitizers are not smart enough to figure it out. 
-__attribute__((no_sanitize("undefined"))) // this is deliberate
-#endif // _MSC_VER
-/* result might be undefined when input_num is zero */
+// Sadly, sanitizers are not smart enough to figure it out.
+NO_SANITIZE_UNDEFINED
 really_inline int trailing_zeroes(uint64_t input_num) {
-
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long ret;
   // Search the mask data from least significant bit (LSB) 
   // to the most significant bit (MSB) for a set bit (1).
   _BitScanForward64(&ret, input_num);
   return (int)ret;
-#else
+#else // SIMDJSON_REGULAR_VISUAL_STUDIO
   return __builtin_ctzll(input_num);
-#endif // _MSC_VER
-
-} // namespace simdjson::arm64
+#endif // SIMDJSON_REGULAR_VISUAL_STUDIO
+}
 
 /* result might be undefined when input_num is zero */
 really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
@@ -34,7 +30,7 @@ really_inline uint64_t clear_lowest_bit(uint64_t input_num) {
 
 /* result might be undefined when input_num is zero */
 really_inline int leading_zeroes(uint64_t input_num) {
-#ifdef _MSC_VER
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB) 
   // to least significant bit (LSB) for a set bit (1).
@@ -44,40 +40,34 @@ really_inline int leading_zeroes(uint64_t input_num) {
     return 64;
 #else
   return __builtin_clzll(input_num);
-#endif// _MSC_VER
+#endif// SIMDJSON_REGULAR_VISUAL_STUDIO
 }
 
 /* result might be undefined when input_num is zero */
 really_inline int count_ones(uint64_t input_num) {
-   return vaddv_u8(vcnt_u8((uint8x8_t)input_num));
+   return vaddv_u8(vcnt_u8(vcreate_u8(input_num)));
 }
 
 really_inline bool add_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-#ifdef _MSC_VER
-  // todo: this might fail under visual studio for ARM
-  return _addcarry_u64(0, value1, value2,
-                       reinterpret_cast<unsigned __int64 *>(result));
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+  *result = value1 + value2;
+  return *result < value1;
 #else
   return __builtin_uaddll_overflow(value1, value2,
                                    (unsigned long long *)result);
 #endif
 }
 
-#ifdef _MSC_VER
-#pragma intrinsic(_umul128) // todo: this might fail under visual studio for ARM
-#endif
-
 really_inline bool mul_overflow(uint64_t value1, uint64_t value2, uint64_t *result) {
-#ifdef _MSC_VER
-  // todo: this might fail under visual studio for ARM
-  uint64_t high;
-  *result = _umul128(value1, value2, &high);
-  return high;
+#ifdef SIMDJSON_REGULAR_VISUAL_STUDIO
+  *result = value1 * value2;
+  return !!__umulh(value1, value2);
 #else
   return __builtin_umulll_overflow(value1, value2, (unsigned long long *)result);
 #endif
 }
 
-} // namespace simdjson::arm64
+} // namespace arm64
+} // namespace simdjson
 
 #endif // SIMDJSON_ARM64_BITMANIPULATION_H

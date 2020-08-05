@@ -7,7 +7,9 @@
 #include "haswell/intrinsics.h"
 
 TARGET_HASWELL
-namespace simdjson::haswell::simd {
+namespace simdjson {
+namespace haswell {
+namespace simd {
 
   // Forward-declared so they can be used by splat and friends.
   template<typename Child>
@@ -59,7 +61,7 @@ namespace simdjson::haswell::simd {
   // SIMD byte mask type (returned by things like eq and gt)
   template<>
   struct simd8<bool>: base8<bool> {
-    static really_inline simd8<bool> splat(bool _value) { return _mm256_set1_epi8(-(!!_value)); }
+    static really_inline simd8<bool> splat(bool _value) { return _mm256_set1_epi8(uint8_t(-(!!_value))); }
 
     really_inline simd8<bool>() : base8() {}
     really_inline simd8<bool>(const __m256i _value) : base8<bool>(_value) {}
@@ -123,10 +125,10 @@ namespace simdjson::haswell::simd {
     really_inline void compress(uint32_t mask, L * output) const {
       // this particular implementation was inspired by work done by @animetosho
       // we do it in four steps, first 8 bytes and then second 8 bytes...
-      uint8_t mask1 = static_cast<uint8_t>(mask); // least significant 8 bits
-      uint8_t mask2 = static_cast<uint8_t>(mask >> 8); // second least significant 8 bits
-      uint8_t mask3 = static_cast<uint8_t>(mask >> 16); // ...
-      uint8_t mask4 = static_cast<uint8_t>(mask >> 24); // ...
+      uint8_t mask1 = uint8_t(mask); // least significant 8 bits
+      uint8_t mask2 = uint8_t(mask >> 8); // second least significant 8 bits
+      uint8_t mask3 = uint8_t(mask >> 16); // ...
+      uint8_t mask4 = uint8_t(mask >> 24); // ...
       // next line just loads the 64-bit values thintable_epi8[mask1] and
       // thintable_epi8[mask2] into a 128-bit register, using only
       // two instructions on most compilers.
@@ -303,8 +305,8 @@ namespace simdjson::haswell::simd {
     }
 
     really_inline void compress(uint64_t mask, T * output) const {
-      uint32_t mask1 = static_cast<uint32_t>(mask);
-      uint32_t mask2 = static_cast<uint32_t>(mask >> 32);
+      uint32_t mask1 = uint32_t(mask);
+      uint32_t mask2 = uint32_t(mask >> 32);
       this->chunks[0].compress(mask1, output);
       this->chunks[1].compress(mask2, output + 32 - count_ones(mask1));
     }
@@ -314,59 +316,41 @@ namespace simdjson::haswell::simd {
       this->chunks[1].store(ptr+sizeof(simd8<T>)*1);
     }
 
-    template <typename F>
-    really_inline void each(F const& each_chunk) const
-    {
-      each_chunk(this->chunks[0]);
-      each_chunk(this->chunks[1]);
-    }
-
-    template <typename R=bool, typename F>
-    really_inline simd8x64<R> map(F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0]),
-        map_chunk(this->chunks[1])
-      );
-    }
-
-    
-
-    template <typename R=bool, typename F>
-    really_inline simd8x64<R> map(const simd8x64<uint8_t> b, F const& map_chunk) const {
-      return simd8x64<R>(
-        map_chunk(this->chunks[0], b.chunks[0]),
-        map_chunk(this->chunks[1], b.chunks[1])
-      );
-    }
-
-    template <typename F>
-    really_inline simd8<T> reduce(F const& reduce_pair) const {
-      return reduce_pair(this->chunks[0], this->chunks[1]);
-    }
-
     really_inline uint64_t to_bitmask() const {
-      uint64_t r_lo = static_cast<uint32_t>(this->chunks[0].to_bitmask());
+      uint64_t r_lo = uint32_t(this->chunks[0].to_bitmask());
       uint64_t r_hi =                       this->chunks[1].to_bitmask();
       return r_lo | (r_hi << 32);
     }
 
     really_inline simd8x64<T> bit_or(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a | mask; } );
+      return simd8x64<T>(
+        this->chunks[0] | mask,
+        this->chunks[1] | mask
+      );
     }
 
     really_inline uint64_t eq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a == mask; } ).to_bitmask();
+      return  simd8x64<bool>(
+        this->chunks[0] == mask,
+        this->chunks[1] == mask
+      ).to_bitmask();
     }
 
     really_inline uint64_t lteq(const T m) const {
       const simd8<T> mask = simd8<T>::splat(m);
-      return this->map( [&](auto a) { return a <= mask; } ).to_bitmask();
+      return  simd8x64<bool>(
+        this->chunks[0] <= mask,
+        this->chunks[1] <= mask
+      ).to_bitmask();
     }
   }; // struct simd8x64<T>
 
-} // namespace simdjson::haswell::simd
+} // namespace simd
+
+} // namespace haswell
+} // namespace simdjson
 UNTARGET_REGION
 
 #endif // SIMDJSON_HASWELL_SIMD_H

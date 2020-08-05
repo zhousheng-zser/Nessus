@@ -6,9 +6,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <utility>
-#include <variant>
 #include <optional>
 #include <algorithm>
+#include <functional>
 #include <type_traits>
 #include <string_view>
 
@@ -45,6 +45,15 @@ namespace glasssix::exposing::meta
 		using tuple_unique_impl_t = typename tuple_unique_impl<Tuple, Args...>::type;
 	}
 
+	template<typename T, typename = void>
+	struct is_complete_type : std::false_type{};
+
+	template<typename T>
+	struct is_complete_type<T, std::void_t<decltype(sizeof(T))>> : std::true_type{};
+
+	template<typename T>
+	inline constexpr bool is_complete_type_v = is_complete_type<T>::value;
+
 	template<typename... Args>
 	struct has_common_type : details::has_common_type_impl<std::tuple<Args...>> {};
 
@@ -77,6 +86,15 @@ namespace glasssix::exposing::meta
 
 	template<template<typename> typename Container, typename T, std::size_t Dimension>
 	using make_multidimensional_container_t = typename make_multidimensional_container<Container, T, Dimension>::type;
+
+	template<typename T, typename Category, typename = void>
+	struct is_iterator_category_same : std::false_type{};
+
+	template<typename T, typename Category>
+	struct is_iterator_category_same<T, Category, std::void_t<typename std::iterator_traits<typename T::iterator>::iterator_category>> : std::is_same<Category, typename std::iterator_traits<typename T::iterator>::iterator_category> {};
+	
+	template<typename T, typename Category>
+	inline constexpr bool is_iterator_category_same_v = is_iterator_category_same<T, Category>::value;
 
 	template<typename... Tuples>
 	using tuple_cat_t = decltype(std::tuple_cat(std::declval<Tuples>()...));
@@ -645,6 +663,20 @@ namespace glasssix::exposing::meta
 		UnsignedNumber addition = (subtraction / divisor + (subtraction % divisor != 0 ? 1 : 0)) * divisor;
 
 		return (subtraction + addition) % divisor;
+	}
+
+	/// <summary>
+	/// Makes a wrapper of a callable object that returns another type.
+	/// </summary>
+	/// <typeparam name="T">The return type</typeparam>
+	/// <typeparam name="Callable">The callable type</typeparam>
+	/// <param name="callable">The callable object</param>
+	/// <param name="default_value">The default return value</param>
+	/// <returns>The wrapper</returns>
+	template<typename T, typename Callable>
+	constexpr auto replace_return(Callable&& callable, T&& default_value = {}) noexcept
+	{
+		return [=](auto&&... args) -> std::decay_t<T> { return (callable(std::forward<decltype(args)>(args)...), default_value); };
 	}
 
 	/// <summary>

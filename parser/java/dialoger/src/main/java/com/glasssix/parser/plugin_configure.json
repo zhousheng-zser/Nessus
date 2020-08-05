@@ -1,0 +1,5 @@
+{
+	"plugin_directory" : "/home/build_slave/lipingbao/extrlib",
+	"pluginManager_lib" : "libPluginRegister.so",
+	"plugin_list" : ["libVisionService.so"]
+}

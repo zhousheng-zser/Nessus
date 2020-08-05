@@ -1,6 +1,7 @@
 #include "plugin_manager_impl.hpp"
 
 #include <mutex>
+#include <iostream>
 #include <unordered_map>
 
 namespace glasssix::exposing::nessus
@@ -15,7 +16,7 @@ namespace glasssix::exposing::nessus
 
 		void load_from_file(const param_string& path)
 		{
-			if (auto factory = component_loader::instance().add_module_with_factory(path); factory && factory.get_qualified_names().contains(plugin_qualified_name))
+			if (auto factory = component_loader::instance().add_module_with_factory(path); factory && factory.qualified_names().contains(plugin_qualified_name))
 			{
 				create_plugin(factory);
 			}
@@ -27,7 +28,7 @@ namespace glasssix::exposing::nessus
 			{
 				for (const auto& item : factories)
 				{
-					create_plugin(item);
+					create_plugin(item.value());
 				}
 			}
 		}
@@ -49,7 +50,7 @@ namespace glasssix::exposing::nessus
 	private:
 		void create_plugin(const class_factory& item)
 		{
-			auto plugin = item.create_instance(plugin_qualified_name).as<plugin_interface>();
+			if (auto plugin = item.create_instance(plugin_qualified_name).try_as<plugin_interface>())
 			{
 				std::lock_guard<std::mutex> lock{ lock_ };
 

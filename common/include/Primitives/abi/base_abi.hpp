@@ -100,7 +100,10 @@ namespace glasssix::exposing::impl
 	inline constexpr bool is_well_defined_interface_v = is_well_defined_interface<T>::value;
 
 	template<typename T, typename = void>
-	struct abi_in;
+	struct abi_in
+	{
+		using type = abi_t<T>;
+	};
 
 	/// <summary>
 	/// An input argument of an ABI function.
@@ -109,17 +112,11 @@ namespace glasssix::exposing::impl
 	using abi_in_t = typename abi_in<T>::type;
 
 	template<typename T>
-	struct abi_in<T, std::enable_if_t<std::disjunction_v<is_primitive<T>, std::is_enum<T>, std::is_same<T, param_string>>>>
-	{
-		using type = abi_t<T>;
-	};
-
-	template<typename T>
 	struct abi_in<T, std::enable_if_t<is_well_defined_interface_v<T>>>
 	{
 		using type = void*;
 	};
-	
+
 	template<typename T>
 	struct abi_out
 	{
@@ -231,6 +228,7 @@ namespace glasssix::exposing
 
 		~unknown_object() noexcept
 		{
+			release();
 		}
 
 		unknown_object& operator=(const unknown_object& right) noexcept
@@ -440,80 +438,20 @@ namespace glasssix::exposing
 	}
 
 	/// <summary>
-	/// Duplicates an ABI and assignes it to an object with the reference count increased.
+	/// Creates an interface from an ABI.
 	/// </summary>
-	/// <param name="object">The object</param>
+	/// <typeparam name="T">The type</typeparam>
 	/// <param name="abi">The ABI</param>
-	inline void copy_from_abi(unknown_object& object, void* abi) noexcept
+	/// <returns>The result</returns>
+	template<typename T, std::enable_if_t<impl::is_well_defined_interface_v<T>>* = nullptr>
+	T create_from_abi(void* abi) noexcept
 	{
 		if (abi)
 		{
 			static_cast<impl::abi_unknown_object*>(abi)->add_ref();
 		}
 
-		*put_abi(object) = abi;
-	}
-
-	/// <summary>
-	/// Duplicates an ABI and assignes it to a primitve object.
-	/// </summary>
-	/// <typeparam name="T">The object type</typeparam>
-	/// <typeparam name="Abi">The ABI type</typeparam>
-	/// <param name="object">The object</param>
-	/// <param name="abi">The ABI</param>
-	template<typename T, typename Abi, typename = std::enable_if_t<std::conjunction_v<impl::is_primitive<T>, std::is_same<impl::abi_t<T>, std::decay_t<Abi>>>>>
-	void copy_from_abi(T& object, Abi&& abi) noexcept
-	{
-		*put_abi(object) = std::forward<Abi>(abi);
-	}
-
-	/// <summary>
-	/// Copy the ABI of an object to another ABI with the reference count increased.
-	/// </summary>
-	/// <param name="object">The object</param>
-	/// <param name="abi">The ABI</param>
-	inline void copy_to_abi(const unknown_object& object, void*& abi) noexcept
-	{
-		if ((abi = get_abi(object)))
-		{
-			static_cast<impl::abi_unknown_object*>(abi)->add_ref();
-		}
-	}
-
-	/// <summary>
-	/// Copy the ABI of a primitive object to another ABI.
-	/// </summary>
-	/// <typeparam name="T">The object type</typeparam>
-	/// <param name="object">The object</param>
-	/// <param name="abi">The ABI</param>
-	template<typename T, typename = std::enable_if_t<impl::is_primitive_v<T>>>
-	void copy_to_abi(const unknown_object& object, impl::abi_t<T>& abi) noexcept
-	{
-		abi = get_abi(object);
-	}
-
-	/// <summary>
-	/// Creates an interface or a string from an ABI.
-	/// </summary>
-	/// <typeparam name="T">The type</typeparam>
-	/// <param name="abi">The ABI</param>
-	/// <returns>The result</returns>
-	template<typename T, typename = std::enable_if_t<std::disjunction_v<impl::is_well_defined_interface<T>, std::is_same<T, param_string>>>>
-	T create_from_abi(void* abi) noexcept
-	{
-		if constexpr (std::is_same_v<T, param_string>)
-		{
-			return create_string_from_abi(abi);
-		}
-		else
-		{
-			if (abi)
-			{
-				static_cast<impl::abi_unknown_object*>(abi)->add_ref();
-			}
-
-			return T{ take_over_abi_from_void_ptr{ abi } };
-		}
+		return T{ take_over_abi_from_void_ptr{ abi } };
 	}
 
 	/// <summary>
@@ -534,14 +472,14 @@ namespace glasssix::exposing::impl
 {
 	namespace details
 	{
-		template<typename To, bool has_exception, typename From, typename = std::enable_if_t<std::conjunction_v<std::is_base_of<abi_unknown_object, From>, is_well_defined_interface<To>>>>
+		template<typename To, bool HasException, typename From, typename = std::enable_if_t<std::conjunction_v<std::is_base_of<abi_unknown_object, From>, is_well_defined_interface<To>>>>
 		To as_impl(From* ptr)
 		{
 			To result{ nullptr };
 
 			if (ptr == nullptr)
 			{
-				if constexpr (has_exception)
+				if constexpr (HasException)
 				{
 					throw abi_null_pointer{};
 				}
@@ -553,7 +491,7 @@ namespace glasssix::exposing::impl
 
 			if (!abi_result{ ptr->query_interface(guid_of_v<To>, put_abi(result)) }.no_error())
 			{
-				if constexpr (has_exception)
+				if constexpr (HasException)
 				{
 					throw abi_no_interface{};
 				}

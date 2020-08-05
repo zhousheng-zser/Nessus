@@ -3,7 +3,7 @@
 
 #include "simdjson.h"
 #include "json.h"
-#include "c_base64.hpp"
+#include "base64.hpp"
 #include "plugin_interface.hpp"
 #include "parser_exception.hpp"
 #include <string>
@@ -21,7 +21,7 @@ namespace glasssix
 				Json::Value value;
 				try
 				{
-					int device = root["device"].get<int64_t>().value();
+					int device = static_cast<int>(root["device"].get<int64_t>().value());
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"device", box(device)}
@@ -69,26 +69,26 @@ namespace glasssix
 				{
 					std::string_view format_str = root["format"].get<std::string_view>().value();
 					std::string_view image_base64_str = root["image"].get<std::string_view>().value();
-					std::string_view image_str(CBase64_Decode(image_base64_str.data(), image_base64_str.size()));
-					int height = root["height"].get<int64_t>().value();
-					int width = root["width"].get<int64_t>().value();
-					int minSize = root["minSize"].get<int64_t>().value();
+					auto image_str = base64_decode(image_base64_str.data(), static_cast<std::uint32_t>(image_base64_str.length()));
+					int height = static_cast<int>(root["height"].get<int64_t>().value());
+					int width = static_cast<int>(root["width"].get<int64_t>().value());
+					int minSize = static_cast<int>(root["min_size"].get<int64_t>().value());
 					auto jarray_threshold = root["threshold"].get<simdjson::dom::array>().value();
 					std::vector<float> threshold;
 					for (auto i : jarray_threshold)
-						threshold.push_back(i.get<double>().value());
+						threshold.push_back(static_cast<float>(i.get<double>().value()));
 
 					if (threshold.size() != 3)
 						throw parser_exception("threshold size != 3");
 
-					float factor = root["factor"].get<double>().value();
-					int stage = root["stage"].get<int64_t>().value();
-					int order = root["order"].get<int64_t>().value();
+					float factor = static_cast<float>(root["factor"].get<double>().value());
+					int stage = static_cast<int>(root["stage"].get<int64_t>().value());
+					int order = static_cast<int>(root["order"].get<int64_t>().value());
 
 					auto threold_array_param = make_param_vector<float>(threshold[0], threshold[1], threshold[2]);
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"image", box(image_str)},
+							{u8"image", box(std::string_view{ image_str.data(), image_str.size() })},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"minSize", box(minSize)},
@@ -110,10 +110,10 @@ namespace glasssix
 						jobj_rect["y"] = Json::Int(/*20*/unbox<int>(obj.get_value(u8"y")));
 						jobj_rect["width"] = Json::Int(/*260*/unbox<int>(obj.get_value(u8"width")));
 						jobj_rect["height"] = Json::Int(/*200*/unbox<int>(obj.get_value(u8"height")));
-						jobj_rect["confidence"] = Json::Value(/*0.99*/unbox<double>(obj.get_value(u8"confidence")));
-						jobj_rect["yaw"] = Json::Value(/*-15.2*/unbox<double>(obj.get_value(u8"yaw")));
-						jobj_rect["pitch"] = Json::Value(/*10.4*/unbox<double>(obj.get_value(u8"pitch")));
-						jobj_rect["roll"] = Json::Value(/*20.3*/unbox<double>(obj.get_value(u8"roll")));
+						jobj_rect["confidence"] = Json::Value(/*0.99*/unbox<float>(obj.get_value(u8"confidence")));
+						jobj_rect["yaw"] = Json::Value(/*-15.2*/unbox<float>(obj.get_value(u8"yaw")));
+						jobj_rect["pitch"] = Json::Value(/*10.4*/unbox<float>(obj.get_value(u8"pitch")));
+						jobj_rect["roll"] = Json::Value(/*20.3*/unbox<float>(obj.get_value(u8"roll")));
 						Json::Value jarray_landmark;
 
 						auto landmark_param_vec = obj.get_value(u8"landmark").as<param_vector<int>>();
@@ -150,16 +150,16 @@ namespace glasssix
 				{
 					std::string_view format_str = root["format"].get<std::string_view>().value();
 					std::string_view image_base64_str = root["image"].get<std::string_view>().value();
-					std::string_view image_str(CBase64_Decode(image_base64_str.data(), image_base64_str.size()));
-					int height = root["height"].get<int64_t>().value();
-					int width = root["width"].get<int64_t>().value();
-					int min_win = root["min_win"].get<int64_t>().value();
-					float threshold = root["threshold"].get<double>().value();
-					int order = root["order"].get<int64_t>().value();
+					auto image_str = base64_decode(image_base64_str.data(), static_cast<std::uint32_t>(image_base64_str.length()));
+					int height = static_cast<int>(root["height"].get<int64_t>().value());
+					int width = static_cast<int>(root["width"].get<int64_t>().value());
+					int min_win = static_cast<int>(root["min_size"].get<int64_t>().value());
+					float threshold = static_cast<float>(root["threshold"].get<double>().value());
+					int order = static_cast<int>(root["order"].get<int64_t>().value());
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"image", box(image_str)},
+							{u8"image", box(std::string_view{ image_str.data(), image_str.size() }) },
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"min_win", box(min_win)},
@@ -179,10 +179,10 @@ namespace glasssix
 						jobj_rect["y"] = Json::Int(/*20*/unbox<int>(obj.get_value(u8"y")));
 						jobj_rect["width"] = Json::Int(/*260*/unbox<int>(obj.get_value(u8"width")));
 						jobj_rect["height"] = Json::Int(/*200*/unbox<int>(obj.get_value(u8"height")));
-						jobj_rect["confidence"] = Json::Value(/*0.99*/unbox<double>(obj.get_value(u8"confidence")));
-						jobj_rect["yaw"] = Json::Value(/*-15.2*/unbox<double>(obj.get_value(u8"yaw")));
-						jobj_rect["pitch"] = Json::Value(/*10.4*/unbox<double>(obj.get_value(u8"pitch")));
-						jobj_rect["roll"] = Json::Value(/*20.3*/unbox<double>(obj.get_value(u8"roll")));
+						jobj_rect["confidence"] = Json::Value(/*0.99*/unbox<float>(obj.get_value(u8"confidence")));
+						jobj_rect["yaw"] = Json::Value(/*-15.2*/unbox<float>(obj.get_value(u8"yaw")));
+						jobj_rect["pitch"] = Json::Value(/*10.4*/unbox<float>(obj.get_value(u8"pitch")));
+						jobj_rect["roll"] = Json::Value(/*20.3*/unbox<float>(obj.get_value(u8"roll")));
 						Json::Value jarray_landmark;
 
 						auto landmark_param_vec = obj.get_value(u8"landmark").as<param_vector<int>>();
@@ -220,9 +220,9 @@ namespace glasssix
 				{
 					std::string_view format_str = root["format"].get<std::string_view>().value();
 					std::string_view gray_base64_str = root["gray"].get<std::string_view>().value();
-					std::string_view gray_str(CBase64_Decode(gray_base64_str.data(), gray_base64_str.size()));
-					int height = root["height"].get<int64_t>().value();
-					int width = root["width"].get<int64_t>().value();
+					auto gray_str = base64_decode(gray_base64_str.data(), static_cast<std::uint32_t>(gray_base64_str.size()));
+					int height = static_cast<int>(root["height"].get<int64_t>().value());
+					int width = static_cast<int>(root["width"].get<int64_t>().value());
 					auto jarray_rect = root["facerectwithfaceinfo_list"].get<simdjson::dom::array>().value();
 
 					auto bboxes = make_param_vector<param_vector<int>>();
@@ -231,17 +231,17 @@ namespace glasssix
 					for (auto i : jarray_rect)
 					{
 						auto bbox = make_param_vector<int>();
-						bbox.push_back(i["x"].get<int64_t>().value());
-						bbox.push_back(i["y"].get<int64_t>().value());
-						bbox.push_back(i["height"].get<int64_t>().value());
-						bbox.push_back(i["width"].get<int64_t>().value());
+						bbox.push_back(static_cast<int>(i["x"].get<int64_t>().value()));
+						bbox.push_back(static_cast<int>(i["y"].get<int64_t>().value()));
+						bbox.push_back(static_cast<int>(i["height"].get<int64_t>().value()));
+						bbox.push_back(static_cast<int>(i["width"].get<int64_t>().value()));
 						bboxes.push_back(bbox);
 						auto landmark_list = i["landmark"].get<simdjson::dom::array>().value();
 						auto landmark = make_param_vector<int>();
 						for (auto j : landmark_list)
 						{
-							landmark.push_back(j["x"].get<int64_t>().value());
-							landmark.push_back(j["y"].get<int64_t>().value());
+							landmark.push_back(static_cast<int>(j["x"].get<int64_t>().value()));
+							landmark.push_back(static_cast<int>(j["y"].get<int64_t>().value()));
 						}
 
 						landmarks.push_back(landmark);
@@ -249,7 +249,7 @@ namespace glasssix
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"gray", box(gray_str)},
+							{u8"gray", box(std::string_view{ gray_str.data(), gray_str.size() })},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"bboxes", bboxes},
@@ -263,7 +263,7 @@ namespace glasssix
 					for (size_t i = 0; i < bboxes.size(); i++)
 					{
 						std::vector<unsigned char> buffer(begin(result), end(result));
-						std::string aligned_str = CBase64_Encode((char*)buffer.data() + i * 3 * 128 * 128, 3 * 128 * 128);
+						std::string aligned_str = base64_encode((char*)buffer.data() + i * 3 * 128 * 128, 3 * 128 * 128);
 						value["aligned_faces"].append(Json::Value(aligned_str));
 					}
 					value["status"] = Json::Value("OK");
@@ -285,7 +285,7 @@ namespace glasssix
 				Json::Value value;
 				try
 				{
-					int device = root["device"].get<int64_t>().value();
+					int device = static_cast<int>(root["device"].get<int64_t>().value());
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"device", box(device)}
@@ -336,17 +336,17 @@ namespace glasssix
 
 				try
 				{
-					auto aligned_face_array = root["aligned_faces"].get<simdjson::dom::array>().value();
+					auto aligned_face_array = root["aligned_images"].get<simdjson::dom::array>().value();
 					std::string aligned_faces_str;
 					int num = 0;
 					for (auto i : aligned_face_array)
 					{
 						std::string_view aligned_face_base64_str = i.get<std::string_view>().value();
-						aligned_faces_str.append(CBase64_Decode(aligned_face_base64_str.data(), aligned_face_base64_str.size()));
+						aligned_faces_str.append(base64_decode(aligned_face_base64_str.data(), static_cast<std::uint32_t>(aligned_face_base64_str.length())));
 						num++;
 					}
 
-					int order = root["order"].get<int64_t>().value();
+					int order = static_cast<int>(root["order"].get<int64_t>().value());
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
@@ -386,7 +386,7 @@ namespace glasssix
 				Json::Value value;
 				try
 				{
-					int device = root["device"].get<int64_t>().value();
+					int device = static_cast<int>(root["device"].get<int64_t>().value());
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"device", box(device)}
@@ -435,17 +435,17 @@ namespace glasssix
 				Json::Value value;
 				try
 				{
-					auto aligned_face_array = root["aligned_faces"].get<simdjson::dom::array>().value();
+					auto aligned_face_array = root["aligned_images"].get<simdjson::dom::array>().value();
 					std::string aligned_faces_str;
 					int num = 0;
 					for (auto i : aligned_face_array)
 					{
 						std::string_view aligned_face_base64_str = i.get<std::string_view>().value();
-						aligned_faces_str.append(CBase64_Decode(aligned_face_base64_str.data(), aligned_face_base64_str.size()));
+						aligned_faces_str.append(base64_decode(aligned_face_base64_str.data(), static_cast<std::uint32_t>(aligned_face_base64_str.length())));
 						num++;
 					}
 
-					int order = root["order"].get<int64_t>().value();
+					int order = static_cast<int>(root["order"].get<int64_t>().value());
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
@@ -487,8 +487,8 @@ namespace glasssix
 
 				try
 				{
-					int single_database_capacity = root["single_database_capacity"].get<int64_t>().value();
-					int dimension = root["dimension"].get<int64_t>().value();
+					int single_database_capacity = static_cast<int>(root["single_database_capacity"].get<int64_t>().value());
+					int dimension = static_cast<int>(root["dimension"].get<int64_t>().value());
 					std::string_view working_directory = root["working_directory"].get<std::string_view>().value();
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
@@ -498,7 +498,7 @@ namespace glasssix
 							{u8"working_directory", box(working_directory)}
 						});
 
-					instance = unbox<uint64_t>(plugin.execute(u8"irsiviel.new", param));
+					instance = unbox<uint64_t>(plugin.execute(u8"irisviel.new", param));
 
 					value["status"] = Json::Value("OK");
 				}
@@ -544,12 +544,12 @@ namespace glasssix
 				{
 					value["result"] = Json::Value(Json::arrayValue);
 
-					param_vector<float> feature;
+					param_vector<float> feature = make_param_vector<float>();
 
 					auto jarray_feature = root["feature"].get<simdjson::dom::array>().value();
 					for (auto i : jarray_feature)
-						feature.push_back(i.get<double>().value());
-					int top = root["top"].get<int64_t>();
+						feature.push_back(static_cast<float>(i.get<double>().value()));
+					int top = static_cast<int>(root["top"].get<int64_t>());
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
@@ -558,7 +558,7 @@ namespace glasssix
 							{u8"object_id", box(instance)}
 						});
 
-					auto result = plugin.execute(u8"irsiviel.search", param).as<param_vector<param_hash_map<param_string, unknown_object>>>();
+					auto result = plugin.execute(u8"irisviel.search", param).as<param_vector<param_hash_map<param_string, unknown_object>>>();
 
 					for (int i = 0; i < result.size(); i++)
 					{
@@ -600,7 +600,7 @@ namespace glasssix
 						{
 							{u8"object_id", box(instance)}
 						});
-					plugin.execute(u8"irsiviel.clear", param);
+					plugin.execute(u8"irisviel.clear", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -622,7 +622,7 @@ namespace glasssix
 						{
 							{u8"object_id", box(instance)}
 						});
-					plugin.execute(u8"irsiviel.remove_all", param);
+					plugin.execute(u8"irisviel.remove_all", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -645,7 +645,7 @@ namespace glasssix
 						{
 							{u8"object_id", box(instance)}
 						});
-					plugin.execute(u8"irsiviel.load_databases", param);
+					plugin.execute(u8"irisviel.load_databases", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -665,7 +665,7 @@ namespace glasssix
 
 				try
 				{
-					param_vector<param_string> keys;
+					auto keys = make_param_vector<param_string>();
 					auto jarray_keys = root["keys"].get<simdjson::dom::array>().value();
 					for (auto i : jarray_keys)
 						keys.push_back(to_param_string(i.get<std::string_view>().value()));
@@ -676,7 +676,7 @@ namespace glasssix
 							{u8"object_id", box(instance)}
 						});
 
-					plugin.execute(u8"irsiviel.remove_records", param);
+					plugin.execute(u8"irisviel.remove_records", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -704,7 +704,7 @@ namespace glasssix
 							{u8"object_id", box(instance)}
 						});
 
-					plugin.execute(u8"irsiviel.remove_record", param);
+					plugin.execute(u8"irisviel.remove_record", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -727,9 +727,9 @@ namespace glasssix
 					param_vector<float> feature = make_param_vector<float>();
 					auto jarray_feature = root["data"]["feature"].get<simdjson::dom::array>().value();
 					for (auto i : jarray_feature)
-						feature.push_back(i.get<double>().value());
+						feature.push_back(static_cast<float>(i.get<double>().value()));
 
-					int dimension = feature.size();
+					int dimension = static_cast<int>(feature.size());
 
 					std::string_view key = root["data"]["key"].get<std::string_view>().value();
 
@@ -769,9 +769,9 @@ namespace glasssix
 						param_vector<float> feature = make_param_vector<float>();
 						auto jarray_feature = i["feature"].get<simdjson::dom::array>().value();
 						for (auto j : jarray_feature)
-							feature.push_back(j.get<double>().value());
+							feature.push_back(static_cast<float>(j.get<double>().value()));
 
-						int dimension = feature.size();
+						int dimension = static_cast<int>(feature.size());
 
 						std::string_view key = i["key"].get<std::string_view>().value();
 
@@ -779,8 +779,7 @@ namespace glasssix
 							{
 								{u8"dimension", box(dimension)},
 								{u8"key", box(key)},
-								{u8"feature", feature},
-								{u8"object_id", box(instance)}
+								{u8"feature", feature}
 							});
 
 						vec.push_back(data);
@@ -789,10 +788,10 @@ namespace glasssix
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"records", vec},
-							{u8"instance", box(instance)}
+							{u8"object_id", box(instance)}
 						});
 
-					plugin.execute(u8"add_records", param);
+					plugin.execute(u8"irisviel.add_records", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -815,9 +814,9 @@ namespace glasssix
 					param_vector<float> feature = make_param_vector<float>();
 					auto jarray_feature = root["data"]["feature"].get<simdjson::dom::array>().value();
 					for (auto i : jarray_feature)
-						feature.push_back(i.get<double>().value());
+						feature.push_back(static_cast<float>(i.get<double>().value()));
 
-					int dimension = feature.size();
+					int dimension = static_cast<int>(feature.size());
 
 					std::string_view key = root["data"]["key"].get<std::string_view>().value();
 
@@ -857,9 +856,9 @@ namespace glasssix
 						param_vector<float> feature = make_param_vector<float>();
 						auto jarray_feature = i["feature"].get<simdjson::dom::array>().value();
 						for (auto j : jarray_feature)
-							feature.push_back(j.get<double>().value());
+							feature.push_back(static_cast<float>(j.get<double>().value()));
 
-						int dimension = feature.size();
+						int dimension = static_cast<int>(feature.size());
 
 						std::string_view key = i["key"].get<std::string_view>().value();
 
@@ -867,8 +866,7 @@ namespace glasssix
 							{
 								{u8"dimension", box(dimension)},
 								{u8"key", box(key)},
-								{u8"feature", feature},
-								{u8"object_id", box(instance)}
+								{u8"feature", feature}
 							});
 
 						vec.push_back(data);
@@ -876,10 +874,11 @@ namespace glasssix
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"records", vec}
+							{u8"records", vec},
+							{u8"object_id", box(instance)}
 						});
 
-					plugin.execute(u8"update_records", param);
+					plugin.execute(u8"irisviel.update_records", param);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
