@@ -22,7 +22,10 @@
     <ClInclude Include="..\parser\cpp\parser_exception.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\parser\cpp\jni\parser_jni.cpp" />
+    <ClCompile Include="..\parser\cpp\jni\parser_jni.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
+      </ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\parser\cpp\jsoncpp.cpp" />
     <ClCompile Include="..\parser\cpp\parser.cpp" />
   </ItemGroup>

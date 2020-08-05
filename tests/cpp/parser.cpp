@@ -27,7 +27,8 @@ namespace
 			return std::string(std::istreambuf_iterator<char>{ fs }, std::istreambuf_iterator<char>{});
 		}
 
-		Assert::Fail();
+		//Assert::Fail();
+		return "";
 	}
 }
 
@@ -74,9 +75,12 @@ namespace glasssix::unit_test
 			Json::FastWriter writer;
 			std::string message_ = writer.write(root);
 
-			result = parser_.parse(protocol, message_);
-
-			Logger::WriteMessage(result.c_str());
+			for (size_t i = 0; i < 1000; i++)
+			{
+				result = parser_.parse(protocol, message_);
+				Logger::WriteMessage(result.c_str());
+				Sleep(100);
+			}
 		}
 
 		TEST_METHOD(test_irisiviel)
@@ -570,3 +574,50 @@ namespace glasssix::unit_test
 		}
 	};
 }
+//
+//int WINAPI WinMain(HINSTANCE hInstance,
+//	HINSTANCE hPrevInstance,
+//	LPSTR lpCmdLine,
+//	int nCmdShow)
+//{
+//	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+//	
+//	{
+//		std::string path(32767, '\0');
+//
+//		path.resize(GetModuleFileNameA(hInstance, path.data(), path.size()));
+//		dll_directory = std::filesystem::path{ path }.parent_path();
+//		std::filesystem::current_path(dll_directory);
+//
+//
+//		parser parser_;
+//		std::string result = parser_.init_plugin("plugin_configure.json");
+//
+//		std::string protocol = "Longinus.new", device = "{\"device\":-1}";
+//		result = parser_.parse(protocol, device);
+//
+//		protocol = "Longinus.detectEx";
+//
+//		Json::Reader reader;
+//		Json::Value newResult;
+//		reader.parse(result, newResult);
+//		std::string instance_guid = newResult["instance_guid"].asString();
+//
+//		auto message = get_file_bytes("Longinus_detectEx.message");
+//
+//		Json::Value root;
+//		reader.parse(message, root);
+//		root["instance_guid"] = Json::Value(instance_guid);
+//
+//		Json::FastWriter writer;
+//		std::string message_ = writer.write(root);
+//
+//		for (size_t i = 0; i < 5; i++)
+//		{
+//			result = parser_.parse(protocol, message_);
+//			//Logger::WriteMessage(result.c_str());
+//		}
+//	}
+//
+//	_CrtDumpMemoryLeaks();
+//}

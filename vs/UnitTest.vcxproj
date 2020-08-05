@@ -15,7 +15,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\tests\cpp\parser.cpp" />
+    <ClCompile Include="..\tests\cpp\parser.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
+      </ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Parser.vcxproj">
