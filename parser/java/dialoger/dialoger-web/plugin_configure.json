@@ -1,0 +1,5 @@
+{
+	"plugin_directory" : ".",
+	"pluginManager_lib" : "libPluginRegister.dll",
+	"plugin_list" : ["libVisionService.dll"]
+}
