@@ -113,7 +113,6 @@ namespace glasssix
 					return status;
 				}
 
-			private:
 				parser()
 				{
 					protocol_map["Longinus.new"] = &Longinus_new_json;
@@ -142,6 +141,7 @@ namespace glasssix
 
 					ready = false;
 				}
+			private:
 
 				unordered_map<string, std::tuple<string, uint64_t, std::shared_ptr<std::mutex>>> instance_map;
 				unordered_map<string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, uint64_t&)>> protocol_map;
