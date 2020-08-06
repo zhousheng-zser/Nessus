@@ -21,7 +21,7 @@ set(COMMON_LIB_PATH /home/build_slave/ZYF/Excalibur/cmake/build/lib)
 
 set(VISION_LIBRARY_DIRECTORIES /home/build_slave/ZYF/Excalibur/cmake/build/lib)
 
-set(JNI_INCLUDE /home/build_slave/jdk1.8.0_221/include /home/build_slave/jdk1.8.0_221/include/linux)
+set(JNI_INCLUDE $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/linux)
 
 add_subdirectory(3rd-party/simdjson)
 add_subdirectory(register/VisionService)
