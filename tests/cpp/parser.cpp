@@ -1,4 +1,5 @@
 #include "../../parser/cpp/parser.hpp"
+#include "../../parser/cpp/json.h"
 
 #include <fstream>
 #include <string>

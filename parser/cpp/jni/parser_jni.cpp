@@ -79,6 +79,7 @@ extern "C" {
 		return char2Jstring(env, status.c_str(), status.length());
 	}
 
+#ifdef __ANDROID__
 	JNIEXPORT jint JNI_OnLoad(JavaVM* jvm, void* reserved)
 	{
 		static constexpr std::string_view environment_var{ "G6_ANDROID_PACKAGE_RESOURCE_DIRECTORY" };
@@ -113,6 +114,7 @@ extern "C" {
 		
 		return (glasssix::os_context::set_environment_variable(environment_var.data(), native_value.c_str()) , *version);
 	}
+#endif
 
 #ifdef __cplusplus
 }
