@@ -14,7 +14,7 @@ void test()
 		try
 		{
 			// 创建插件管理器并加载指定目录下所有插件
-			auto manager = factory.create_instance(u8"glasssix.nessus.pluginManager").as<plugin_manager>();
+			auto manager = factory.create_by_name(u8"glasssix.nessus.pluginManager").as<plugin_manager>();
 
 			manager.load_from_directory(u8R"(D:\plugins)");
 

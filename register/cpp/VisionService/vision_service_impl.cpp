@@ -1,4 +1,8 @@
-#include "vision_service.hpp"
+#include "vision_service_impl.hpp"
+
+#include <mutex>
+#include <functional>
+#include <unordered_map>
 
 #include <longinus/retina_net.hpp>
 #include <irisviel/face_service.hpp>
@@ -14,40 +18,80 @@ using namespace glasssix::longinus;
 
 namespace glasssix::exposing::nessus
 {
-	class vision_service::impl
+	namespace
+	{
+		struct package_names
+		{
+			static constexpr utf8_string_view gaius{ u8"gaius" };
+			static constexpr utf8_string_view cassius{ u8"cassius" };
+			static constexpr utf8_string_view longinus{ u8"longinus" };
+			static constexpr utf8_string_view romancia{ u8"romancia" };
+			static constexpr utf8_string_view irisviel{ u8"irisviel" };
+		};
+
+		struct function_names final
+		{
+			static constexpr utf8_string_view gaius_new{ u8"gaius.new" };
+			static constexpr utf8_string_view cassius_new{ u8"cassius.new" };
+			static constexpr utf8_string_view longinus_new{ u8"longinus.new" };
+			static constexpr utf8_string_view romancia_new{ u8"romancia.new" };
+			static constexpr utf8_string_view irisviel_new{ u8"irisviel.new" };
+			static constexpr utf8_string_view gaius_delete{ u8"gaius.delete" };
+			static constexpr utf8_string_view cassius_delete{ u8"cassius.delete" };
+			static constexpr utf8_string_view longinus_delete{ u8"longinus.delete" };
+			static constexpr utf8_string_view romancia_delete{ u8"romancia.delete" };
+			static constexpr utf8_string_view irisviel_delete{ u8"irisviel.delete" };
+			static constexpr utf8_string_view gaius_forward{ u8"gaius.Forward" };
+			static constexpr utf8_string_view cassius_forward{ u8"cassius.Forward" };
+			static constexpr utf8_string_view longinus_detect{ u8"longinus.detect" };
+			static constexpr utf8_string_view romancia_align_face{ u8"romancia.alignFace" };
+			static constexpr utf8_string_view irisviel_clear{ u8"irisviel.clear" };
+			static constexpr utf8_string_view irisviel_remove_all{ u8"irisviel.remove_all" };
+			static constexpr utf8_string_view irisviel_load_databases{ u8"irisviel.load_databases" };
+			static constexpr utf8_string_view irisviel_add_record{ u8"irisviel.add_record" };
+			static constexpr utf8_string_view irisviel_add_records{ u8"irisviel.add_records" };
+			static constexpr utf8_string_view irisviel_update_record{ u8"irisviel.update_record" };
+			static constexpr utf8_string_view irisviel_update_records{ u8"irisviel.update_records" };
+			static constexpr utf8_string_view irisviel_remove_record{ u8"irisviel.remove_record" };
+			static constexpr utf8_string_view irisviel_remove_records{ u8"irisviel.remove_records" };
+			static constexpr utf8_string_view irisviel_search{ u8"irisviel.search" };
+		};
+	}
+
+	class vision_service_impl::impl
 	{
 	public:
 		impl()
 		{
 			// New
-			functions_.insert_or_assign(u8"gaius.new", std::bind(&impl::gaius_new, this, std::placeholders::_1));
-			functions_.insert_or_assign(u8"cassius.new", std::bind(&impl::cassius_new, this, std::placeholders::_1));
-			functions_.insert_or_assign(u8"longinus.new", std::bind(&impl::longinus_new, this, std::placeholders::_1));
-			functions_.insert_or_assign(u8"romancia.new", std::bind(&impl::romancia_new, this, std::placeholders::_1));
-			functions_.insert_or_assign(u8"irisviel.new", std::bind(&impl::irisviel_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::gaius_new, std::bind(&impl::gaius_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::cassius_new, std::bind(&impl::cassius_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::longinus_new, std::bind(&impl::longinus_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::romancia_new, std::bind(&impl::romancia_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::irisviel_new, std::bind(&impl::irisviel_new, this, std::placeholders::_1));
 
 			// Delete
-			functions_.insert_or_assign(u8"gaius.delete", meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"cassius.delete", meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"longinus.delete", meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"irisviel.delete", meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"romancia.delete", meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::gaius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::cassius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::longinus_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::romancia_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
-			functions_.insert_or_assign(u8"longinus.detect", std::bind(&impl::longinus_detect, this, std::placeholders::_1));
-			functions_.insert_or_assign(u8"romancia.alignFace", std::bind(&impl::romancia_align_face, this, std::placeholders::_1));
-			functions_.insert_or_assign(u8"gaius.Forward", std::bind(&impl::gaius_extract_feature, this, std::placeholders::_1));
-			functions_.insert_or_assign(u8"cassius.Forward", std::bind(&impl::cassius_extract_feature, this, std::placeholders::_1));
-			functions_.insert_or_assign(u8"irisviel.clear", meta::replace_return<unknown_object>(std::bind(&impl::irisviel_clear, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"irisviel.remove_all", meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_all, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"irisviel.load_databases", meta::replace_return<unknown_object>(std::bind(&impl::irisviel_load_databases, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"irisviel.add_record", meta::replace_return<unknown_object>(std::bind(&impl::irisviel_add_record, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"irisviel.add_records", meta::replace_return<unknown_object>(std::bind(&impl::irisviel_add_records, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"irisviel.update_record", meta::replace_return<unknown_object>(std::bind(&impl::irisviel_update_record, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"irisviel.update_records", meta::replace_return<unknown_object>(std::bind(&impl::irisviel_update_records, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"irisviel.remove_record", meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_record, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"irisviel.remove_records", meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_records, this, std::placeholders::_1)));
-			functions_.insert_or_assign(u8"irisviel.search", std::bind(&impl::irisviel_search, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::longinus_detect, std::bind(&impl::longinus_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::romancia_align_face, std::bind(&impl::romancia_align_face, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::gaius_forward, std::bind(&impl::gaius_extract_feature, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::cassius_forward, std::bind(&impl::cassius_extract_feature, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::irisviel_clear, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_clear, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_remove_all, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_all, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_load_databases, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_load_databases, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_add_record, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_add_record, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_add_records, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_add_records, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_update_record, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_update_record, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_update_records, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_update_records, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_remove_record, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_record, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_remove_records, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_records, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_search, std::bind(&impl::irisviel_search, this, std::placeholders::_1));
 		}
 
 		param_string name() const
@@ -60,13 +104,25 @@ namespace glasssix::exposing::nessus
 			return u8"1.0.0";
 		}
 
-		param_vector<param_string> get_available_functions() const
+		param_vector<param_string> available_functions() const
 		{
 			auto result = make_param_vector<param_string>();
 
 			for (auto [key, value] : functions_)
 			{
 				result.push_back(key);
+			}
+
+			return result;
+		}
+
+		param_hash_map<guid, param_string> existing_instances() const
+		{
+			auto result = make_param_hash_map<guid, param_string>();
+
+			for (const auto& [key, value] : instances_)
+			{
+				result.add_or_update(key, std::get<param_string>(value));
 			}
 
 			return result;
@@ -83,14 +139,14 @@ namespace glasssix::exposing::nessus
 		{
 			auto device = unbox<int>(params.get_value(u8"device"));
 
-			return add_instance(make_exported_interface<cassius::feature_extractor>(u8"models/unicorn.phai", device));
+			return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(u8"models/unicorn.phai", device));
 		}
 
 		unknown_object gaius_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<int>(params.get_value(u8"device"));
 
-			return add_instance(make_exported_interface<gaius::feature_extractor>(u8"models/mobile_unicorn.phai", device));
+			return add_instance(package_names::gaius, make_exported_interface<gaius::feature_extractor>(u8"models/mobile_unicorn.phai", device));
 		}
 
 		unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
@@ -98,14 +154,14 @@ namespace glasssix::exposing::nessus
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto nms = unbox<float>(params.get_value(u8"nms"));
 
-			return add_instance(make_exported_interface<retina_net>(u8"models/retina.phai", u8"models/retina.racy", nms, device));
+			return add_instance(package_names::longinus, make_exported_interface<retina_net>(u8"models/retina.phai", u8"models/retina.racy", nms, device));
 		}
 
 		unknown_object romancia_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 
-			return add_instance(make_exported_interface<face_alignment>(device));
+			return add_instance(package_names::romancia, make_exported_interface<face_alignment>(device));
 		}
 
 		unknown_object irisviel_new(const param_hash_map<param_string, unknown_object>& params)
@@ -114,7 +170,7 @@ namespace glasssix::exposing::nessus
 			auto dimension = unbox<std::int32_t>(params.get_value(u8"dimension"));
 			auto working_directory = unbox<param_string>(params.get_value(u8"working_directory"));
 
-			return add_instance(make_exported_interface<face_service>(single_database_capacity, dimension, working_directory));
+			return add_instance(package_names::irisviel, make_exported_interface<face_service>(single_database_capacity, dimension, working_directory));
 		}
 
 		unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
@@ -144,11 +200,11 @@ namespace glasssix::exposing::nessus
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-			auto min_win = unbox<std::int32_t>(params.get_value(u8"min_win"));
+			auto min_size = unbox<std::int32_t>(params.get_value(u8"min_size"));
 			auto threshold = unbox<float>(params.get_value(u8"threshold"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return instance.get(image, channels, height, width, min_win, threshold, order);
+			return instance.get(image, channels, height, width, min_size, threshold, order);
 		}
 
 		unknown_object romancia_align_face(const param_hash_map<param_string, unknown_object>& params)
@@ -269,13 +325,13 @@ namespace glasssix::exposing::nessus
 			}
 		}
 
-		unknown_object add_instance(const unknown_object& instance)
+		unknown_object add_instance(utf8_string_view package_name, const unknown_object& instance)
 		{
 			auto id = create_guid_from_bytes(meta::to_array(reinterpret_cast<std::size_t>(get_abi(instance))));
 			{
 				std::scoped_lock lock{ mutex_ };
 
-				return (instances_.insert_or_assign(id, instance), box(id));
+				return (instances_.insert_or_assign(id, std::tuple{ package_name, instance }), box(id));
 			}
 		}
 
@@ -305,7 +361,7 @@ namespace glasssix::exposing::nessus
 			std::scoped_lock lock{ mutex_ };
 			auto iter = instances_.find(id);
 
-			return iter != instances_.end() ? iter->second.as<T>() : throw abi_key_not_found{ exposing::format(u8"Cannot find instance: {}.", to_param_string(id)) };
+			return iter != instances_.end() ? std::get<unknown_object>(iter->second).as<T>() : throw abi_key_not_found{ exposing::format(u8"Cannot find instance: {}.", to_param_string(id)) };
 		}
 
 		template<typename T>
@@ -315,15 +371,15 @@ namespace glasssix::exposing::nessus
 		}
 
 		std::mutex mutex_;
-		std::unordered_map<guid, unknown_object> instances_;
+		std::unordered_map<guid, std::tuple<param_string, unknown_object>> instances_;
 		std::unordered_map<param_string, std::function<unknown_object(const param_hash_map<param_string, unknown_object>&)>> functions_;
 	};
 
-	vision_service::vision_service() : impl_{ new impl }
+	vision_service_impl::vision_service_impl() : impl_{ new impl }
 	{
 	}
 
-	vision_service::~vision_service()
+	vision_service_impl::~vision_service_impl()
 	{
 		if (impl_)
 		{
@@ -332,22 +388,27 @@ namespace glasssix::exposing::nessus
 		}
 	}
 
-	param_string vision_service::name() const
+	param_string vision_service_impl::name() const
 	{
 		return impl_->name();
 	}
 
-	param_string vision_service::version() const
+	param_string vision_service_impl::version() const
 	{
 		return impl_->version();
 	}
 
-	param_vector<param_string> vision_service::get_available_functions() const
+	param_vector<param_string> vision_service_impl::available_functions() const
 	{
-		return impl_->get_available_functions();
+		return impl_->available_functions();
 	}
 
-	unknown_object vision_service::execute(const param_string& function_name, const param_hash_map<param_string, unknown_object>& params) const
+	param_hash_map<guid, param_string> vision_service_impl::existing_instances() const
+	{
+		return impl_->existing_instances();
+	}
+
+	unknown_object vision_service_impl::execute(const param_string& function_name, const param_hash_map<param_string, unknown_object>& params) const
 	{
 		return impl_->execute(function_name, params);
 	}
