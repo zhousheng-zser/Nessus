@@ -103,7 +103,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>libPrimitivesd.lib;libLonginusd.lib;libGaiusd.lib;libCassiusd.lib;libIrisvield.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libPrimitivesd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
@@ -122,7 +122,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>libPrimitivesd.lib;libLonginusd.lib;libGaiusd.lib;libCassiusd.lib;libIrisvield.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libPrimitivesd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -144,7 +144,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>libPrimitives.lib;libLonginus.lib;libGaius.lib;libCassius.lib;libIrisviel.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libPrimitives.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
