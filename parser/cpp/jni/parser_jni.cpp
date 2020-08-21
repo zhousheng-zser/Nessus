@@ -106,7 +106,7 @@ extern "C" {
 
 		std::shared_ptr<_jstring> name{ env->NewStringUTF("G6_ANDROID_PACKAGE_RESOURCE_DIRECTORY"), [&](jstring inner) { env->DeleteLocalRef(inner); } };
 		std::shared_ptr<_jclass> class_system{ env->FindClass("java/lang/System"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
-		auto method_get_property = env->GetMethodID(class_system.get(), "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
+		auto method_get_property = env->GetStaticMethodID(class_system.get(), "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
 		std::shared_ptr<_jstring> value{ static_cast<jstring>(env->CallStaticObjectMethod(class_system.get(), method_get_property, name.get())), [&](jstring inner) { env->DeleteLocalRef(inner); } };
 
 		// Sets the environment variable.

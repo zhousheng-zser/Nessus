@@ -148,7 +148,7 @@ namespace glasssix::exposing::nessus
 			auto threshold = unbox<float>(params.get_value(u8"threshold"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return instance.get(image, 3, height, width, min_win, threshold, order);
+			return instance.get(image, channels, height, width, min_win, threshold, order);
 		}
 
 		unknown_object romancia_align_face(const param_hash_map<param_string, unknown_object>& params)
@@ -271,9 +271,12 @@ namespace glasssix::exposing::nessus
 
 		unknown_object add_instance(const unknown_object& instance)
 		{
-			std::scoped_lock lock{ mutex_ };
+			auto id = create_guid_from_bytes(meta::to_array(reinterpret_cast<std::size_t>(get_abi(instance))));
+			{
+				std::scoped_lock lock{ mutex_ };
 
-			return nullptr;
+				return (instances_.insert_or_assign(id, instance), instance);
+			}
 		}
 
 		void delete_instance_by_id(const guid& id)
