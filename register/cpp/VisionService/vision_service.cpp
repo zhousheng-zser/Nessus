@@ -275,7 +275,7 @@ namespace glasssix::exposing::nessus
 			{
 				std::scoped_lock lock{ mutex_ };
 
-				return (instances_.insert_or_assign(id, instance), instance);
+				return (instances_.insert_or_assign(id, instance), box(id));
 			}
 		}
 
