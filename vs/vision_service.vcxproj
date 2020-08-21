@@ -16,9 +16,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\register\cpp\VisionService\dllmain.cpp" />
-    <ClCompile Include="..\register\cpp\VisionService\vision_service.cpp" />
+    <ClCompile Include="..\register\cpp\VisionService\vision_service_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\register\cpp\VisionService\vision_service_impl.hpp" />
     <ClInclude Include="..\register\cpp\VisionService\vision_service.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
