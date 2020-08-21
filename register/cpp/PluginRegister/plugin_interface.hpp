@@ -21,7 +21,7 @@ namespace glasssix::exposing::impl
 		{
 			virtual std::int32_t G6_ABI_CALL name(abi_out_t<param_string> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept = 0;
-			virtual std::int32_t G6_ABI_CALL get_available_functions(abi_out_t<param_vector<param_string>> result) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL available_functions(abi_out_t<param_vector<param_string>> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL execute(abi_in_t<param_string> function_name, abi_in_t<param_hash_map<param_string, unknown_object>> params, abi_out_t<unknown_object> result) noexcept = 0;
 		};
 	};
@@ -39,9 +39,9 @@ namespace glasssix::exposing::impl
 			return abi_safe_call([&] { *result = detach_abi(this->self().version()); });
 		}
 
-		virtual std::int32_t G6_ABI_CALL get_available_functions(abi_out_t<param_vector<param_string>> result) noexcept override
+		virtual std::int32_t G6_ABI_CALL available_functions(abi_out_t<param_vector<param_string>> result) noexcept override
 		{
-			return abi_safe_call([&] { *result = detach_abi(this->self().get_available_functions()); });
+			return abi_safe_call([&] { *result = detach_abi(this->self().available_functions()); });
 		}
 
 		virtual std::int32_t G6_ABI_CALL execute(abi_in_t<param_string> function_name, abi_in_t<param_hash_map<param_string, unknown_object>> params, abi_out_t<unknown_object> result) noexcept override
@@ -69,11 +69,11 @@ namespace glasssix::exposing::impl
 				return (check_abi_result(this->self_abi().version(put_abi(result))), result);
 			}
 
-			param_vector<param_string> get_available_functions() const
+			param_vector<param_string> available_functions() const
 			{
 				param_vector<param_string> result{ nullptr };
 
-				return (check_abi_result(this->self_abi().get_available_functions(put_abi(result))), result);
+				return (check_abi_result(this->self_abi().available_functions(put_abi(result))), result);
 			}
 
 			unknown_object execute(const param_string& function_name, const param_hash_map<param_string, unknown_object>& params) const
