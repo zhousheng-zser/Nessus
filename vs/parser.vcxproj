@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -15,38 +15,46 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\register\cpp\VisionService\dllmain.cpp" />
-    <ClCompile Include="..\register\cpp\VisionService\vision_service.cpp" />
+    <ClInclude Include="..\parser\cpp\base64.hpp" />
+    <ClInclude Include="..\parser\cpp\json.h" />
+    <ClInclude Include="..\parser\cpp\message_protocol.hpp" />
+    <ClInclude Include="..\parser\cpp\parser.hpp" />
+    <ClInclude Include="..\parser\cpp\parser_exception.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\register\cpp\VisionService\vision_service.hpp" />
+    <ClCompile Include="..\parser\cpp\jni\parser_jni.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
+      </ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\parser\cpp\jsoncpp.cpp" />
+    <ClCompile Include="..\parser\cpp\parser.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>16.0</VCProjectVersion>
-    <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{78180b15-4fb6-4c4f-b9e7-806d8d96bf52}</ProjectGuid>
-    <RootNamespace>VisionService</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{ECDD701A-668B-4BDD-9A96-5A0B619A4B14}</ProjectGuid>
+    <RootNamespace>Parser</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <ProjectName>parser</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -64,87 +72,86 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../common/include;../common/include/Primitives;$(IncludePath)</IncludePath>
-    <LibraryPath>../common/lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>E:\Libs\jdk1.8.0_251\include;E:\Libs\jdk1.8.0_251\include\win32;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../common/include;../common/include/Primitives;$(IncludePath)</IncludePath>
-    <LibraryPath>../common/lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>E:\Libs\jdk1.8.0_251\include;E:\Libs\jdk1.8.0_251\include\win32;E:\Libs\opencv\build\include;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
+    <LibraryPath>E:\Libs\opencv\build\x64\vc15\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../common/include;../common/include/Primitives;$(IncludePath)</IncludePath>
-    <LibraryPath>../common/lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>E:\Libs\jdk1.8.0_251\include;E:\Libs\jdk1.8.0_251\include\win32;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../register/cpp/VisionService;../register/cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\include;..\common\include\Primitives;..\register\cpp\PluginRegister;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>..\common\lib\libPrimitivesd.lib;$(TargetDir)simdjson.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>libPrimitivesd.lib;libLonginusd.lib;libGaiusd.lib;libCassiusd.lib;libIrisvield.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Lib>
+      <AdditionalDependencies>$(SolutionDir)..\build\out\$(Configuration)\simdjson.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../register/cpp/VisionService;../register/cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\include;..\common\include\Primitives;..\register\cpp\PluginRegister;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>libPrimitivesd.lib;libLonginusd.lib;libGaiusd.lib;libCassiusd.lib;libIrisvield.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>..\common\lib\libPrimitivesd.lib;$(TargetDir)simdjson.lib;opencv_world430d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Lib>
+      <AdditionalDependencies>$(SolutionDir)..\build\out\$(Configuration)\simdjson.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../register/cpp/VisionService;../register/cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\include;..\common\include\Primitives;..\register\cpp\PluginRegister;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>libPrimitives.lib;libLonginus.lib;libGaius.lib;libCassius.lib;libIrisviel.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\common\lib\libPrimitives.lib;$(TargetDir)simdjson.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Lib>
+      <AdditionalDependencies>$(SolutionDir)..\build\out\$(Configuration)\simdjson.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
