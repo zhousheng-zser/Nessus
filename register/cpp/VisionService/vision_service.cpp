@@ -148,7 +148,7 @@ namespace glasssix::exposing::nessus
 			auto threshold = unbox<float>(params.get_value(u8"threshold"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return instance.get(image, 3, height, width, min_win, threshold, order);
+			return instance.get(image, channels, height, width, min_win, threshold, order);
 		}
 
 		unknown_object romancia_align_face(const param_hash_map<param_string, unknown_object>& params)
