@@ -271,9 +271,12 @@ namespace glasssix::exposing::nessus
 
 		unknown_object add_instance(const unknown_object& instance)
 		{
-			std::scoped_lock lock{ mutex_ };
+			auto id = create_guid_from_bytes(meta::to_array(reinterpret_cast<std::size_t>(get_abi(instance))));
+			{
+				std::scoped_lock lock{ mutex_ };
 
-			return nullptr;
+				return (instances_.insert_or_assign(id, instance), instance);
+			}
 		}
 
 		void delete_instance_by_id(const guid& id)
