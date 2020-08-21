@@ -1,34 +1,22 @@
 #ifndef _PARSER_JNI_HPP_
 #define _PARSER_JNI_HPP_
 
-#include <jni.h>
 #include "../parser.hpp"
+
+#include <memory>
+#include <cstdlib>
+#include <algorithm>
+#include <string_view>
+#include <type_traits>
+
+#include <jni.h>
+#include <os_context.hpp>
 
 static std::string jstring2string(JNIEnv* env, jstring jstr)
 {
-	char* rtn = nullptr;
-	jclass strClazz = env->FindClass("java/lang/String");
-	jstring strEncode = env->NewStringUTF("utf-8");
-	jmethodID mid = env->GetMethodID(strClazz, "getBytes", "(Ljava/lang/String;)[B");
-	jbyteArray bytes = (jbyteArray)env->CallObjectMethod(jstr, mid, strEncode);
-	jsize len = env->GetArrayLength(bytes);
-	jbyte* p = env->GetByteArrayElements(bytes, JNI_FALSE);
-	if (len > 0)
-	{
-		rtn = (char*)malloc(len + 1);
-		memcpy(rtn, p, len);
-		rtn[len] = 0;
-	}
+	std::shared_ptr<const char> native_str{ env->GetStringUTFChars(jstr, nullptr), [&](const char* inner) { env->ReleaseStringUTFChars(jstr, inner); } };
 
-	env->ReleaseByteArrayElements(bytes, p, 0);
-	env->DeleteLocalRef(bytes);
-	env->DeleteLocalRef(strEncode);
-	env->DeleteLocalRef(strClazz);
-
-	std::string str(rtn);
-	free(rtn);
-
-	return str;
+	return native_str.get();
 }
 
 static jstring char2Jstring(JNIEnv* env, const char* pat, size_t len)
@@ -90,6 +78,43 @@ extern "C" {
 		std::string status = instance->init_plugin(config_file_path);
 		return char2Jstring(env, status.c_str(), status.length());
 	}
+
+#ifdef __ANDROID__
+	JNIEXPORT jint JNI_OnLoad(JavaVM* jvm, void* reserved)
+	{
+		static constexpr std::string_view environment_var{ "G6_ANDROID_PACKAGE_RESOURCE_DIRECTORY" };
+		static constexpr int available_versions[] =
+		{
+			JNI_VERSION_1_6,
+			JNI_VERSION_1_4,
+			JNI_VERSION_1_2,
+			JNI_VERSION_1_1
+		};
+
+		if (jvm == nullptr)
+		{
+			return false;
+		}
+
+		JNIEnv* env = nullptr;
+		auto version = std::find_if(std::begin(available_versions), std::end(available_versions), [&](int value) { return jvm->GetEnv(reinterpret_cast<void**>(&env), value) == JNI_OK; });
+
+		if (version == std::end(available_versions))
+		{
+			return JNI_FALSE;
+		}
+
+		std::shared_ptr<_jstring> name{ env->NewStringUTF("G6_ANDROID_PACKAGE_RESOURCE_DIRECTORY"), [&](jstring inner) { env->DeleteLocalRef(inner); } };
+		std::shared_ptr<_jclass> class_system{ env->FindClass("java/lang/System"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
+		auto method_get_property = env->GetMethodID(class_system.get(), "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
+		std::shared_ptr<_jstring> value{ static_cast<jstring>(env->CallStaticObjectMethod(class_system.get(), method_get_property, name.get())), [&](jstring inner) { env->DeleteLocalRef(inner); } };
+
+		// Sets the environment variable.
+		auto native_value = jstring2string(env, value.get());
+		
+		return (glasssix::os_context::set_environment_variable(environment_var.data(), native_value.c_str()) , *version);
+	}
+#endif
 
 #ifdef __cplusplus
 }
