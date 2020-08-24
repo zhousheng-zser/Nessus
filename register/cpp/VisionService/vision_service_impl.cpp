@@ -108,7 +108,7 @@ namespace glasssix::exposing::nessus
 		{
 			auto result = make_param_vector<param_string>();
 
-			for (auto [key, value] : functions_)
+			for (const auto& [key, value] : functions_)
 			{
 				result.push_back(key);
 			}
@@ -137,14 +137,14 @@ namespace glasssix::exposing::nessus
 	private:
 		unknown_object cassius_new(const param_hash_map<param_string, unknown_object>& params)
 		{
-			auto device = unbox<int>(params.get_value(u8"device"));
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 
 			return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(u8"models/unicorn.phai", device));
 		}
 
 		unknown_object gaius_new(const param_hash_map<param_string, unknown_object>& params)
 		{
-			auto device = unbox<int>(params.get_value(u8"device"));
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 
 			return add_instance(package_names::gaius, make_exported_interface<gaius::feature_extractor>(u8"models/mobile_unicorn.phai", device));
 		}
