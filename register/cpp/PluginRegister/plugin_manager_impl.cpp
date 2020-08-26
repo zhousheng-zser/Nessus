@@ -16,7 +16,7 @@ namespace glasssix::exposing::nessus
 
 		void load_from_file(const param_string& path)
 		{
-			if (auto factory = component_loader::instance().add_module_with_factory(path); factory && factory.qualified_names().contains(plugin_qualified_name))
+			if (auto factory = get_component_loader().add_module_with_factory(path); factory && factory.qualified_names().contains(plugin_qualified_name))
 			{
 				create_plugin(factory);
 			}
@@ -24,7 +24,7 @@ namespace glasssix::exposing::nessus
 
 		void load_from_directory(const param_string& path)
 		{
-			if (auto factories = component_loader::instance().add_modules_with_factories_in_directory(path); factories && !factories.empty())
+			if (auto factories = get_component_loader().add_modules_with_factories_in_directory(path); factories && !factories.empty())
 			{
 				for (const auto& item : factories)
 				{

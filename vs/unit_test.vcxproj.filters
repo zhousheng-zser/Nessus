@@ -5,7 +5,7 @@
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="..\tests\data\alignface.txt" />
-    <CopyFileToFolders Include="..\tests\data\Longinus_detectEx.message" />
     <CopyFileToFolders Include="..\tests\data\forward.txt" />
+    <CopyFileToFolders Include="..\tests\data\Longinus_detect.message" />
   </ItemGroup>
 </Project>

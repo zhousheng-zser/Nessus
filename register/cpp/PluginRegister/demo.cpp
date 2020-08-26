@@ -9,7 +9,7 @@ void test()
 	using namespace glasssix::exposing::nessus;
 
 	// 加载插件管理器 DLL
-	if (auto factory = component_loader::instance().add_module_with_factory(u8"g6.pluginManager.dll"))
+	if (auto factory = get_component_loader().add_module_with_factory(u8"g6.pluginManager.dll"))
 	{
 		try
 		{

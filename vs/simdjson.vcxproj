@@ -61,10 +61,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestDebug|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
