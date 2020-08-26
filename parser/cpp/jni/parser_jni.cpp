@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <string_view>
 #include <type_traits>
+#include <mutex>
 
 #include <jni.h>
 #include <os_context.hpp>
@@ -15,9 +16,15 @@
 static std::string jstring2string(JNIEnv* env, jstring jstr)
 {
 	std::shared_ptr<const char> native_str{ env->GetStringUTFChars(jstr, nullptr), [&](const char* inner) { env->ReleaseStringUTFChars(jstr, inner); } };
-	auto size = env->GetStringLength(jstr);
 
-	return std::string(native_str.get(), size);
+	return std::string(native_str.get(), env->GetStringLength(jstr));
+}
+
+static glasssix::exposing::param_string jstring2paramstring(JNIEnv* env, jstring jstr)
+{
+	std::shared_ptr<const char> native_str{ env->GetStringUTFChars(jstr, nullptr), [&](const char* inner) { env->ReleaseStringUTFChars(jstr, inner); } };
+
+	return glasssix::exposing::param_string(native_str.get(), env->GetStringLength(jstr));
 }
 
 static jstring char2Jstring(JNIEnv* env, const char* pat, size_t len)
@@ -37,47 +44,32 @@ static jstring char2Jstring(JNIEnv* env, const char* pat, size_t len)
 	return jstr;
 }
 
+namespace
+{
+	glasssix::exposing::nessus::parser parser_singleton;
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-	JNIEXPORT void JNICALL Java_com_glasssix_parser_Parser_init(JNIEnv* env, jobject thiz)
+	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jprotocol, jstring jstr)
 	{
-		jclass clazz = env->GetObjectClass(thiz);
-		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
-		glasssix::exposing::nessus::parser* p = &glasssix::exposing::nessus::parser::instance();
-		env->SetLongField(thiz, fid_mObject, (jlong)p);
+		static std::once_flag flag;
+		std::call_once(flag, [&] {parser_singleton = glasssix::exposing::make_exported_interface<glasssix::exposing::nessus::parser>(); });
 
-		env->DeleteLocalRef(clazz);
-	}
+		glasssix::exposing::param_string protocol = jstring2paramstring(env, jprotocol);
+		glasssix::exposing::param_string jsonstr = jstring2paramstring(env, jstr);
 
-	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jtopic, jstring jstr)
-	{
-		jclass clazz = env->GetObjectClass(thiz);
-		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
-		jlong p = env->GetLongField(thiz, fid_mObject);
-		glasssix::exposing::nessus::parser* instance = (glasssix::exposing::nessus::parser*)p;
-
-		std::string topic = jstring2string(env, jtopic);
-		std::string jsonstr = jstring2string(env, jstr);
-		env->DeleteLocalRef(clazz);
-
-		std::string result = instance->parse(topic, jsonstr);
-		return char2Jstring(env, result.c_str(), result.length());
+		glasssix::exposing::param_string result = parser_singleton.parse(protocol, jsonstr);
+		return char2Jstring(env, result.data(), result.size());
 	}
 
 	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_initPlugin(JNIEnv* env, jobject thiz, jstring jstr)
 	{
-		jclass clazz = env->GetObjectClass(thiz);
-		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
-		jlong p = env->GetLongField(thiz, fid_mObject);
-		glasssix::exposing::nessus::parser* instance = (glasssix::exposing::nessus::parser*)p;
+		glasssix::exposing::param_string config_file_path = jstring2paramstring(env, jstr);
 
-		std::string config_file_path = jstring2string(env, jstr);
-		env->DeleteLocalRef(clazz);
-
-		std::string status = instance->init_plugin(config_file_path);
-		return char2Jstring(env, status.c_str(), status.length());
+		glasssix::exposing::param_string status = parser_singleton.init_plugin(config_file_path);
+		return char2Jstring(env, status.data(), status.size());
 	}
 
 #ifdef __ANDROID__

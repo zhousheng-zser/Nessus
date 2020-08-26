@@ -3,13 +3,17 @@
   <ItemGroup>
     <ClInclude Include="..\parser\cpp\json.h" />
     <ClInclude Include="..\parser\cpp\message_protocol.hpp" />
-    <ClInclude Include="..\parser\cpp\parser.hpp" />
     <ClInclude Include="..\parser\cpp\parser_exception.hpp" />
     <ClInclude Include="..\parser\cpp\base64.hpp" />
+    <ClInclude Include="..\parser\cpp\parser_impl.hpp" />
+    <ClInclude Include="..\parser\cpp\parser.hpp" />
+    <ClInclude Include="..\parser\cpp\parser_internal.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\parser\cpp\jsoncpp.cpp" />
-    <ClCompile Include="..\parser\cpp\parser.cpp" />
+    <ClCompile Include="..\parser\cpp\parser_impl.cpp" />
+    <ClCompile Include="..\parser\cpp\parser_internal.cpp" />
     <ClCompile Include="..\parser\cpp\jni\parser_jni.cpp" />
+    <ClCompile Include="..\parser\cpp\exports.cpp" />
   </ItemGroup>
 </Project>

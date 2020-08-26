@@ -1,9 +1,9 @@
-#include "parser.hpp"
+#include "parser_internal.hpp"
 #include "abi/guid.hpp"
-#include "simdjson.h"
 #include "singleton.hpp"
 #include "plugin_manager.hpp"
 #include "plugin_interface.hpp"
+#include "vision_service.hpp"
 #include "message_protocol.hpp"
 
 #include <mutex>
@@ -62,16 +62,15 @@ namespace glasssix::exposing::nessus
 		}
 	}
 
-	class parser::impl
+	class parser_internal::impl
 	{
 	public:
 		impl()
 		{
 			protocol_map["Longinus.new"] = &Longinus_new_json;
 			protocol_map["Longinus.delete"] = &Longinus_delete_json;
-			protocol_map["Longinus.detectEx"] = &Longinus_detectEx_json;
-			protocol_map["Longinus.detectRetina"] = &Longinus_detectRetina_json;
-			protocol_map["Longinus.alignFace"] = &Longinus_alignFace_json;
+			protocol_map["Longinus.detect"] = &Longinus_detect_json;
+			protocol_map["Longinus.alignFace"] = &Romancia_alignFace_json;
 			protocol_map["Gaius.new"] = &Gaius_new_json;
 			protocol_map["Gaius.delete"] = &Gaius_delete_json;
 			protocol_map["Gaius.Forward"] = &Gaius_Forward_json;
@@ -129,8 +128,8 @@ namespace glasssix::exposing::nessus
 
 			if (method == "new")
 			{
-				uint64_t instance = 0;
-				std::function<Json::Value(plugin_interface&, simdjson::dom::element&, uint64_t&)> func;
+				guid instance;
+				std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)> func;
 				try
 				{
 					func = protocol_map.at(protocol_str);
@@ -145,14 +144,8 @@ namespace glasssix::exposing::nessus
 
 				if (value["status"] == "OK")
 				{
-					//根据instance生成guid
-					auto guid_array = to_char_array(create_guid_from_bytes(meta::to_array(instance)));
-					std::string instance_guid(guid_array.data(), guid_array.size());
-
-					std::lock_guard<std::mutex> lck(mut_instance_map);
-
-					instance_map[instance_guid] = std::tuple<std::string, uint64_t, std::shared_ptr<std::mutex>>(instance_type, instance, std::shared_ptr<std::mutex>(new std::mutex));
-					value["instance_guid"] = Json::Value(instance_guid);
+					auto array = to_char_array(instance);
+					value["instance_guid"] = Json::Value(std::string(array.begin(), array.end()));
 				}
 			}
 			else
@@ -168,73 +161,19 @@ namespace glasssix::exposing::nessus
 					return writer.write(value);
 				}
 
-				std::shared_ptr<std::mutex> mut_instance;
+				std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)> func;
 				try
 				{
-					std::lock_guard<std::mutex> lck(mut_instance_map);
-					mut_instance = std::get<2>(instance_map.at(instance_guid));
+					func = protocol_map.at(protocol_str);
 				}
 				catch (const std::exception&)
 				{
-					value["status"] = Json::Value(instance_guid + " instance not found");
+					value["status"] = Json::Value("Function of the topic not register");
 					return writer.write(value);
 				}
 
-				if (method == "release")
-				{
-					std::lock_guard<std::mutex> lck_instance_map(mut_instance_map);
-					std::lock_guard<std::mutex> lck_instance(*mut_instance);
-					try
-					{
-						auto& instance_tuple = instance_map.at(instance_guid);
-					}
-					catch (const std::exception&)
-					{
-						value["status"] = Json::Value(instance_guid + " instance not found");
-						return writer.write(value);
-					}
-
-					std::function<Json::Value(plugin_interface&, simdjson::dom::element&, uint64_t&)> func;
-					try
-					{
-						func = protocol_map.at(protocol_str);
-					}
-					catch (const std::exception&)
-					{
-						value["status"] = Json::Value("Function of the topic not register");
-						return writer.write(value);
-					}
-
-					value = func(plugin, root, std::get<1>(instance_map[instance_guid]));
-					instance_map.erase(instance_guid);
-				}
-				else
-				{
-					std::lock_guard<std::mutex> lck_instance(*mut_instance);
-					try
-					{
-						std::lock_guard<std::mutex> lck(mut_instance_map);
-						auto& instance_tuple = instance_map.at(instance_guid);
-					}
-					catch (const std::exception&)
-					{
-						value["status"] = Json::Value(instance_guid + " instance not found");
-						return writer.write(value);
-					}
-
-					std::function<Json::Value(plugin_interface&, simdjson::dom::element&, uint64_t&)> func;
-					try
-					{
-						func = protocol_map.at(protocol_str);
-					}
-					catch (const std::exception&)
-					{
-						value["status"] = Json::Value("Function of the topic not register");
-						return writer.write(value);
-					}
-
-					value = func(plugin, root, std::get<1>(instance_map[instance_guid]));
-				}
+				guid instance(instance_guid);
+				value = func(plugin, root, instance);
 			}
 
 			return writer.write(value);
@@ -242,10 +181,14 @@ namespace glasssix::exposing::nessus
 
 		std::string query_all_instance()
 		{
+			
 			Json::Value value;
-			std::lock_guard<std::mutex> lck_instance_map(mut_instance_map);
-			for (auto& instance : instance_map)
-				value[instance.first] = std::get<0>(instance.second);
+			auto instances = plugin.as<vision_service>().existing_instances();
+			for (const auto& instance : instances)
+			{
+				auto key_array = to_char_array(instance.key());
+				value[std::string(key_array.begin(), key_array.end())] = to_narrow_string(instance.value());
+			}
 
 			return writer.write(value);
 		}
@@ -275,28 +218,21 @@ namespace glasssix::exposing::nessus
 					{
 						simdjson::dom::element config = parser_.parse(buffer);
 						fs::path plugin_directory = os_context::expand_enviroment_variables(config["plugin_directory"].get<std::string_view>().value());
-						std::string pluginManager_lib = std::string(config["pluginManager_lib"].get<std::string_view>().value());
 
-						auto factory = component_loader::instance().add_module_with_factory(to_param_string((plugin_directory / pluginManager_lib).string()));
-						if (!factory)
+						for (auto lib_item : config["plugin_list"].get<simdjson::dom::array>().value())
 						{
-							ready = false;
-							status = "{\"status\":\"Get a nullptr 'class_factory' instance\"}";
-							return;
-						}
-						auto manager = factory.create_instance(u8"glasssix.nessus.pluginManager").as<plugin_manager>();
-						if (!manager)
-						{
-							ready = false;
-							status = "{\"status\":\"Get a nullptr 'plugin_manager' instance\"}";
-							return;
-						}
-						//manager.load_from_directory(to_param_string(plugin_directory));
-						for (auto plugin_item : config["plugin_list"].get<simdjson::dom::array>().value())
-						{
-							manager.load_from_file(to_param_string((plugin_directory / plugin_item.get<std::string_view>().value()).string()));
+							bool ret = get_component_loader().add_module(to_param_string((plugin_directory / lib_item.get<std::string_view>().value()).string()));
+							if (!ret)
+							{
+								ready = false;
+								status = "{\"status\":\"load module '" + std::string(lib_item.get<std::string_view>().value()) + "' failed\"}";
+								return;
+							}
 						}
 
+						auto manager = exposing::make_exported_interface<plugin_manager>();
+
+						manager.load_from_file((plugin_directory / "libvision_serviced.dll").u8string().c_str());
 						plugin = manager.lookup(u8"Glasssix Vision Service");
 						if (!plugin)
 						{
@@ -323,23 +259,21 @@ namespace glasssix::exposing::nessus
 			return status;
 		}
 	private:
-		std::unordered_map<std::string, std::tuple<std::string, uint64_t, std::shared_ptr<std::mutex>>> instance_map;
-		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, uint64_t&)>> protocol_map;
+		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)>> protocol_map;
 		simdjson::dom::parser parser_;
 
 		Json::FastWriter writer;
 		plugin_interface plugin;
 
 		std::mutex mut_parse;
-		std::mutex mut_instance_map;
 		bool ready;
 	};
 
-	parser::parser() : impl_{ new impl }
+	parser_internal::parser_internal() : impl_{ new impl }
 	{
 	}
 
-	parser::~parser()
+	parser_internal::~parser_internal()
 	{
 		if (impl_)
 		{
@@ -348,22 +282,22 @@ namespace glasssix::exposing::nessus
 		}
 	}
 
-	std::string parser::parse(std::string_view topic, std::string_view jsonstr)
+	std::string parser_internal::parse(std::string_view topic, std::string_view jsonstr)
 	{
 		return impl_->parse(topic, jsonstr);
 	}
 
-	std::string parser::query_all_instance()
+	std::string parser_internal::query_all_instance()
 	{
 		return impl_->query_all_instance();
 	}
 
-	std::string parser::support_protocol()
+	std::string parser_internal::support_protocol()
 	{
 		return impl_->support_protocol();
 	}
 
-	std::string parser::init_plugin(std::string_view config_file_path)
+	std::string parser_internal::init_plugin(std::string_view config_file_path)
 	{
 		return impl_->init_plugin(config_file_path);
 	}
