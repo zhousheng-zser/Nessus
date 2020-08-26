@@ -15,8 +15,9 @@
 static std::string jstring2string(JNIEnv* env, jstring jstr)
 {
 	std::shared_ptr<const char> native_str{ env->GetStringUTFChars(jstr, nullptr), [&](const char* inner) { env->ReleaseStringUTFChars(jstr, inner); } };
+	auto size = env->GetStringLength(jstr);
 
-	return native_str.get();
+	return std::string(native_str.get(), size);
 }
 
 static jstring char2Jstring(JNIEnv* env, const char* pat, size_t len)
