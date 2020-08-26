@@ -16,7 +16,7 @@ namespace glasssix::exposing::nessus
 
 		void load_from_file(const param_string& path)
 		{
-			if (auto factory = component_loader::instance().add_module_with_factory(path); factory && factory.qualified_names().contains(plugin_qualified_name))
+			if (auto factory = get_component_loader().add_module_with_factory(path); factory && factory.qualified_names().contains(plugin_qualified_name))
 			{
 				create_plugin(factory);
 			}
@@ -24,7 +24,7 @@ namespace glasssix::exposing::nessus
 
 		void load_from_directory(const param_string& path)
 		{
-			if (auto factories = component_loader::instance().add_modules_with_factories_in_directory(path); factories && !factories.empty())
+			if (auto factories = get_component_loader().add_modules_with_factories_in_directory(path); factories && !factories.empty())
 			{
 				for (const auto& item : factories)
 				{
@@ -35,7 +35,7 @@ namespace glasssix::exposing::nessus
 
 		plugin_interface lookup(const param_string& plugin_name)
 		{
-			std::lock_guard<std::mutex> lock{ lock_ };
+			std::scoped_lock lock{ mutex_ };
 			auto iter = plugins_.find(plugin_name);
 
 			return iter != plugins_.end() ? iter->second : nullptr;
@@ -52,13 +52,13 @@ namespace glasssix::exposing::nessus
 		{
 			if (auto plugin = item.create_by_name(plugin_qualified_name).try_as<plugin_interface>())
 			{
-				std::lock_guard<std::mutex> lock{ lock_ };
+				std::scoped_lock lock{ mutex_ };
 
 				plugins_.insert_or_assign(plugin.name(), plugin);
 			}
 		}
 
-		std::mutex lock_;
+		std::mutex mutex_;
 		std::unordered_map<param_string, plugin_interface> plugins_;
 	};
 
