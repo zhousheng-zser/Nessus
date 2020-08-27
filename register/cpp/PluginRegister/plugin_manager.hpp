@@ -17,6 +17,7 @@ namespace glasssix::exposing::impl
 
 		struct type : abi_unknown_object
 		{
+			virtual std::int32_t G6_ABI_CALL load_from_existing_libraries() noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL load_from_file(abi_in_t<param_string> path) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL load_from_directory(abi_in_t<param_string> directory) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL lookup(abi_in_t<param_string> plugin_name, abi_out_t<nessus::plugin_interface> result) noexcept = 0;
@@ -27,6 +28,11 @@ namespace glasssix::exposing::impl
 	template<typename Derived>
 	struct interface_vtable<Derived, nessus::plugin_manager> : interface_vtable_base<Derived, nessus::plugin_manager>
 	{
+		virtual std::int32_t G6_ABI_CALL load_from_existing_libraries() noexcept override
+		{
+			return abi_safe_call([&] { this->self().load_from_existing_libraries(); });
+		}
+
 		virtual std::int32_t G6_ABI_CALL load_from_file(abi_in_t<param_string> path) noexcept override
 		{
 			return abi_safe_call([&] { this->self().load_from_file(create_from_abi<param_string>(path)); });
@@ -53,6 +59,11 @@ namespace glasssix::exposing::impl
 		template<typename Derived>
 		struct type : enable_self_abi_awareness<Derived, nessus::plugin_manager>
 		{
+			void load_from_existing_libraries() const
+			{
+				check_abi_result(this->self_abi().load_from_existing_libraries());
+			}
+
 			void load_from_file(const param_string& path) const
 			{
 				check_abi_result(this->self_abi().load_from_file(get_abi(path)));
