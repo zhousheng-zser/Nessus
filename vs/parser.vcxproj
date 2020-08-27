@@ -21,7 +21,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\parser\cpp\exports.cpp" />
-    <ClCompile Include="..\parser\cpp\jni\parser_jni.cpp" />
+    <ClCompile Include="..\parser\cpp\jni\parser_jni.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\parser\cpp\jsoncpp.cpp" />
     <ClCompile Include="..\parser\cpp\parser_impl.cpp" />
     <ClCompile Include="..\parser\cpp\parser_internal.cpp" />

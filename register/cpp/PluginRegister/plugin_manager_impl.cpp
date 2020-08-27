@@ -14,6 +14,14 @@ namespace glasssix::exposing::nessus
 	public:
 		friend singleton<plugin_manager_concrete_impl>;
 
+		void load_from_existing_libraries()
+		{
+			for (const auto& item : get_component_loader().factories())
+			{
+				create_plugin(item.value());
+			}
+		}
+
 		void load_from_file(const param_string& path)
 		{
 			if (auto factory = get_component_loader().add_module_with_factory(path); factory && factory.qualified_names().contains(plugin_qualified_name))
@@ -50,7 +58,7 @@ namespace glasssix::exposing::nessus
 	private:
 		void create_plugin(const class_factory& item)
 		{
-			if (auto plugin = item.create_by_name(plugin_qualified_name).try_as<plugin_interface>())
+			if (auto plugin = item.create_by_interface_id(guid_of_v<plugin_interface>).try_as<plugin_interface>())
 			{
 				std::scoped_lock lock{ mutex_ };
 
@@ -61,6 +69,11 @@ namespace glasssix::exposing::nessus
 		std::mutex mutex_;
 		std::unordered_map<param_string, plugin_interface> plugins_;
 	};
+
+	void plugin_manager_impl::load_from_existing_libraries()
+	{
+		plugin_manager_concrete_impl::instance().load_from_existing_libraries();
+	}
 
 	void plugin_manager_impl::load_from_file(const param_string& path)
 	{
