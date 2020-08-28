@@ -212,11 +212,7 @@ namespace glasssix::exposing::nessus
 
 						auto manager = exposing::make_exported_interface<plugin_manager>();
 
-#ifdef _MSC_VER
-						manager.load_from_file((plugin_directory / "libvision_service.dll").u8string().c_str());
-#else
-						manager.load_from_file((plugin_directory / "libvision_service.so").u8string().c_str());
-#endif
+						manager.load_from_existing_libraries();
 						plugin = manager.lookup(u8"Glasssix Vision Service");
 						if (!plugin)
 						{
