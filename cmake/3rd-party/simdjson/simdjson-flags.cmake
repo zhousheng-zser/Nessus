@@ -1,11 +1,12 @@
-
 add_library(simdjson-flags INTERFACE)
 add_library(simdjson-internal-flags INTERFACE)
 target_link_libraries(simdjson-internal-flags INTERFACE simdjson-flags)
 
-# We compile tools, tests, etc. with C++ 17. Override yourself if you need on a target.
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Ubuntu bug for GCC 5.0+ (safe for all versions)
+if (CMAKE_COMPILER_IS_GNUCC)
+target_link_libraries(simdjson-flags INTERFACE -fuse-ld=gold)
+endif()
+
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_MACOSX_RPATH OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
@@ -88,6 +89,3 @@ endif()
 if(${CMAKE_C_COMPILER_ID} MATCHES "Intel") # icc / icpc
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-intel")
 endif()
-
-install(TARGETS simdjson-flags EXPORT simdjson-config)
-install(TARGETS simdjson-internal-flags EXPORT simdjson-config)

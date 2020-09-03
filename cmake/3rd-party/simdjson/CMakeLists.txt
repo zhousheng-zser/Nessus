@@ -1,18 +1,17 @@
-include(GNUInstallDirs)
-include(simdjson-flags.cmake)
+cmake_minimum_required(VERSION 3.14.3)
 
+include(simdjson-flags.cmake)
 
 add_library(simdjson-include-source INTERFACE)
 target_include_directories(simdjson-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/../../../3rd-party/cpp/simdjson/include)
 target_include_directories(simdjson-include-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/../../../3rd-party/cpp/simdjson/src)
-install(TARGETS simdjson-include-source EXPORT simdjson-config)
 
 add_library(simdjson-source INTERFACE)
 target_sources(simdjson-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/../../../3rd-party/cpp/simdjson/src/simdjson.cpp)
 target_link_libraries(simdjson-source INTERFACE simdjson-include-source)
-install(TARGETS simdjson-source EXPORT simdjson-config)
 
 option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
+target_compile_options(simdjson-source INTERFACE -Wno-deprecated-declarations)
 if(SIMDJSON_BUILD_STATIC)
   MESSAGE( STATUS "Building a static library." )
   add_library(simdjson STATIC "")
@@ -27,19 +26,3 @@ else()
 endif()
 
 target_link_libraries(simdjson PRIVATE simdjson-source simdjson-internal-flags)
-
-install(TARGETS simdjson
-  EXPORT simdjson-config
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-install(EXPORT simdjson-config
-  FILE simdjson-config.cmake
-  NAMESPACE simdjson::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/simdjson
-)
-
-
-install(FILES singleheader/simdjson.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
