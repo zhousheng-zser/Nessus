@@ -11,7 +11,9 @@ target_sources(simdjson-source INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURC
 target_link_libraries(simdjson-source INTERFACE simdjson-include-source)
 
 option(SIMDJSON_BUILD_STATIC "Build a static library" ON) # turning it on disables the production of a dynamic library
-target_compile_options(simdjson-source INTERFACE -Wno-deprecated-declarations)
+if(NOT MSVC)
+    target_compile_options(simdjson-source INTERFACE -Wno-deprecated-declarations)
+endif()
 if(SIMDJSON_BUILD_STATIC)
   MESSAGE( STATUS "Building a static library." )
   add_library(simdjson STATIC "")
