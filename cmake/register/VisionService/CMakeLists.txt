@@ -1,14 +1,17 @@
-file(GLOB vision_service_source_files ${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/VisionService/dllmain.cpp 
-					${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/VisionService/vision_service.cpp)
+cmake_minimum_required(VERSION 3.14.3)
+set(module_name visison_service)
+file(GLOB src ${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/VisionService/*.cpp)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/VisionService 
+add_library(${module_name} SHARED ${src})
+
+target_include_directories(${module_name} PRIVATE 
 			${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/PluginRegister 
 			${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp 
-			${COMMON_INCLUDE})
+			${COMMON_INCLUDE_DIRS})
 
-link_directories(${VISION_LIBRARY_DIRECTORIES})
+if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
+	target_link_directories(${module_name} PRIVATE ${COMMON_LIBRARY_DIRS})
+endif()
 
-add_library(VisionService SHARED ${vision_service_source_files})
-
-target_link_libraries(VisionService PluginRegister Primitives Longinus Cassius Gaius Irisviel)
-add_dependencies(VisionService PluginRegister)
+target_link_libraries(${module_name} PRIVATE plugin_register ${COMMON_LIBRARIES})
+add_dependencies(${module_name} plugin_register)

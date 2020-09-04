@@ -138,6 +138,53 @@ namespace glasssix
 				
 				return value;
 			}
+
+			inline Json::Value Romancia_new_json(plugin_interface& plugin, simdjson::dom::element& root, guid& instance)
+			{
+				Json::Value value;
+				try
+				{
+					int device = static_cast<int>(root["device"].get<int64_t>().value());
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"device", box(device)}
+						});
+
+					instance = unbox<guid>(plugin.execute(u8"romancia.new", param));
+					value["status"] = Json::Value("OK");
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"] = Json::Value(ex.what());
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"] = Json::Value(ex.what_to_narrow());
+				}
+
+				return value;
+			}
+			inline Json::Value Romancia_delete_json(plugin_interface& plugin, simdjson::dom::element& root, guid& instance)
+			{
+				Json::Value value;
+				try
+				{
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"object_id", box(instance)}
+						});
+
+					plugin.execute(u8"romancia.delete", param);
+
+					value["status"] = Json::Value("OK");
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"] = Json::Value(ex.what());
+				}
+				return value;
+			}
+
 			inline Json::Value Romancia_alignFace_json(plugin_interface &plugin, simdjson::dom::element& root, guid &instance)
 			{
 				Json::Value value;
