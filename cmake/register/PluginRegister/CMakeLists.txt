@@ -20,4 +20,4 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	target_link_libraries(${module_name} PRIVATE stdc++fs)
 endif()
 
-target_link_libraries(${module_name} PRIVATE ${COMMON_LIBRARIES})
+target_link_libraries(${module_name} PRIVATE ${COMMON_LIBRARIES} Threads::Threads)
