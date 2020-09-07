@@ -31,7 +31,7 @@ if(NOT DEFINED COMMON_LIBRARY_DIRS)
 	message(FATAL_ERROR "COMMON_LIBRARY_DIRS NOT DEFINED: You must specify common library's directories.")
 endif()
 
-list(APPEND COMMON_LIBRARIES_NAMES primitives cassius gaius longinus romancia)
+list(APPEND COMMON_LIBRARIES_NAMES primitives)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	foreach(library_name ${COMMON_LIBRARIES_NAMES})
 		find_library(library
