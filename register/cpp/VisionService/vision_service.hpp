@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PluginRegister/plugin_interface.hpp"
+#include "../PluginRegister/plugin_interface.hpp"
 
 #include <abi/consumer.hpp>
 

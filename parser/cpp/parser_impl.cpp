@@ -245,7 +245,9 @@ namespace glasssix::exposing::nessus
 			protocol_map["Longinus.new"] = &Longinus_new_json;
 			protocol_map["Longinus.delete"] = &Longinus_delete_json;
 			protocol_map["Longinus.detect"] = &Longinus_detect_json;
-			protocol_map["Longinus.alignFace"] = &Romancia_alignFace_json;
+			protocol_map["Romancia.new"] = &Romancia_new_json;
+			protocol_map["Romancia.delete"] = &Romancia_delete_json;
+			protocol_map["Romancia.alignFace"] = &Romancia_alignFace_json;
 			protocol_map["Gaius.new"] = &Gaius_new_json;
 			protocol_map["Gaius.delete"] = &Gaius_delete_json;
 			protocol_map["Gaius.Forward"] = &Gaius_Forward_json;

@@ -1,14 +1,26 @@
-file(GLOB parser_source_files ${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/*.cpp 
-				${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/jni/*.cpp) 
+cmake_minimum_required(VERSION 3.14.3)
+set(module_name parser)
+file(GLOB src ${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/jni/*.cpp)
+if(NOT WITH_JNI)
+	list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/jni/parser_jni.cpp")
+endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../3rd-party/cpp/simdjson/singleheader 
+add_library(${module_name} SHARED ${src})
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	target_compile_definitions(${module_name} PRIVATE -DJSON_DLL_BUILD)
+endif()
+
+target_include_directories(${module_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd-party/cpp/simdjson/singleheader 
 			${CMAKE_CURRENT_SOURCE_DIR}/../../register/cpp/PluginRegister 
-			${COMMON_INCLUDE} 
-			${JNI_INCLUDE})
+			${CMAKE_CURRENT_SOURCE_DIR}/../../register/cpp/VisionService 
+			${COMMON_INCLUDE_DIRS} 
+			${JNI_INCLUDE_DIRS})
 
-link_directories(${COMMON_LIB_PATH})
-add_library(Parser SHARED ${parser_source_files})
+if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
+	target_link_directories(${module_name} PRIVATE ${COMMON_LIBRARY_DIRS})
+endif()
 
-target_link_libraries(Parser simdjson PluginRegister Primitives dl stdc++fs)
-add_dependencies(Parser simdjson PluginRegister)
+target_link_libraries(${module_name} simdjson plugin_register ${COMMON_LIBRARIES} Threads::Threads)
+add_dependencies(${module_name} simdjson plugin_register)
 
