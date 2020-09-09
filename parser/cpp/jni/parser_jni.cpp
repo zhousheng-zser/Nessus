@@ -1,6 +1,3 @@
-#ifndef _PARSER_JNI_HPP_
-#define _PARSER_JNI_HPP_
-
 #include "../parser.hpp"
 
 #include <memory>
@@ -8,7 +5,6 @@
 #include <algorithm>
 #include <string_view>
 #include <type_traits>
-#include <mutex>
 
 #include <jni.h>
 #include <os_context.hpp>
@@ -44,19 +40,13 @@ static jstring char2Jstring(JNIEnv* env, const char* pat, size_t len)
 	return jstr;
 }
 
-namespace
-{
-	glasssix::exposing::nessus::parser parser_singleton;
-}
+extern glasssix::exposing::nessus::parser parser_singleton;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jprotocol, jstring jstr)
 	{
-		static std::once_flag flag;
-		std::call_once(flag, [&] {parser_singleton = glasssix::exposing::make_exported_interface<glasssix::exposing::nessus::parser>(); });
-
 		glasssix::exposing::param_string protocol = jstring2paramstring(env, jprotocol);
 		glasssix::exposing::param_string jsonstr = jstring2paramstring(env, jstr);
 
@@ -111,6 +101,4 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

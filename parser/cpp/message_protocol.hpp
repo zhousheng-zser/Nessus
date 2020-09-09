@@ -26,10 +26,12 @@ namespace glasssix
 				{
 					int device = static_cast<int>(root["device"].get<int64_t>().value());
 					float nms = static_cast<float>(root["nms"].get<double>().value());
+					std::string_view models_directory = root["models_directory"].get<std::string_view>().value();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"device", box(device)},
-							{u8"nms", box(nms)}
+							{u8"nms", box(nms)},
+							{u8"models_directory", box(models_directory)}
 						});
 
 					instance = unbox<guid>(plugin.execute(u8"longinus.new", param));
@@ -262,9 +264,11 @@ namespace glasssix
 				try
 				{
 					int device = static_cast<int>(root["device"].get<int64_t>().value());
+					std::string_view models_directory = root["models_directory"].get<std::string_view>().value();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"device", box(device)}
+							{u8"device", box(device)},
+							{u8"models_directory", box(models_directory)}
 						});
 
 					instance = unbox<guid>(plugin.execute(u8"gaius.new", param));
@@ -363,9 +367,11 @@ namespace glasssix
 				try
 				{
 					int device = static_cast<int>(root["device"].get<int64_t>().value());
+					std::string_view models_directory = root["models_directory"].get<std::string_view>().value();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"device", box(device)}
+							{u8"device", box(device)},
+							{u8"models_directory", box(models_directory)}
 						});
 
 					instance = unbox<guid>(plugin.execute(u8"cassius.new", param));

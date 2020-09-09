@@ -99,7 +99,7 @@ namespace glasssix::exposing::nessus
 			std::vector<std::string> str_vec = split(protocol_view, ".");
 			if (str_vec.size() != 2)
 			{
-				value["status"] = Json::Value("topic illegal");
+				value["status"] = Json::Value("protocol illegal");
 				return to_param_string(writer.write(value));
 			}
 
@@ -117,7 +117,7 @@ namespace glasssix::exposing::nessus
 				}
 				catch (const std::exception&)
 				{
-					value["status"] = Json::Value("Function of the topic not register");
+					value["status"] = Json::Value("Function of the protocol not register");
 					return to_param_string(writer.write(value));
 				}
 

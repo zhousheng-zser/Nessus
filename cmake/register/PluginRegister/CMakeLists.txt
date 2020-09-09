@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 3.14.3)
 set(module_name plugin_register)
 
 file(GLOB src ${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/PluginRegister/*.cpp)
+file(GLOB header ${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/PluginRegister/*.hpp)
 list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/PluginRegister/demo.cpp")
 
-add_library(${module_name} SHARED ${src})
+add_library(${module_name} SHARED ${src} ${header})
 
 target_include_directories(${module_name} PRIVATE ${COMMON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/PluginRegister)
 

@@ -1,4 +1,4 @@
 {
-	"plugin_directory" : "/home/build_slave/lipingbao/extrlib",
+	"plugin_directory" : ".",
 	"plugin_list" : ["libplugin_register.so", "libvision_service.so", "libgaius.so", "libcassius.so", "liblonginus.so", "libromancia.so", "libirisviel.so"]
 }

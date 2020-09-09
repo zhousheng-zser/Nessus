@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.14.3)
 set(module_name parser)
 file(GLOB src ${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/jni/*.cpp)
+file(GLOB header ${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/*.hpp)
 if(NOT WITH_JNI)
 	list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/jni/parser_jni.cpp")
 endif()
 
-add_library(${module_name} SHARED ${src})
+add_library(${module_name} SHARED ${src} ${header})
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_definitions(${module_name} PRIVATE -DJSON_DLL_BUILD)
