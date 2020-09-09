@@ -6,7 +6,7 @@
 
 glasssix::exposing::nessus::parser parser_singleton = []
 {
-	glasssix::exposing::get_component_loader().add_module("libparser.dll");
+	glasssix::exposing::get_component_loader().add_module_by_name("parser");
 	return glasssix::exposing::make_exported_interface<glasssix::exposing::nessus::parser>();
 }();
 
