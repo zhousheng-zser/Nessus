@@ -59,7 +59,7 @@ namespace glasssix::unit_test
 		{
 			auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
 			exposing::param_string result = parser_.init_plugin(u8"plugin_configure.json");
-			exposing::param_string protocol(u8"Longinus.new"), device(u8"{\"device\":-1, \"nms\" : 0.4}");
+			exposing::param_string protocol(u8"Longinus.new"), device(u8"{\"device\":-1, \"nms\" : 0.4, \"models_directory\":\"C:/Users/Glasssix-ZYF/Desktop/libs/arm64-v8a/models\"}");
 			result = parser_.parse(protocol, device);
 
 			protocol = u8"Longinus.detect";

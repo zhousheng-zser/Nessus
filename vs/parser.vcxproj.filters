@@ -15,5 +15,6 @@
     <ClCompile Include="..\parser\cpp\parser_internal.cpp" />
     <ClCompile Include="..\parser\cpp\jni\parser_jni.cpp" />
     <ClCompile Include="..\parser\cpp\exports.cpp" />
+    <ClCompile Include="..\parser\cpp\parser_c.cpp" />
   </ItemGroup>
 </Project>

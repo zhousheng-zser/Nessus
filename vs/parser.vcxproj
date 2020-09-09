@@ -26,6 +26,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\parser\cpp\jsoncpp.cpp" />
+    <ClCompile Include="..\parser\cpp\parser_c.cpp" />
     <ClCompile Include="..\parser\cpp\parser_impl.cpp" />
     <ClCompile Include="..\parser\cpp\parser_internal.cpp" />
   </ItemGroup>
