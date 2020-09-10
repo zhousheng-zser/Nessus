@@ -141,7 +141,7 @@ namespace glasssix::exposing::nessus
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(get_hardcode_model_params("unicorn"), models_directory + u8"/unicorn.racy", device));
+			return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(get_hardcode_model_params(u8"unicorn"), models_directory + u8"/unicorn.racy", device));
 		}
 
 		unknown_object gaius_new(const param_hash_map<param_string, unknown_object>& params)
@@ -149,7 +149,7 @@ namespace glasssix::exposing::nessus
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::gaius, make_exported_interface<gaius::feature_extractor>(get_hardcode_model_params("mobile_unicorn"), models_directory + u8"/mobile_unicorn.racy", device));
+			return add_instance(package_names::gaius, make_exported_interface<gaius::feature_extractor>(get_hardcode_model_params(u8"mobile_unicorn"), models_directory + u8"/mobile_unicorn.racy", device));
 		}
 
 		unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
@@ -158,7 +158,7 @@ namespace glasssix::exposing::nessus
 			auto nms = unbox<float>(params.get_value(u8"nms"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::longinus, make_exported_interface<retina_net>(get_hardcode_model_params("retina"), models_directory + u8"/retina.racy", nms, device));
+			return add_instance(package_names::longinus, make_exported_interface<retina_net>(get_hardcode_model_params(u8"retina"), models_directory + u8"/retina.racy", nms, device));
 		}
 
 		unknown_object romancia_new(const param_hash_map<param_string, unknown_object>& params)
