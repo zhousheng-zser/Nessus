@@ -15,6 +15,7 @@ option(WITH_JNI "Compile java native interface." ON)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	set(CMAKE_FIND_LIBRARY_PREFIXES "lib")
+	set(COMMON_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../common/lib/${CMAKE_BUILD_TYPE})
 endif()
 
 if(WITH_JNI)
