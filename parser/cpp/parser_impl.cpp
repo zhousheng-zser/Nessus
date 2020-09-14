@@ -7,7 +7,6 @@
 
 #include "message_protocol.hpp"
 
-#include <singleton.hpp>
 #include <filesystem.hpp>
 #include <os_context.hpp>
 
@@ -68,10 +67,9 @@ namespace glasssix::exposing::nessus
 	/// <summary>
 	/// An implementation of the standard plugin manager.
 	/// </summary>
-	class parser_concrete_impl : public singleton<parser_concrete_impl>
+	class parser_impl::impl
 	{
 	public:
-		friend singleton<parser_concrete_impl>;
 
 		param_string parse(const param_string& protocol, const param_string& jsonstr)
 		{
@@ -87,7 +85,6 @@ namespace glasssix::exposing::nessus
 			simdjson::dom::element root;
 			try
 			{
-				std::lock_guard<std::mutex> lck(mut_parse);
 				root = parser_.parse(jsonstr_view);
 			}
 			catch (const std::exception&)
@@ -196,12 +193,14 @@ namespace glasssix::exposing::nessus
 
 					try
 					{
-						simdjson::dom::element config = parser_.parse(buffer);
-						fs::path plugin_directory = os_context::expand_enviroment_variables(config["plugin_directory"].get<std::string_view>().value());
+						simdjson::dom::parser parser_temp;
+						simdjson::dom::element config = parser_temp.parse(buffer);
+						//fs::path plugin_directory = os_context::expand_enviroment_variables(config["plugin_directory"].get<std::string_view>().value());
 
 						for (auto lib_item : config["plugin_list"].get<simdjson::dom::array>().value())
 						{
-							bool ret = get_component_loader().add_module(to_param_string((plugin_directory / lib_item.get<std::string_view>().value()).string()));
+							//bool ret = get_component_loader().add_module(to_param_string((plugin_directory / lib_item.get<std::string_view>().value()).string()));
+							bool ret = get_component_loader().add_module_by_name(to_param_string(lib_item.get<std::string_view>().value()));
 							if (!ret)
 							{
 								ready = false;
@@ -240,65 +239,74 @@ namespace glasssix::exposing::nessus
 		}
 
 	private:
-		parser_concrete_impl()
-		{
-			protocol_map["Longinus.new"] = &Longinus_new_json;
-			protocol_map["Longinus.delete"] = &Longinus_delete_json;
-			protocol_map["Longinus.detect"] = &Longinus_detect_json;
-			protocol_map["Romancia.new"] = &Romancia_new_json;
-			protocol_map["Romancia.delete"] = &Romancia_delete_json;
-			protocol_map["Romancia.alignFace"] = &Romancia_alignFace_json;
-			protocol_map["Gaius.new"] = &Gaius_new_json;
-			protocol_map["Gaius.delete"] = &Gaius_delete_json;
-			protocol_map["Gaius.Forward"] = &Gaius_Forward_json;
-			protocol_map["Cassius.new"] = &Cassius_new_json;
-			protocol_map["Cassius.delete"] = &Cassius_delete_json;
-			protocol_map["Cassius.Forward"] = &Cassius_Forward_json;
-			protocol_map["Irisviel.new"] = &Irisviel_new_json;
-			protocol_map["Irisviel.delete"] = &Irisviel_delete_json;
-			protocol_map["Irisviel.search"] = &Irisviel_search_json;
-			protocol_map["Irisviel.clear"] = &Irisviel_clear_json;
-			protocol_map["Irisviel.remove_all"] = &Irisviel_remove_all_json;
-			protocol_map["Irisviel.load_databases"] = &Irisviel_load_databases_json;
-			protocol_map["Irisviel.remove_records"] = &Irisviel_remove_records_json;
-			protocol_map["Irisviel.remove_record"] = &Irisviel_remove_record_json;
-			protocol_map["Irisviel.add_record"] = &Irisviel_add_record_json;
-			protocol_map["Irisviel.add_records"] = &Irisviel_add_records_json;
-			protocol_map["Irisviel.update_record"] = &Irisviel_update_record_json;
-			protocol_map["Irisviel.update_records"] = &Irisviel_update_records_json;
-
-			ready = false;
-		}
-
-
-	private:
-		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)>> protocol_map;
+		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)>> protocol_map;
 		simdjson::dom::parser parser_;
 
 		Json::FastWriter writer;
-		plugin_interface plugin;
-
-		std::mutex mut_parse;
-		bool ready;
+		static plugin_interface plugin;
+		static bool ready;
 	};
+
+	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)>> parser_impl::impl::protocol_map = [] {
+		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)>> protocol_map;
+		protocol_map["Longinus.new"] = &Longinus_new_json;
+		protocol_map["Longinus.delete"] = &Longinus_delete_json;
+		protocol_map["Longinus.detect"] = &Longinus_detect_json;
+		protocol_map["Romancia.new"] = &Romancia_new_json;
+		protocol_map["Romancia.delete"] = &Romancia_delete_json;
+		protocol_map["Romancia.alignFace"] = &Romancia_alignFace_json;
+		protocol_map["Gaius.new"] = &Gaius_new_json;
+		protocol_map["Gaius.delete"] = &Gaius_delete_json;
+		protocol_map["Gaius.Forward"] = &Gaius_Forward_json;
+		protocol_map["Cassius.new"] = &Cassius_new_json;
+		protocol_map["Cassius.delete"] = &Cassius_delete_json;
+		protocol_map["Cassius.Forward"] = &Cassius_Forward_json;
+		protocol_map["Irisviel.new"] = &Irisviel_new_json;
+		protocol_map["Irisviel.delete"] = &Irisviel_delete_json;
+		protocol_map["Irisviel.search"] = &Irisviel_search_json;
+		protocol_map["Irisviel.clear"] = &Irisviel_clear_json;
+		protocol_map["Irisviel.remove_all"] = &Irisviel_remove_all_json;
+		protocol_map["Irisviel.load_databases"] = &Irisviel_load_databases_json;
+		protocol_map["Irisviel.remove_records"] = &Irisviel_remove_records_json;
+		protocol_map["Irisviel.remove_record"] = &Irisviel_remove_record_json;
+		protocol_map["Irisviel.add_record"] = &Irisviel_add_record_json;
+		protocol_map["Irisviel.add_records"] = &Irisviel_add_records_json;
+		protocol_map["Irisviel.update_record"] = &Irisviel_update_record_json;
+		protocol_map["Irisviel.update_records"] = &Irisviel_update_records_json;
+		return protocol_map;
+	}();
+	plugin_interface parser_impl::impl::plugin{nullptr};
+	bool parser_impl::impl::ready = false;
+
+	parser_impl::parser_impl() :impl_(new impl)
+	{
+	}
+	parser_impl::~parser_impl()
+	{
+		if (impl_)
+		{
+			delete impl_;
+			impl_ = nullptr;
+		}
+	}
 
 	param_string parser_impl::parse(const param_string& protocol, const param_string& jsonstr)
 	{
-		return parser_concrete_impl::instance().parse(protocol, jsonstr);
+		return impl_->parse(protocol, jsonstr);
 	}
 
 	param_string parser_impl::query_all_instance()
 	{
-		return parser_concrete_impl::instance().query_all_instance();
+		return impl_->query_all_instance();
 	}
 
 	param_string parser_impl::support_protocol()
 	{
-		return parser_concrete_impl::instance().support_protocol();
+		return impl_->support_protocol();
 	}
 
 	param_string parser_impl::init_plugin(const param_string& config_file_path)
 	{
-		return parser_concrete_impl::instance().init_plugin(config_file_path);
+		return impl_->init_plugin(config_file_path);
 	}
 }

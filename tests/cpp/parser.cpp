@@ -6,6 +6,7 @@
 #include <iterator>
 #include <streambuf>
 #include <filesystem>
+#include <thread>
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -59,7 +60,7 @@ namespace glasssix::unit_test
 		{
 			auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
 			exposing::param_string result = parser_.init_plugin(u8"plugin_configure.json");
-			exposing::param_string protocol(u8"Longinus.new"), device(u8"{\"device\":-1, \"nms\" : 0.4, \"models_directory\":\"C:/Users/Glasssix-ZYF/Desktop/libs/arm64-v8a/models\"}");
+			exposing::param_string protocol(u8"Longinus.new"), device(u8"{\"device\":-1, \"nms\" : 0.4, \"models_directory\":\"./models\"}");
 			result = parser_.parse(protocol, device);
 
 			protocol = u8"Longinus.detect";
@@ -415,7 +416,7 @@ namespace glasssix::unit_test
 			Json::Value result;
 			Json::Reader reader;
 			std::string raw_json;
-			std::string json_new = R"({"device":-1})";
+			std::string json_new = R"({"device":-1, "models_directory":"./models"})";
 
 			auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
 			Logger::WriteMessage(parser_.init_plugin(u8"plugin_configure.json").data());
@@ -437,7 +438,7 @@ namespace glasssix::unit_test
 			Json::Value result;
 			Json::Reader reader;
 			std::string raw_json;
-			std::string json_new = R"({"device":-1})";
+			std::string json_new = R"({"device":-1, "models_directory":"./models"})";
 
 			auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
 			Logger::WriteMessage(parser_.init_plugin(u8"plugin_configure.json").data());
@@ -449,6 +450,116 @@ namespace glasssix::unit_test
 			reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_Forward), to_param_string(params_Forward.toStyledString()))), result);
 			Logger::WriteMessage(raw_json.c_str());
 			Assert::AreEqual("OK", result["status"].asCString());
+		}
+
+		TEST_METHOD(test_multi_thread)
+		{
+			exposing::make_exported_interface<exposing::nessus::parser>().init_plugin(u8"plugin_configure.json");
+			std::thread longinus_thread([] {
+				auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
+				exposing::param_string protocol(u8"Longinus.new"), device(u8"{\"device\":-1, \"nms\" : 0.4, \"models_directory\":\"./models\"}");
+				auto result = parser_.parse(protocol, device);
+
+				protocol = u8"Longinus.detect";
+
+				Json::Reader reader;
+				Json::Value newResult;
+				reader.parse(to_narrow_string(result), newResult);
+				std::string instance_guid = newResult["instance_guid"].asString();
+
+				auto message = get_file_bytes("Longinus_detect.message");
+
+				Json::Value root;
+				reader.parse(message, root);
+				root["instance_guid"] = Json::Value(instance_guid);
+
+				Json::FastWriter writer;
+				std::string message_ = writer.write(root);
+
+				for (size_t i = 0; i < 100; i++)
+				{
+					result = parser_.parse(protocol, to_param_string(message_));
+					Logger::WriteMessage(result.data());
+				}
+			});
+			
+
+			std::thread romancia_thread([] {
+				std::string topic_new = "Romancia.new";
+				std::string topic_alignFace = "Romancia.alignFace";
+				Json::Value params_alignFace;
+				Json::Value result;
+				Json::Reader reader;
+				std::string raw_json;
+				std::string json_new = R"({"device":-1})";
+				auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
+
+				reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_new), to_param_string(json_new))), result);
+				Logger::WriteMessage(raw_json.c_str());
+				Assert::AreEqual("OK", result["status"].asCString());
+				reader.parse(get_file_bytes("alignface.txt"), params_alignFace);
+				params_alignFace["instance_guid"] = result["instance_guid"];
+				for (size_t i = 0; i < 100; i++)
+				{
+					reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_alignFace), to_param_string(params_alignFace.toStyledString()))), result);
+					Logger::WriteMessage(raw_json.c_str());
+					Assert::AreEqual("OK", result["status"].asCString());
+				}
+			});
+
+			std::thread gaius_thread([] {
+				std::string topic_new = "Gaius.new";
+				std::string topic_Forward = "Gaius.Forward";
+				Json::Value params_Forward;
+				Json::Value result;
+				Json::Reader reader;
+				std::string raw_json;
+				std::string json_new = R"({"device":-1, "models_directory":"./models"})";
+
+				auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
+				reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_new), to_param_string(json_new))), result);
+				Logger::WriteMessage(raw_json.c_str());
+				Assert::AreEqual("OK", result["status"].asCString());
+				reader.parse(get_file_bytes("forward.txt"), params_Forward);
+				params_Forward["instance_guid"] = result["instance_guid"];
+
+				for (size_t i = 0; i < 100; i++)
+				{
+					reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_Forward), to_param_string(params_Forward.toStyledString()))), result);
+					Logger::WriteMessage(raw_json.c_str());
+					Assert::AreEqual("OK", result["status"].asCString());
+				}
+			});
+
+			std::thread cassius_thread([] {
+				std::string topic_new = "Cassius.new";
+				std::string topic_Forward = "Cassius.Forward";
+				Json::Value params_Forward;
+				Json::Value result;
+				Json::Reader reader;
+				std::string raw_json;
+				std::string json_new = R"({"device":-1, "models_directory":"./models"})";
+
+				auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
+				reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_new), to_param_string(json_new))), result);
+				Logger::WriteMessage(raw_json.c_str());
+				Assert::AreEqual("OK", result["status"].asCString());
+				reader.parse(get_file_bytes("forward.txt"), params_Forward);
+				params_Forward["instance_guid"] = result["instance_guid"];
+
+				for (size_t i = 0; i < 100; i++)
+				{
+					reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_Forward), to_param_string(params_Forward.toStyledString()))), result);
+					Logger::WriteMessage(raw_json.c_str());
+					Assert::AreEqual("OK", result["status"].asCString());
+				}
+			});
+
+
+			cassius_thread.join();
+			gaius_thread.join();
+			romancia_thread.join();
+			longinus_thread.join();
 		}
 	};
 }

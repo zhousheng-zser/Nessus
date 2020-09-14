@@ -13,10 +13,17 @@ namespace glasssix::exposing::nessus
 	class parser_impl : public implements<parser_impl, parser>, public make_external_qualified_name<parser_qualified_name>
 	{
 	public:
+		class impl;
+
+		parser_impl();
+		~parser_impl();
 		param_string parse(const param_string& protocol, const param_string& jsonstr);
 		param_string query_all_instance();
 		param_string support_protocol();
 		param_string init_plugin(const param_string& config_file_path);
+
+	private:
+		impl* impl_;
 	};
 }
 #endif
