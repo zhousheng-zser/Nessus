@@ -228,7 +228,7 @@ namespace glasssix
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"gray", box(std::string_view{ gray_str.data(), gray_str.size() })},
+							{u8"gray", box(exposing::param_span<std::uint8_t>{reinterpret_cast<std::uint8_t*>(gray_str.data()), gray_str.size()})},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"faces", faces},
@@ -330,7 +330,7 @@ namespace glasssix
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"aligned_faces_str", box(std::string_view(aligned_faces_str))},
+							{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{reinterpret_cast<std::uint8_t*>(aligned_faces_str.data()), aligned_faces_str.size()})},
 							{u8"num", box(num)},
 							{u8"order", box(order)},
 							{u8"object_id", box(instance)}
@@ -431,7 +431,7 @@ namespace glasssix
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"aligned_faces_str", box(std::string_view(aligned_faces_str))},
+							{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{reinterpret_cast<std::uint8_t*>(aligned_faces_str.data()), aligned_faces_str.size()})},
 							{u8"num", box(num)},
 							{u8"order", box(order)},
 							{u8"object_id", box(instance)}
