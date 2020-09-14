@@ -1,5 +1,6 @@
 #include "parser.hpp"
-#include <Primitives/memory.hpp>
+
+#include <memory.hpp>
 
 #define PARSER_C_EXPORT __declspec(dllexport)
 #define parser_handle void*
