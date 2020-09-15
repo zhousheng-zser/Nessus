@@ -300,11 +300,11 @@ namespace glasssix::exposing::nessus
 
 			if (update)
 			{
-				instance.add_record(record);
+				instance.update_record(record);
 			}
 			else
 			{
-				instance.update_record(record);
+				instance.add_record(record);
 			}
 		}
 
