@@ -3,7 +3,7 @@
 
 #include "simdjson.h"
 #include "json.h"
-#include "base64.hpp"
+#include "base64_x.hpp"
 #include "plugin_interface.hpp"
 #include "parser_exception.hpp"
 #include "../../common/include/longinus/face_info.hpp"
@@ -76,19 +76,21 @@ namespace glasssix
 				{
 					std::string_view format_str = root["format"].get<std::string_view>().value();
 					std::string_view image_base64_str = root["image"].get<std::string_view>().value();
-					auto image_str = base64_decode(image_base64_str.data(), static_cast<std::uint32_t>(image_base64_str.length()));
+					std::uint8_t* image_str = static_cast<std::uint8_t*>(_valloc(TB64DECLEN(image_base64_str.size())));
+					size_t image_str_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(image_base64_str.data()), image_base64_str.size(), image_str);
+
 					int height = static_cast<int>(root["height"].get<int64_t>().value());
 					int width = static_cast<int>(root["width"].get<int64_t>().value());
 					int min_size = static_cast<int>(root["min_size"].get<int64_t>().value());
 					float threshold = static_cast<float>(root["threshold"].get<double>().value());
 					int order = static_cast<int>(root["order"].get<int64_t>().value());
 
-					if (image_str.size() != 3 * height * width)
+					if (image_str_len != 3 * height * width)
 						throw parser_exception("image_str.size() != 3 * height * width");
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"image", box(exposing::param_span<std::uint8_t>{reinterpret_cast<std::uint8_t*>(image_str.data()), image_str.size()})},
+							{u8"image", box(exposing::param_span<std::uint8_t>{image_str, image_str_len})},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"min_size", box(min_size)},
@@ -195,13 +197,16 @@ namespace glasssix
 				{
 					std::string_view format_str = root["format"].get<std::string_view>().value();
 					std::string_view gray_base64_str = root["gray"].get<std::string_view>().value();
-					auto gray_str = base64_decode(gray_base64_str.data(), static_cast<std::uint32_t>(gray_base64_str.size()));
+					std::uint8_t* gray_str = static_cast<std::uint8_t*>(_valloc(TB64DECLEN(gray_base64_str.size())));
+					size_t gray_str_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(gray_base64_str.data()), gray_base64_str.size(), gray_str);
+
+					//auto gray_str = base64_decode(gray_base64_str.data(), static_cast<std::uint32_t>(gray_base64_str.size()));
 					int height = static_cast<int>(root["height"].get<int64_t>().value());
 					int width = static_cast<int>(root["width"].get<int64_t>().value());
 					auto jarray_rect = root["facerectwithfaceinfo_list"].get<simdjson::dom::array>().value();
 
-					if (gray_str.size() != height * width)
-						throw parser_exception("gray_str.size() != height * width");
+					if (gray_str_len != height * width)
+						throw parser_exception("gray_str_len != height * width");
 
 					auto faces = exposing::make_param_vector<longinus::face_info>();
 
@@ -228,7 +233,7 @@ namespace glasssix
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"gray", box(exposing::param_span<std::uint8_t>{reinterpret_cast<std::uint8_t*>(gray_str.data()), gray_str.size()})},
+							{u8"gray", box(exposing::param_span<std::uint8_t>{gray_str, gray_str_len})},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"faces", faces},
@@ -240,9 +245,14 @@ namespace glasssix
 					value["aligned_images"] = Json::Value(Json::arrayValue);
 					for (size_t i = 0; i < result.size(); i++)
 					{
-						std::vector<unsigned char> buffer(begin(result[i]), end(result[i]));
-						std::string aligned_str = base64_encode((char*)buffer.data(), buffer.size());
-						value["aligned_images"].append(Json::Value(aligned_str));
+						std::vector<std::uint8_t> buffer(begin(result[i]), end(result[i]));
+
+						size_t aligned_str_len = TB64ENCLEN(buffer.size());
+						std::uint8_t* aligned_str = static_cast<std::uint8_t*>(_valloc(aligned_str_len));
+						size_t aligned_base64_str_len = tb64xenc(buffer.data(), buffer.size(), aligned_str);
+
+						//std::string aligned_str = base64_encode((char*)buffer.data(), buffer.size());
+						value["aligned_images"].append(Json::Value(reinterpret_cast<char *>(aligned_str), reinterpret_cast<char*>(aligned_str) + aligned_base64_str_len));
 					}
 					value["status"] = Json::Value("OK");
 				}
@@ -322,7 +332,9 @@ namespace glasssix
 					for (auto i : aligned_face_array)
 					{
 						std::string_view aligned_face_base64_str = i.get<std::string_view>().value();
-						aligned_faces_str.append(base64_decode(aligned_face_base64_str.data(), static_cast<std::uint32_t>(aligned_face_base64_str.length())));
+						std::uint8_t* aligned_face_str = static_cast<std::uint8_t*>(_valloc(TB64DECLEN(aligned_face_base64_str.size())));
+						size_t aligned_face_str_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), aligned_face_str);
+						aligned_faces_str.append(reinterpret_cast<char *>(aligned_face_str), aligned_face_str_len);
 						num++;
 					}
 
@@ -339,10 +351,10 @@ namespace glasssix
 					auto result = plugin.execute(u8"gaius.Forward", param).as<param_vector<param_vector<float>>>();
 
 					Json::Value jobj_features;
-					for (int i = 0; i < result.size(); i++)
+					for (size_t i = 0; i < result.size(); i++)
 					{
 						Json::Value jarray_feature;
-						for (int j = 0; j < result[i].size(); j++)
+						for (size_t j = 0; j < result[i].size(); j++)
 							jarray_feature["feature"].append(result[i][j]);
 						jobj_features.append(jarray_feature);
 					}
@@ -423,7 +435,9 @@ namespace glasssix
 					for (auto i : aligned_face_array)
 					{
 						std::string_view aligned_face_base64_str = i.get<std::string_view>().value();
-						aligned_faces_str.append(base64_decode(aligned_face_base64_str.data(), static_cast<std::uint32_t>(aligned_face_base64_str.length())));
+						std::uint8_t* aligned_face_str = static_cast<std::uint8_t*>(_valloc(TB64DECLEN(aligned_face_base64_str.size())));
+						size_t aligned_face_str_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), aligned_face_str);
+						aligned_faces_str.append(reinterpret_cast<char*>(aligned_face_str), aligned_face_str_len);
 						num++;
 					}
 
@@ -440,10 +454,10 @@ namespace glasssix
 					auto result = plugin.execute(u8"cassius.Forward", param).as<param_vector<param_vector<float>>>();
 
 					Json::Value jobj_features;
-					for (int i = 0; i < result.size(); i++)
+					for (size_t i = 0; i < result.size(); i++)
 					{
 						Json::Value jarray_feature;
-						for (int j = 0; j < result[i].size(); j++)
+						for (size_t j = 0; j < result[i].size(); j++)
 							jarray_feature["feature"].append(result[i][j]);
 						jobj_features.append(jarray_feature);
 					}
@@ -548,7 +562,7 @@ namespace glasssix
 						Json::Value jobj_data;
 
 						auto feature = item.feature();
-						for (int j = 0; j < feature.size(); j++)
+						for (size_t j = 0; j < feature.size(); j++)
 							jobj_data["feature"].append(Json::Value(feature[j]));
 
 						jobj_data["key"] = Json::Value(to_narrow_string(item.key()));

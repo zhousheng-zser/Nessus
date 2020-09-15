@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\parser\cpp\base64.hpp" />
+    <ClInclude Include="..\parser\cpp\base64_x.hpp" />
     <ClInclude Include="..\parser\cpp\json.h" />
     <ClInclude Include="..\parser\cpp\message_protocol.hpp" />
     <ClInclude Include="..\parser\cpp\parser.hpp" />
