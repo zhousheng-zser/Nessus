@@ -83,13 +83,13 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\singleheader;..\common\include\Primitives;..\register\cpp\PluginRegister;../register/cpp/VisionService;../register/cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\singleheader;..\3rd-party\cpp\libyuv\include;..\common\include\Primitives;..\register\cpp\PluginRegister;../register/cpp/VisionService;../register/cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>JSON_DLL_BUILD;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>../common/lib/$(Configuration)/libprimitives.lib;$(TargetDir)libsimdjson.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>../common/lib/$(Configuration)/libprimitives.lib;$(TargetDir)libsimdjson.lib;$(TargetDir)libyuv.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
     </Link>
     <Lib>
@@ -105,7 +105,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\singleheader;..\common\include\Primitives;..\register\cpp\PluginRegister;../register/cpp/VisionService;../register/cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\singleheader;..\3rd-party\cpp\libyuv\include;..\common\include\Primitives;..\register\cpp\PluginRegister;../register/cpp/VisionService;../register/cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>JSON_DLL_BUILD;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
@@ -113,7 +113,7 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>../common/lib/$(Configuration)/libprimitives.lib;$(TargetDir)libsimdjson.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>../common/lib/$(Configuration)/libprimitives.lib;$(TargetDir)libsimdjson.lib;$(TargetDir)libyuv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>$(SolutionDir)..\build\out\$(Configuration)\simdjson.lib</AdditionalDependencies>

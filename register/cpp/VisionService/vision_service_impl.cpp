@@ -44,6 +44,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view gaius_forward{ u8"gaius.Forward" };
 			static constexpr utf8_string_view cassius_forward{ u8"cassius.Forward" };
 			static constexpr utf8_string_view longinus_detect{ u8"longinus.detect" };
+			static constexpr utf8_string_view longinus_trace{ u8"longinus.trace" };
 			static constexpr utf8_string_view romancia_align_face{ u8"romancia.alignFace" };
 			static constexpr utf8_string_view irisviel_clear{ u8"irisviel.clear" };
 			static constexpr utf8_string_view irisviel_remove_all{ u8"irisviel.remove_all" };
@@ -79,6 +80,7 @@ namespace glasssix::exposing::nessus
 
 			// Business
 			functions_.insert_or_assign(function_names::longinus_detect, std::bind(&impl::longinus_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::longinus_trace, std::bind(&impl::longinus_trace, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_align_face, std::bind(&impl::romancia_align_face, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gaius_forward, std::bind(&impl::gaius_extract_feature, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::cassius_forward, std::bind(&impl::cassius_extract_feature, this, std::placeholders::_1));
@@ -157,7 +159,7 @@ namespace glasssix::exposing::nessus
 			auto nms = unbox<float>(params.get_value(u8"nms"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/retina.phai", models_directory + u8"/retina.racy", nms, device));
+			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/retina.phai", models_directory + u8"/retina.racy", models_directory + u8"/pfld-sim.phai", models_directory + u8"/pfld-sim.racy", nms, device));
 		}
 
 		unknown_object romancia_new(const param_hash_map<param_string, unknown_object>& params)
@@ -210,15 +212,31 @@ namespace glasssix::exposing::nessus
 			return instance.get(image, channels, height, width, min_size, threshold, order);
 		}
 
+		unknown_object longinus_trace(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<retina_net>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto trace_face = params.get_value(u8"trace_face").as<face_info>();
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			auto result = instance.get(trace_face, image, channels, height, width, order);
+
+			return result;
+		}
+
 		unknown_object romancia_align_face(const param_hash_map<param_string, unknown_object>& params)
 		{
+			constexpr std::int32_t channels = 3;
 			auto instance = get_instance<face_alignment>(params);
-			auto gray = unbox<param_span<std::uint8_t>>(params.get_value(u8"gray"));
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return instance.get(gray, height, width, faces);
+			return instance.get(image, channels, height, width, faces, order);
 		}
 
 		void irisviel_clear(const param_hash_map<param_string, unknown_object>& params)
@@ -299,11 +317,11 @@ namespace glasssix::exposing::nessus
 
 			if (update)
 			{
-				instance.add_record(record);
+				instance.update_record(record);
 			}
 			else
 			{
-				instance.update_record(record);
+				instance.add_record(record);
 			}
 		}
 
@@ -320,11 +338,11 @@ namespace glasssix::exposing::nessus
 
 			if (update)
 			{
-				instance.add_records(records);
+				instance.update_records(records);
 			}
 			else
 			{
-				instance.update_records(records);
+				instance.add_records(records);
 			}
 		}
 

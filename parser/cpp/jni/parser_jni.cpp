@@ -76,14 +76,35 @@ extern "C" {
 		jclass clazz = env->GetObjectClass(thiz);
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
 		jlong p = env->GetLongField(thiz, fid_mObject);
-
 		
 		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
 
 		glasssix::exposing::param_string protocol = jstring2paramstring(env, jprotocol);
 		glasssix::exposing::param_string jsonstr = jstring2paramstring(env, jstr);
+
 		glasssix::exposing::param_string result = parser_object.parse(protocol, jsonstr);
 
+		env->DeleteLocalRef(clazz);
+
+		return char2Jstring(env, result.data(), result.size());
+	}
+
+	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse1(JNIEnv* env, jobject thiz, jstring jprotocol, jbyteArray jstr)
+	{
+		jclass clazz = env->GetObjectClass(thiz);
+		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
+		jlong p = env->GetLongField(thiz, fid_mObject);
+
+		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
+
+		glasssix::exposing::param_string protocol = jstring2paramstring(env, jprotocol);
+
+		jbyte* data = env->GetByteArrayElements(jstr, 0);
+		glasssix::exposing::param_string jsonstr(reinterpret_cast<char *>(data), env->GetArrayLength(jstr));
+
+		glasssix::exposing::param_string result = parser_object.parse(protocol, jsonstr);
+
+		env->ReleaseByteArrayElements(jstr, data, 0);
 		env->DeleteLocalRef(clazz);
 
 		return char2Jstring(env, result.data(), result.size());
@@ -95,11 +116,12 @@ extern "C" {
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
 		jlong p = env->GetLongField(thiz, fid_mObject);
 
-
 		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
 
 		glasssix::exposing::param_string config_file_path = jstring2paramstring(env, jstr);
 		glasssix::exposing::param_string status = parser_object.init_plugin(config_file_path);
+
+		env->DeleteLocalRef(clazz);
 
 		return char2Jstring(env, status.data(), status.size());
 	}

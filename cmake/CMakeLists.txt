@@ -84,6 +84,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
 add_subdirectory(3rd-party/simdjson)
+add_subdirectory(3rd-party/libyuv)
 add_subdirectory(register/VisionService)
 add_subdirectory(register/PluginRegister)
 add_subdirectory(parser)

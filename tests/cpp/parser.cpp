@@ -1,5 +1,6 @@
 #include "../../parser/cpp/parser.hpp"
 #include "../../parser/cpp/json.h"
+#include "../../parser/cpp/base64_x.hpp"
 
 #include <fstream>
 #include <string>
@@ -7,6 +8,7 @@
 #include <streambuf>
 #include <filesystem>
 #include <thread>
+#include <opencv2/opencv.hpp>
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -70,7 +72,7 @@ namespace glasssix::unit_test
 			reader.parse(to_narrow_string(result), newResult);
 			std::string instance_guid = newResult["instance_guid"].asString();
 
-			auto message = get_file_bytes("Longinus_detect.message");
+			auto message = get_file_bytes("C:\\Users\\Glasssix-ZYF\\Desktop\\nv21.txt");
 
 			Json::Value root;
 			reader.parse(message, root);
@@ -81,6 +83,92 @@ namespace glasssix::unit_test
 
 			result = parser_.parse(protocol, to_param_string(message_));
 			Logger::WriteMessage(result.data());
+		}
+
+		TEST_METHOD(test_longinus_trace)
+		{
+			auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
+			exposing::param_string result = parser_.init_plugin(u8"plugin_configure.json");
+			exposing::param_string protocol(u8"Longinus.new"), device(u8"{\"device\":-1, \"nms\" : 0.4, \"models_directory\":\"./models\"}");
+			result = parser_.parse(protocol, device);
+
+			Json::FastWriter writer;
+			Json::Reader reader;
+			Json::Value newResult;
+			reader.parse(to_narrow_string(result), newResult);
+			std::string instance_guid = newResult["instance_guid"].asString();
+
+			Json::Value root;
+			root["instance_guid"] = instance_guid;
+
+
+			bool need_detect = true;
+			cv::Rect face;
+			cv::VideoCapture cap(0);
+
+			int width = cap.get(cv::CAP_PROP_FRAME_WIDTH);
+			int height = cap.get(cv::CAP_PROP_FRAME_HEIGHT);
+			std::uint8_t* img_base64_str = static_cast<std::uint8_t*>(_valloc(TB64ENCLEN(width * height * 3)));
+			for (size_t i = 0; i < 1000; i++)
+			{
+				cv::Mat img;
+				cap >> img;
+				
+				size_t img_base64_str_len = tb64xenc(img.data, img.rows * img.step[0], img_base64_str);		
+				root["image"] = Json::Value(reinterpret_cast<char*>(img_base64_str), reinterpret_cast<char*>(img_base64_str) + img_base64_str_len);
+				root["height"] = Json::Value(img.rows);
+				root["width"] = Json::Value(img.cols);
+				root["format"] = Json::Value(1);
+
+				if (need_detect)
+				{
+					protocol = u8"Longinus.detect";
+					root["threshold"] = Json::Value(0.5);
+					root["min_size"] = Json::Value(16);
+				}
+				else
+				{
+					protocol = u8"Longinus.trace";
+					root["trace_face"]["x"] = Json::Value(face.x);
+					root["trace_face"]["y"] = Json::Value(face.y);
+					root["trace_face"]["height"] = Json::Value(face.height);
+					root["trace_face"]["width"] = Json::Value(face.width);
+				}
+
+				std::string jstr = writer.write(root);
+				result = parser_.parse(protocol, to_param_string(jstr));
+				//exposing::param_string result = u8"{\"status\":\"OK\",\"facerectwithfaceinfo_list\":[]}";
+
+				Json::Value value;
+				reader.parse(to_narrow_string(result), value);
+
+				if (value["status"].asString() == "OK")
+				{
+					if (value["facerectwithfaceinfo_list"].size())
+					{
+						need_detect = false;
+						face.x = value["facerectwithfaceinfo_list"][0]["x"].asInt();
+						face.y = value["facerectwithfaceinfo_list"][0]["y"].asInt();
+						face.height = value["facerectwithfaceinfo_list"][0]["height"].asInt();
+						face.width = value["facerectwithfaceinfo_list"][0]["width"].asInt();
+
+						cv::rectangle(img, face, cv::Scalar(0, 0, 255));
+						for (const auto& x : value["facerectwithfaceinfo_list"][0]["landmark"])
+							cv::circle(img, cv::Point(x["x"].asDouble(), x["y"].asDouble()), 2, cv::Scalar(0, 255, 255));
+					}
+				}
+				else
+				{
+					need_detect = true;
+				}
+
+				cv::imshow("img", img);
+				cv::waitKey(1);
+
+				Logger::WriteMessage(result.data());
+			}
+
+			_vfree(img_base64_str, TB64ENCLEN(width * height * 3));
 		}
 
 		TEST_METHOD(test_irisiviel)
@@ -521,7 +609,7 @@ namespace glasssix::unit_test
 			Assert::AreEqual("OK", result["status"].asCString());
 		}
 
-		TEST_METHOD(test_romancia_alignFace)
+		/*TEST_METHOD(test_romancia_alignFace)
 		{
 			std::string topic_new = "Romancia.new";
 			std::string topic_alignFace = "Romancia.alignFace";
@@ -541,7 +629,7 @@ namespace glasssix::unit_test
 			reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_alignFace), to_param_string(params_alignFace.toStyledString()))), result);
 			Logger::WriteMessage(raw_json.c_str());
 			Assert::AreEqual("OK", result["status"].asCString());
-		}
+		}*/
 
 		TEST_METHOD(test_gaius_forward)
 		{
@@ -619,28 +707,28 @@ namespace glasssix::unit_test
 			});
 			
 
-			std::thread romancia_thread([] {
-				std::string topic_new = "Romancia.new";
-				std::string topic_alignFace = "Romancia.alignFace";
-				Json::Value params_alignFace;
-				Json::Value result;
-				Json::Reader reader;
-				std::string raw_json;
-				std::string json_new = R"({"device":-1})";
-				auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
+			//std::thread romancia_thread([] {
+			//	std::string topic_new = "Romancia.new";
+			//	std::string topic_alignFace = "Romancia.alignFace";
+			//	Json::Value params_alignFace;
+			//	Json::Value result;
+			//	Json::Reader reader;
+			//	std::string raw_json;
+			//	std::string json_new = R"({"device":-1})";
+			//	auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
 
-				reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_new), to_param_string(json_new))), result);
-				Logger::WriteMessage(raw_json.c_str());
-				Assert::AreEqual("OK", result["status"].asCString());
-				reader.parse(get_file_bytes("alignface.txt"), params_alignFace);
-				params_alignFace["instance_guid"] = result["instance_guid"];
-				for (size_t i = 0; i < 100; i++)
-				{
-					reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_alignFace), to_param_string(params_alignFace.toStyledString()))), result);
-					Logger::WriteMessage(raw_json.c_str());
-					Assert::AreEqual("OK", result["status"].asCString());
-				}
-			});
+			//	reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_new), to_param_string(json_new))), result);
+			//	Logger::WriteMessage(raw_json.c_str());
+			//	Assert::AreEqual("OK", result["status"].asCString());
+			//	reader.parse(get_file_bytes("alignface.txt"), params_alignFace);
+			//	params_alignFace["instance_guid"] = result["instance_guid"];
+			//	for (size_t i = 0; i < 100; i++)
+			//	{
+			//		reader.parse(raw_json = to_narrow_string(parser_.parse(to_param_string(topic_alignFace), to_param_string(params_alignFace.toStyledString()))), result);
+			//		Logger::WriteMessage(raw_json.c_str());
+			//		Assert::AreEqual("OK", result["status"].asCString());
+			//	}
+			//});
 
 			std::thread gaius_thread([] {
 				std::string topic_new = "Gaius.new";
@@ -693,7 +781,7 @@ namespace glasssix::unit_test
 
 			cassius_thread.join();
 			gaius_thread.join();
-			romancia_thread.join();
+			//romancia_thread.join();
 			longinus_thread.join();
 		}
 	};

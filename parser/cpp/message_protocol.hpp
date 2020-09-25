@@ -2,6 +2,7 @@
 #define _MESSAGEPROTOCOL_SIMDJSON_HPP_
 
 #include "simdjson.h"
+#include <libyuv.h>
 #include "json.h"
 #include "base64_x.hpp"
 #include "plugin_interface.hpp"
@@ -19,6 +20,78 @@ namespace glasssix
 	{
 		namespace nessus
 		{
+			//supported image format
+			enum class PROTOCOL_IMAGE_FORMAT
+			{
+				PROTOCOL_IMAGE_BGR_NCHW = 0,
+				PROTOCOL_IMAGE_BGR_NHWC = 1,
+				PROTOCOL_IMAGE_NV21 = 2
+			};
+
+			inline int convert_to_bgr(exposing::param_span<uint8_t>& src, PROTOCOL_IMAGE_FORMAT src_format, exposing::param_span<uint8_t>& dst, int width, int height)
+			{
+				switch (src_format)
+				{
+				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NCHW:
+					dst = src;
+					return 0;
+				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC:
+					dst = src;
+					return 1;
+				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_NV21:
+				{
+					if (src.size() != (width * height * 3 >> 1))
+						return -1;
+					int aligned_src_width = (width + 1) & ~1;
+					const uint8_t* y = src.data();
+					const uint8_t* uv = src.data() + aligned_src_width * height;
+					if (libyuv::NV21ToRGB24(y, width, uv, aligned_src_width, dst.data(), width * 3, width, height))
+						return -1;
+				}
+					return 1;
+				default:
+					return -1;
+				}
+			}
+
+			typedef struct image_rgb_frame
+			{
+				image_rgb_frame(int order, param_span<uint8_t> span):order(order), image_span(span) {}
+				int order;
+				param_span<uint8_t> image_span;
+			}bgr_frame;
+
+			inline image_rgb_frame decode_and_convert(std::string_view image_base64_str, uint8_t** decode_buffer, size_t* decode_buffer_len, PROTOCOL_IMAGE_FORMAT format, uint8_t** bgr_buffer, size_t* bgr_buffer_len, int width, int height)
+			{
+				if (height <= 0 || width <= 0)
+					throw parser_exception("Invalid argument: height <= 0 || width <= 0");
+
+				int current_image_str_len = TB64DECLEN(image_base64_str.size());
+				if (current_image_str_len != *decode_buffer_len)
+				{
+					_vfree(*decode_buffer, *decode_buffer_len);
+					*decode_buffer_len = current_image_str_len;
+					*decode_buffer = static_cast<std::uint8_t*>(_valloc(*decode_buffer_len));
+				}
+
+				if (height * width * 3 != *bgr_buffer_len)
+				{
+					_vfree(*bgr_buffer, *bgr_buffer_len);
+					*bgr_buffer_len = height * width * 3;
+					*bgr_buffer = static_cast<std::uint8_t*>(_valloc(*bgr_buffer_len));
+				}
+
+				tb64xdec(reinterpret_cast<const std::uint8_t*>(image_base64_str.data()), image_base64_str.size(), *decode_buffer);
+
+				param_span<std::uint8_t> image_src_span(*decode_buffer, *decode_buffer_len);
+				param_span<std::uint8_t> image_dst_span(*bgr_buffer, *bgr_buffer_len);
+				int order = convert_to_bgr(image_src_span, format, image_dst_span, width, height);
+				if (order < 0)
+					throw parser_exception("Error: convert_to_bgr failed");
+
+				return { order, image_dst_span };
+			}
+
 			inline Json::Value Longinus_new_json(plugin_interface &plugin, simdjson::dom::element& root, guid &instance)
 			{
 				Json::Value value;
@@ -68,34 +141,34 @@ namespace glasssix
 				}
 				return value;
 			}
-			
+
+			static std::uint8_t* longinus_detect_base64_decode_buffer = nullptr;
+			static size_t longinus_detect_base64_decode_buffer_len = 0;
+			static std::uint8_t* longinus_detect_bgr24_buffer = nullptr;
+			static size_t longinus_detect_bgr24_buffer_len = 0;
 			inline Json::Value Longinus_detect_json(plugin_interface &plugin, simdjson::dom::element& root, guid &instance)
 			{
 				Json::Value value;
 				try
 				{
-					std::string_view format_str = root["format"].get<std::string_view>().value();
+					int format = root["format"].get<int64_t>().value();
 					std::string_view image_base64_str = root["image"].get<std::string_view>().value();
-					std::uint8_t* image_str = static_cast<std::uint8_t*>(_valloc(TB64DECLEN(image_base64_str.size())));
-					size_t image_str_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(image_base64_str.data()), image_base64_str.size(), image_str);
-
 					int height = static_cast<int>(root["height"].get<int64_t>().value());
 					int width = static_cast<int>(root["width"].get<int64_t>().value());
 					int min_size = static_cast<int>(root["min_size"].get<int64_t>().value());
 					float threshold = static_cast<float>(root["threshold"].get<double>().value());
-					int order = static_cast<int>(root["order"].get<int64_t>().value());
 
-					if (image_str_len != 3 * height * width)
-						throw parser_exception("image_str.size() != 3 * height * width");
+					auto frame = decode_and_convert(image_base64_str, &longinus_detect_base64_decode_buffer, &longinus_detect_base64_decode_buffer_len,
+						static_cast<PROTOCOL_IMAGE_FORMAT>(format), &longinus_detect_bgr24_buffer, &longinus_detect_bgr24_buffer_len, width, height);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"image", box(exposing::param_span<std::uint8_t>{image_str, image_str_len})},
+							{u8"image", box(frame.image_span)},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"min_size", box(min_size)},
 							{u8"threshold", box(threshold)},
-							{u8"order", box(order)},
+							{u8"order", box(frame.order)},
 							{u8"object_id", box(instance)}
 						});
 
@@ -140,6 +213,81 @@ namespace glasssix
 					value["status"] = Json::Value(ex.what_to_narrow());
 				}
 				
+				return value;
+			}
+
+			inline Json::Value Longinus_trace_json(plugin_interface& plugin, simdjson::dom::element& root, guid& instance)
+			{
+				Json::Value value;
+				try
+				{
+					int format = root["format"].get<int64_t>().value();
+					std::string_view image_base64_str = root["image"].get<std::string_view>().value();
+					int height = static_cast<int>(root["height"].get<int64_t>().value());
+					int width = static_cast<int>(root["width"].get<int64_t>().value());
+					auto trace_face = make_exported_interface<longinus::face_info>();
+					trace_face.set_x(root["trace_face"]["x"].get<int64_t>().value());
+					trace_face.set_y(root["trace_face"]["y"].get<int64_t>().value());
+					trace_face.set_width(root["trace_face"]["width"].get<int64_t>().value());
+					trace_face.set_height(root["trace_face"]["height"].get<int64_t>().value());
+
+					auto frame = decode_and_convert(image_base64_str, &longinus_detect_base64_decode_buffer, &longinus_detect_base64_decode_buffer_len,
+						static_cast<PROTOCOL_IMAGE_FORMAT>(format), &longinus_detect_bgr24_buffer, &longinus_detect_bgr24_buffer_len, width, height);
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"image", box(frame.image_span)},
+							{u8"height", box(height)},
+							{u8"width", box(width)},
+							{u8"trace_face", trace_face },
+							{u8"order", box(frame.order)},
+							{u8"object_id", box(instance)}
+						});
+					auto result = plugin.execute(u8"longinus.trace", param).as<longinus::face_info>();
+
+					Json::Value jarray_rect = Json::Value(Json::arrayValue);
+					if (result.confidence() > 0.1)
+					{
+						Json::Value jobj_rect;
+						jobj_rect["x"] = Json::Int(result.x());
+						jobj_rect["y"] = Json::Int(result.y());
+						jobj_rect["width"] = Json::Int(result.width());
+						jobj_rect["height"] = Json::Int(result.height());
+						jobj_rect["confidence"] = Json::Value(result.confidence());
+						jobj_rect["yaw"] = Json::Value(result.yaw());
+						jobj_rect["pitch"] = Json::Value(result.pitch());
+						jobj_rect["roll"] = Json::Value(result.roll());
+						Json::Value jarray_landmark;
+
+						for (const auto& pt : result.pts())
+						{
+
+							Json::Value jobj_point;
+							jobj_point["x"] = Json::Int((int)pt.key());
+							jobj_point["y"] = Json::Int((int)pt.value());
+							jarray_landmark.append(jobj_point);
+						}
+						jobj_rect["landmark"] = jarray_landmark;
+						jarray_rect.append(jobj_rect);
+
+						value["status"] = Json::Value("OK");
+					}
+					else
+					{
+						value["status"] = Json::Value("Trace failed");
+					}
+
+					value["facerectwithfaceinfo_list"] = jarray_rect;
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"] = Json::Value(ex.what());
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"] = Json::Value(ex.what_to_narrow());
+				}
+
 				return value;
 			}
 
@@ -189,27 +337,24 @@ namespace glasssix
 				return value;
 			}
 
+			static std::uint8_t* romancia_align_base64_decode_buffer = nullptr;
+			static size_t romancia_align_base64_decode_buffer_len = 0;
+			static std::uint8_t* romancia_align_bgr24_buffer = nullptr;
+			static size_t romancia_align_bgr24_buffer_len = 0;
+			const static int romancia_align_aligned_base64_buffer_len = TB64ENCLEN(3 * 128 * 128);
+			static std::uint8_t* romancia_align_aligned_base64_buffer = static_cast<std::uint8_t*>(_valloc(romancia_align_aligned_base64_buffer_len));
 			inline Json::Value Romancia_alignFace_json(plugin_interface &plugin, simdjson::dom::element& root, guid &instance)
 			{
 				Json::Value value;
 
 				try
 				{
-					std::string_view format_str = root["format"].get<std::string_view>().value();
-					std::string_view gray_base64_str = root["gray"].get<std::string_view>().value();
-					std::uint8_t* gray_str = static_cast<std::uint8_t*>(_valloc(TB64DECLEN(gray_base64_str.size())));
-					size_t gray_str_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(gray_base64_str.data()), gray_base64_str.size(), gray_str);
-
-					//auto gray_str = base64_decode(gray_base64_str.data(), static_cast<std::uint32_t>(gray_base64_str.size()));
+					int format = root["format"].get<int64_t>().value();
+					std::string_view image_base64_str = root["image"].get<std::string_view>().value();
 					int height = static_cast<int>(root["height"].get<int64_t>().value());
 					int width = static_cast<int>(root["width"].get<int64_t>().value());
 					auto jarray_rect = root["facerectwithfaceinfo_list"].get<simdjson::dom::array>().value();
-
-					if (gray_str_len != height * width)
-						throw parser_exception("gray_str_len != height * width");
-
 					auto faces = exposing::make_param_vector<longinus::face_info>();
-
 					for (auto i : jarray_rect)
 					{
 						auto face = exposing::make_exported_interface<longinus::face_info>();
@@ -231,12 +376,16 @@ namespace glasssix
 						faces.push_back(face);
 					}
 
+					auto frame = decode_and_convert(image_base64_str, &romancia_align_base64_decode_buffer, &romancia_align_base64_decode_buffer_len,
+						static_cast<PROTOCOL_IMAGE_FORMAT>(format), &romancia_align_bgr24_buffer, &romancia_align_bgr24_buffer_len, width, height);
+
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"gray", box(exposing::param_span<std::uint8_t>{gray_str, gray_str_len})},
+							{u8"image", box(frame.image_span)},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"faces", faces},
+							{u8"order", box(frame.order)},
 							{u8"object_id", box(instance)}
 						});
 
@@ -247,13 +396,11 @@ namespace glasssix
 					{
 						std::vector<std::uint8_t> buffer(begin(result[i]), end(result[i]));
 
-						size_t aligned_str_len = TB64ENCLEN(buffer.size());
-						std::uint8_t* aligned_str = static_cast<std::uint8_t*>(_valloc(aligned_str_len));
-						size_t aligned_base64_str_len = tb64xenc(buffer.data(), buffer.size(), aligned_str);
+						tb64xenc(buffer.data(), buffer.size(), romancia_align_aligned_base64_buffer);
 
-						//std::string aligned_str = base64_encode((char*)buffer.data(), buffer.size());
-						value["aligned_images"].append(Json::Value(reinterpret_cast<char *>(aligned_str), reinterpret_cast<char*>(aligned_str) + aligned_base64_str_len));
+						value["aligned_images"].append(Json::Value(reinterpret_cast<char *>(romancia_align_aligned_base64_buffer), reinterpret_cast<char*>(romancia_align_aligned_base64_buffer) + romancia_align_aligned_base64_buffer_len));
 					}
+					value["format"] = Json::Value(0);
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -320,31 +467,38 @@ namespace glasssix
 
 				return value;
 			}
+
+			const static int gaius_forward_aligned_buffer_len = 3 * 128 * 128;
+			static std::uint8_t* gaius_forward_aligned_buffer = static_cast<std::uint8_t*>(_valloc(gaius_forward_aligned_buffer_len));
 			inline Json::Value Gaius_Forward_json(plugin_interface &plugin, simdjson::dom::element& root, guid &instance)
 			{
 				Json::Value value;
 
 				try
 				{
+					int format = static_cast<int>(root["format"].get<int64_t>().value());
+					if (format < 0 || format > 1)
+						throw parser_exception("Error: format < 0 || format > 1");
+
 					auto aligned_face_array = root["aligned_images"].get<simdjson::dom::array>().value();
-					std::string aligned_faces_str;
+					std::vector<uint8_t> aligned_faces_vec;
 					int num = 0;
 					for (auto i : aligned_face_array)
 					{
 						std::string_view aligned_face_base64_str = i.get<std::string_view>().value();
-						std::uint8_t* aligned_face_str = static_cast<std::uint8_t*>(_valloc(TB64DECLEN(aligned_face_base64_str.size())));
-						size_t aligned_face_str_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), aligned_face_str);
-						aligned_faces_str.append(reinterpret_cast<char *>(aligned_face_str), aligned_face_str_len);
+						if (aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len))
+							throw parser_exception("Error: aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len)");
+
+						size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), gaius_forward_aligned_buffer);
+						aligned_faces_vec.insert(aligned_faces_vec.end(), gaius_forward_aligned_buffer, gaius_forward_aligned_buffer + gaius_forward_aligned_buffer_len);
 						num++;
 					}
 
-					int order = static_cast<int>(root["order"].get<int64_t>().value());
-
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{reinterpret_cast<std::uint8_t*>(aligned_faces_str.data()), aligned_faces_str.size()})},
+							{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
 							{u8"num", box(num)},
-							{u8"order", box(order)},
+							{u8"order", box(format)},
 							{u8"object_id", box(instance)}
 						});
 
@@ -373,6 +527,7 @@ namespace glasssix
 				
 				return value;
 			}
+
 			inline Json::Value Cassius_new_json(plugin_interface &plugin, simdjson::dom::element& root, guid &instance)
 			{
 				Json::Value value;
@@ -424,30 +579,37 @@ namespace glasssix
 				}
 				return value;
 			}
+
+			static int cassius_forward_aligned_buffer_len = 3 * 128 * 128;
+			static std::uint8_t* cassius_forward_aligned_buffer = static_cast<std::uint8_t*>(_valloc(cassius_forward_aligned_buffer_len));
 			inline Json::Value Cassius_Forward_json(plugin_interface &plugin, simdjson::dom::element& root, guid &instance)
 			{
 				Json::Value value;
 				try
 				{
+					int format = static_cast<int>(root["format"].get<int64_t>().value());
+					if (format < 0 || format > 1)
+						throw parser_exception("Error: format < 0 || format > 1");
+
 					auto aligned_face_array = root["aligned_images"].get<simdjson::dom::array>().value();
-					std::string aligned_faces_str;
+					std::vector<uint8_t> aligned_faces_vec;
 					int num = 0;
 					for (auto i : aligned_face_array)
 					{
 						std::string_view aligned_face_base64_str = i.get<std::string_view>().value();
-						std::uint8_t* aligned_face_str = static_cast<std::uint8_t*>(_valloc(TB64DECLEN(aligned_face_base64_str.size())));
-						size_t aligned_face_str_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), aligned_face_str);
-						aligned_faces_str.append(reinterpret_cast<char*>(aligned_face_str), aligned_face_str_len);
+						if (aligned_face_base64_str.size() != TB64ENCLEN(cassius_forward_aligned_buffer_len))
+							throw parser_exception("Error: aligned_face_base64_str.size() != TB64ENCLEN(cassius_forward_aligned_buffer_len)");
+
+						size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), cassius_forward_aligned_buffer);
+						aligned_faces_vec.insert(aligned_faces_vec.end(), cassius_forward_aligned_buffer, cassius_forward_aligned_buffer + cassius_forward_aligned_buffer_len);
 						num++;
 					}
 
-					int order = static_cast<int>(root["order"].get<int64_t>().value());
-
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
-							{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{reinterpret_cast<std::uint8_t*>(aligned_faces_str.data()), aligned_faces_str.size()})},
+							{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
 							{u8"num", box(num)},
-							{u8"order", box(order)},
+							{u8"order", box(format)},
 							{u8"object_id", box(instance)}
 						});
 

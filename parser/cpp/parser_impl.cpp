@@ -15,6 +15,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <fstream>
+#include <algorithm>
 
 namespace glasssix::exposing::nessus
 {
@@ -74,7 +75,8 @@ namespace glasssix::exposing::nessus
 		param_string parse(const param_string& protocol, const param_string& jsonstr)
 		{
 			Json::Value value;
-			std::string_view protocol_view(protocol.data(), protocol.size());
+			std::string protocol_str(protocol.data(), protocol.size());
+			std::transform(protocol_str.begin(), protocol_str.end(), protocol_str.begin(), ::tolower);
 			std::string_view jsonstr_view(jsonstr.data(), jsonstr.size());
 			if (!ready)
 			{
@@ -93,14 +95,13 @@ namespace glasssix::exposing::nessus
 				return to_param_string(writer.write(value));
 			}
 
-			std::vector<std::string> str_vec = split(protocol_view, ".");
+			std::vector<std::string> str_vec = split(protocol_str, ".");
 			if (str_vec.size() != 2)
 			{
 				value["status"] = Json::Value("protocol illegal");
 				return to_param_string(writer.write(value));
 			}
 
-			std::string protocol_str(protocol_view.begin(), protocol_view.end());
 			std::string instance_type = str_vec[0];
 			std::string method = str_vec[1];
 
@@ -249,30 +250,31 @@ namespace glasssix::exposing::nessus
 
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)>> parser_impl::impl::protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)>> protocol_map;
-		protocol_map["Longinus.new"] = &Longinus_new_json;
-		protocol_map["Longinus.delete"] = &Longinus_delete_json;
-		protocol_map["Longinus.detect"] = &Longinus_detect_json;
-		protocol_map["Romancia.new"] = &Romancia_new_json;
-		protocol_map["Romancia.delete"] = &Romancia_delete_json;
-		protocol_map["Romancia.alignFace"] = &Romancia_alignFace_json;
-		protocol_map["Gaius.new"] = &Gaius_new_json;
-		protocol_map["Gaius.delete"] = &Gaius_delete_json;
-		protocol_map["Gaius.Forward"] = &Gaius_Forward_json;
-		protocol_map["Cassius.new"] = &Cassius_new_json;
-		protocol_map["Cassius.delete"] = &Cassius_delete_json;
-		protocol_map["Cassius.Forward"] = &Cassius_Forward_json;
-		protocol_map["Irisviel.new"] = &Irisviel_new_json;
-		protocol_map["Irisviel.delete"] = &Irisviel_delete_json;
-		protocol_map["Irisviel.search"] = &Irisviel_search_json;
-		protocol_map["Irisviel.clear"] = &Irisviel_clear_json;
-		protocol_map["Irisviel.remove_all"] = &Irisviel_remove_all_json;
-		protocol_map["Irisviel.load_databases"] = &Irisviel_load_databases_json;
-		protocol_map["Irisviel.remove_records"] = &Irisviel_remove_records_json;
-		protocol_map["Irisviel.remove_record"] = &Irisviel_remove_record_json;
-		protocol_map["Irisviel.add_record"] = &Irisviel_add_record_json;
-		protocol_map["Irisviel.add_records"] = &Irisviel_add_records_json;
-		protocol_map["Irisviel.update_record"] = &Irisviel_update_record_json;
-		protocol_map["Irisviel.update_records"] = &Irisviel_update_records_json;
+		protocol_map["longinus.new"] = &Longinus_new_json;
+		protocol_map["longinus.delete"] = &Longinus_delete_json;
+		protocol_map["longinus.detect"] = &Longinus_detect_json;
+		protocol_map["longinus.trace"] = &Longinus_trace_json;
+		protocol_map["romancia.new"] = &Romancia_new_json;
+		protocol_map["romancia.delete"] = &Romancia_delete_json;
+		protocol_map["romancia.alignface"] = &Romancia_alignFace_json;
+		protocol_map["gaius.new"] = &Gaius_new_json;
+		protocol_map["gaius.delete"] = &Gaius_delete_json;
+		protocol_map["gaius.forward"] = &Gaius_Forward_json;
+		protocol_map["cassius.new"] = &Cassius_new_json;
+		protocol_map["cassius.delete"] = &Cassius_delete_json;
+		protocol_map["cassius.forward"] = &Cassius_Forward_json;
+		protocol_map["irisviel.new"] = &Irisviel_new_json;
+		protocol_map["irisviel.delete"] = &Irisviel_delete_json;
+		protocol_map["irisviel.search"] = &Irisviel_search_json;
+		protocol_map["irisviel.clear"] = &Irisviel_clear_json;
+		protocol_map["irisviel.remove_all"] = &Irisviel_remove_all_json;
+		protocol_map["irisviel.load_databases"] = &Irisviel_load_databases_json;
+		protocol_map["irisviel.remove_records"] = &Irisviel_remove_records_json;
+		protocol_map["irisviel.remove_record"] = &Irisviel_remove_record_json;
+		protocol_map["irisviel.add_record"] = &Irisviel_add_record_json;
+		protocol_map["irisviel.add_records"] = &Irisviel_add_records_json;
+		protocol_map["irisviel.update_record"] = &Irisviel_update_record_json;
+		protocol_map["irisviel.update_records"] = &Irisviel_update_records_json;
 		return protocol_map;
 	}();
 	plugin_interface parser_impl::impl::plugin{nullptr};
