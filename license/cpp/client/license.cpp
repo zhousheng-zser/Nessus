@@ -1,6 +1,4 @@
 #include "license.hpp"
-#include "smbios.hpp"
-#include "jni/utils.hpp"
 #include "authorization_client.hpp"
 
 #include <logger.hpp>
