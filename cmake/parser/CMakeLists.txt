@@ -26,6 +26,6 @@ if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
 	target_link_directories(${module_name} PRIVATE ${COMMON_LIBRARY_DIRS})
 endif()
 
-target_link_libraries(${module_name} simdjson yuv plugin_register ${COMMON_LIBRARIES} Threads::Threads log)
+target_link_libraries(${module_name} simdjson yuv plugin_register ${COMMON_LIBRARIES} Threads::Threads)
 add_dependencies(${module_name} simdjson yuv plugin_register)
 
