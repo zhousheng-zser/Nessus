@@ -118,17 +118,7 @@ namespace glasssix::exposing
 		);
 	}
 
-	/// <summary>
-	/// Converts a GUID to a string.
-	/// </summary>
-	/// <param name="id">The GUID</param>
-	/// <returns>The string</returns>
-	std::string to_string(const guid& id)
-	{
-		auto chars = to_char_array(id);
-
-		return std::string(chars.data(), chars.size());
-	}
+	
 
 	/// <summary>
 	/// Creates a GUID from a byte buffer.
@@ -174,6 +164,18 @@ namespace glasssix::exposing
 			meta::to_char_array(meta::sub_array<0, 2>::get(id.data4)), std::array<char, 1>{ '-' },
 			meta::to_char_array(meta::sub_array<2, 6>::get(id.data4))
 		);
+	}
+
+	/// <summary>
+	/// Converts a GUID to a string.
+	/// </summary>
+	/// <param name="id">The GUID</param>
+	/// <returns>The string</returns>
+	inline std::string to_string(const guid& id)
+	{
+		auto chars = to_char_array(id);
+
+		return std::string(chars.data(), chars.size());
 	}
 }
 

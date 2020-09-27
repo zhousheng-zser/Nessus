@@ -2,7 +2,7 @@
 
 #ifdef _MSC_VER
 #ifdef EXPORT_NESSUS_LICENSE
-#undef 
+#undef EXPORT_NESSUS_LICENSE
 #define EXPORT_NESSUS_LICENSE __declspec(dllexport)
 #else
 #define EXPORT_NESSUS_LICENSE __declspec(dllimport)

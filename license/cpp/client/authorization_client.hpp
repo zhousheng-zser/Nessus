@@ -19,7 +19,7 @@ namespace glasssix::license
 
 		authorization_client();
 		virtual ~authorization_client();
-		void connect(std::string_view server, std::string_view port) const;
+		void connect(std::string_view uri) const;
 		void close() const;
 		void request_authorization(const authorization_request_message& message) const;
 		void on_connect(const std::function<void()>& handler) const;

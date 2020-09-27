@@ -58,8 +58,8 @@ END)"
 					{
 						exposing::guid{ records.front()["id"].as<std::string_view>() },
 						records.front()["organization"].as<std::string>(),
-						records.front()["allowed_device_count"].as<std::int64_t>(),
-						records.front()["authorized_device_count"].as<std::int64_t>(),
+						records.front()["allowed_device_count"].as<std::int32_t>(),
+						records.front()["authorized_device_count"].as<std::int32_t>(),
 						records.front()["creation_time"].as<std::time_t>(),
 						records.front()["expiration_time"].as<std::time_t>()
 					}
@@ -69,7 +69,7 @@ END)"
 		std::vector<authorized_device_record> get_authorized_devices(const exposing::guid& license_id)
 		{
 			pqxx::work work{ connection_ };
-			std::vector<license_record> result;
+			std::vector<authorized_device_record> result;
 			auto records = work.exec_params(std::string(query_get_authorized_devices), exposing::to_string(license_id));
 
 			for (const auto& item : records)
@@ -89,7 +89,7 @@ END)"
 		std::vector<authorized_device_record> get_exact_authorized_devices(const exposing::guid& license_id, std::string_view machine_id)
 		{
 			pqxx::work work{ connection_ };
-			std::vector<license_record> result;
+			std::vector<authorized_device_record> result;
 			auto records = work.exec_params(std::string(query_get_exact_authorized_devices), exposing::to_string(license_id), machine_id);
 
 			for (const auto& item : records)

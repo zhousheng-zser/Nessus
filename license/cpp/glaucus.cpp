@@ -169,10 +169,10 @@ namespace glasssix::crypto
 					auto machine_id_hash = hashing::sha3::hash_sha3_512(reverse_machine_id.data(), reverse_machine_id.size());
 					auto result = (meta::rotl(meta::make_number<std::uint32_t>(
 						{
-							hash[indexes * sizeof(std::uint32_t)] ^ machine_id_hash[indexes * sizeof(std::uint32_t)],
-							hash[indexes * sizeof(std::uint32_t) + 1] ^ machine_id_hash[indexes * sizeof(std::uint32_t) + 1],
-							hash[indexes * sizeof(std::uint32_t) + 2] ^ machine_id_hash[indexes * sizeof(std::uint32_t) + 2],
-							hash[indexes * sizeof(std::uint32_t) + 3] ^ machine_id_hash[indexes * sizeof(std::uint32_t) + 3]
+							static_cast<std::uint8_t>(hash[indexes * sizeof(std::uint32_t)] ^ machine_id_hash[indexes * sizeof(std::uint32_t)]),
+							static_cast<std::uint8_t>(hash[indexes * sizeof(std::uint32_t) + 1] ^ machine_id_hash[indexes * sizeof(std::uint32_t) + 1]),
+							static_cast<std::uint8_t>(hash[indexes * sizeof(std::uint32_t) + 2] ^ machine_id_hash[indexes * sizeof(std::uint32_t) + 2]),
+							static_cast<std::uint8_t>(hash[indexes * sizeof(std::uint32_t) + 3] ^ machine_id_hash[indexes * sizeof(std::uint32_t) + 3])
 						}), seed) ^ ...);
 
 					return result;
@@ -180,7 +180,7 @@ namespace glasssix::crypto
 
 			auto buffer = meta::apply_index_sequence<user_portrait_size>([&](auto... indexes) { return std::array{ (indexes, (user_portrait[indexes] ^ factor))... }; });
 
-			aes_.set_key_with_iv(buffer, machine_id);
+			aes_.set_key_with_iv(make_user_portarit_bytes(buffer), machine_id);
 		}
 
 		aes_provider aes_;

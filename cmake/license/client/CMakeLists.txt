@@ -9,6 +9,6 @@ file(GLOB_RECURSE source_files ${source_dir}/*.cpp ${source_dir}/*.hpp)
 add_library(${target_name} SHARED ${source_files})
 
 target_include_directories(${target_name} PRIVATE ${common_lib_dir} ${3rd_party_dir}/asio/include ${3rd_party_dir}/websocketpp/include ${3rd_party_dir}/nlohmann/include ${3rd_party_dir}/openssl/include ${COMMON_INCLUDE_DIRS} E:/Libs/jdk1.8.0_251/include E:/Libs/jdk1.8.0_251/include/Win32)
-target_compile_definitions(${target_name} PRIVATE -DEXPORT_NESSUS_LICENSE -DASIO_STANDALONE)
+target_compile_definitions(${target_name} PRIVATE -DEXPORT_NESSUS_LICENSE -DASIO_STANDALONE -D_WEBSOCKETPP_CPP11_STRICT_)
 target_link_libraries(${target_name} PRIVATE ssl crypto license-common-lib ${COMMON_LIBRARIES})
 add_dependencies(${target_name} ssl crypto license-common-lib)

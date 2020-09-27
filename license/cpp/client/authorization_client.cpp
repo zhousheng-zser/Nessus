@@ -148,7 +148,7 @@ namespace glasssix::license
 			}
 		}
 
-		void parse_content(const client_type::connection_ptr& connection, std::string_view content)
+		void parse_content(const protocol_header& header, std::string_view content)
 		{
 			static constexpr std::array dispatcher_table
 			{
@@ -176,7 +176,7 @@ namespace glasssix::license
 			}
 
 			protocol_header::buffer_type header_buffer;
-			auto header = (std::copy(payload.begin(), payload.begin() + protocol_header::header_size, header_buffer), protocol_header::parse(header_buffer));
+			auto header = (std::copy(payload.begin(), payload.begin() + protocol_header::header_size, header_buffer.begin()), protocol_header::parse(header_buffer));
 
 			// Validates the data size.
 			if (!header || payload.size() - header_buffer.size() < header.size)
@@ -184,7 +184,7 @@ namespace glasssix::license
 				return connection->close(websocketpp::close::status::invalid_payload, "The data size is too small.", code);
 			}
 
-			parse_content(connection, payload.substr(header_buffer.size(), header.size));
+			parse_content(header, payload.substr(header_buffer.size(), header.size));
 		}
 
 		void on_message(const websocketpp::connection_hdl& handle, const client_type::message_ptr& message)
@@ -220,9 +220,9 @@ namespace glasssix::license
 	{
 	}
 
-	void authorization_client::connect(std::string_view server, std::string_view port) const
+	void authorization_client::connect(std::string_view uri) const
 	{
-		impl_->connect(server, port);
+		impl_->connect(uri);
 	}
 
 	void authorization_client::close() const
