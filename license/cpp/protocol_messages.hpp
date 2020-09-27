@@ -58,6 +58,4 @@ namespace glasssix::license
 		
 		return (std::copy(json_bytes.begin(), json_bytes.end(), iter), result);
 	}
-
-
 }
