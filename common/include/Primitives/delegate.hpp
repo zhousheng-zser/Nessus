@@ -2,188 +2,168 @@
 
 #include <atomic>
 #include <vector>
+#include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 #include <functional>
+#include <type_traits>
 
 namespace glasssix
 {
-    class delegate_token
-    {
-    public:
-        delegate_token() : id_{}
-        {
-        }
+	class delegate_token
+	{
+	public:
+		delegate_token() : id_{}
+		{
+		}
 
-        delegate_token(const std::function<void(uint64_t)>& remove_handler, uint64_t id, const std::weak_ptr<void>& observer) : remove_handler_{ remove_handler }, id_{ id }, observer_{ observer }
-        {
-        }
+		delegate_token(const std::function<void(std::uint64_t)>& remove_handler, std::uint64_t id, const std::weak_ptr<void>& observer) : remove_handler_{ remove_handler }, id_{ id }, observer_{ observer }
+		{
+		}
 
-        delegate_token(const delegate_token& other) = delete;
-        delegate_token(delegate_token&& other)
-        {
-            *this = std::move(other);
-        }
+		delegate_token(const delegate_token& other) = delete;
 
-        virtual ~delegate_token()
-        {
-            clean();
-        }
+		delegate_token(delegate_token&& other) noexcept : id_{ std::exchange(other.id_, 0) }, observer_{ std::move(other.observer_) }, remove_handler_{ std::move(other.remove_handler_) }
+		{
+		}
 
-        delegate_token& operator=(const delegate_token& right) = delete;
-        delegate_token& operator=(delegate_token&& right)
-        {
-            clean();
-            id_ = std::move(right.id_);
-            observer_ = std::move(right.observer_);
-            remove_handler_ = std::move(right.remove_handler_);
+		~delegate_token()
+		{
+			clear();
+		}
 
-            return *this;
-        }
+		delegate_token& operator=(const delegate_token& right) = delete;
+		
+		delegate_token& operator=(delegate_token&& right) noexcept
+		{
+			clear();
+			id_ = std::exchange(right.id_, 0);
+			observer_ = std::move(right.observer_);
+			remove_handler_ = std::move(right.remove_handler_);
 
-        void clean()
-        {
-            // We assume that the object keeps alive with the observer.
-            auto observer = observer_.lock();
+			return *this;
+		}
 
-            if (observer && remove_handler_)
-            {
-                remove_handler_(id_);
-            }
-        }
-    private:
-        uint64_t id_;
-        std::weak_ptr<void> observer_;
-        std::function<void(uint64_t)> remove_handler_;
-    };
-    
-    template<typename TResult, typename... TArgs>
-    class simple_delegate
-    {
-    public:
-        using function_type = std::function<TResult(TArgs...)>;
-    public:
-        simple_delegate() : lifetime_observer_{ std::make_shared<int>() }
-        {
-            update_readable_buffer_core();
-        }
+		void clear()
+		{
+			// We assume that the object keeps alive with the observer.
+			if (auto observer = observer_.lock(); observer && remove_handler_)
+			{
+				remove_handler_(id_);
+			}
+		}
+	private:
+		std::uint64_t id_;
+		std::weak_ptr<void> observer_;
+		std::function<void(std::uint64_t)> remove_handler_;
+	};
 
-        virtual ~simple_delegate() = default;
+	template<typename Result, typename... Args>
+	class delegate
+	{
+	public:
+		using function_type = std::function<Result(Args...)>;
 
-        auto& operator+=(function_type&& func)
-        {
-            add_listener_core(std::move(func));
+		delegate() : lifetime_observer_{ std::make_shared<int>() }
+		{
+			update_readable_buffer();
+		}
 
-            return *this;
-        }
+		decltype(auto) operator+=(const delegate& right)
+		{
+			for (auto& [id, func] : right.listeners_)
+			{
+				add_listener(func);
+			}
 
-        auto& operator+=(const function_type& func)
-        {
-            add_listener_core(func);
+			return (update_readable_buffer(), *this);
+		}
 
-            return *this;
-        }
+		template<typename Callable, typename = std::enable_if_t<std::is_convertible_v<Callable, function_type>>>
+		decltype(auto) operator+=(Callable&& handler)
+		{
+			return (add_listener_with_updating(std::forward<Callable>(handler)), *this);
+		}
 
-        auto& operator+=(const simple_delegate<TResult, TArgs...>& right)
-        {
-            for (auto&[id, func] : right.listeners_)
-            {
-                add_listener_core(func);
-            }
+		template<typename... Args, typename = std::void_t<decltype(std::declval<function_type>()(std::declval<Args>()...))>>
+		Result operator()(Args&&... args)
+		{
+			// Fetches the buffer automically.
+			std::shared_ptr<function_type[]> buffer = std::atomic_load_explicit(&readable_buffer_, std::memory_order_acquire);
 
-            return *this;
-        }
+			if constexpr (std::is_void_v<Result>)
+			{
+				for (auto ptr = buffer.get(); *ptr; ptr++)
+				{
+					(*ptr)(std::forward<Args>(args)...);
+				}
+			}
+			else
+			{
+				// Initializes the default value.
+				Result result{};
 
-		template<typename... TParameters>
-		TResult operator()(TParameters&&... args)
-        {
-            // Fetch the buffer automically.
-            std::shared_ptr<function_type[]> buffer = std::atomic_load(&readable_buffer_);
+				for (auto ptr = buffer.get(); *ptr; ptr++)
+				{
+					result = (*ptr)(std::forward<Args>(args)...);
+				}
 
-            // A specialization for 'void'.
-            if constexpr (std::is_void_v<TResult>)
-            {
-                for (auto ptr = buffer.get(); *ptr; ptr++)
-                {
-                    (*ptr)(std::forward<TParameters>(args)...);
-                }
-            }
-            else
-            {
-                // Initialize the default value.
-                TResult result{};
+				return result;
+			}
+		}
 
-                for (auto ptr = buffer.get(); *ptr; ptr++)
-                {
-                    result = (*ptr)(std::forward<TParameters>(args)...);
-                }
+		template<typename Callable, typename = std::enable_if_t<std::is_convertible_v<Callable, function_type>>>
+		auto add_listener_auto_removal(Callable&& handler)
+		{
+			auto id = add_listener_with_updating(std::forward<Callable>(handler));
 
-                return result;
-            }
-        }
+			return std::make_shared<delegate_token>(std::bind(&delegate::remove_listener, this, std::placeholders::_1), id, lifetime_observer_);
+		}
 
-        auto add_listener_auto_removal(const function_type& func)
-        {
-            auto id = add_listener_core(func);
+		void remove_listener(std::uint64_t id)
+		{
+			if (auto iter = std::find_if(listeners_.begin(), listeners_.end(), [&](const auto& inner) { return inner.first == id; }); iter != listeners_.end())
+			{
+				// Creates a new readable buffer atomically.
+				listeners_.erase(iter);
+				update_readable_buffer();
+			}
+		}
+	private:
+		template<typename Callable>
+		auto add_listener_with_updating(Callable&& handler)
+		{
+			std::uint64_t id = add_listener(std::forward<Callable>(handler));
 
-            return std::make_shared<delegate_token>(std::bind(&simple_delegate::remove_listener, this, std::placeholders::_1), id, lifetime_observer_);
-        }
+			return (update_readable_buffer(), id);
+		}
 
-        auto add_listener_auto_removal(function_type&& func)
-        {
-            auto id = add_listener_core(func);
+		template<typename Callable>
+		auto add_listener(Callable&& handler)
+		{
+			if (!std::forward<Callable>(handler))
+			{
+				throw std::runtime_error{ "The listener cannot be empty." };
+			}
 
-            return std::make_shared<delegate_token>(std::bind(&simple_delegate::remove_listener, this, std::placeholders::_1), id, lifetime_observer_);
-        }
+			return listeners_.emplace_back(global_counter_++, std::forward<Callable>(handler)).first;
+		}
 
-        void remove_listener(uint64_t id)
-        {
-            auto item = std::find_if(listeners_.begin(), listeners_.end(), [&](const auto& item)
-            {
-                return item.first == id;
-            });
+		void update_readable_buffer()
+		{
+			std::shared_ptr<function_type[]> buffer{ new function_type[listeners_.size() + 1], [](function_type* inner) { delete[] inner; } };
 
-            if (item != listeners_.end())
-            {
-                listeners_.erase(item);
+			for (std::size_t i = 0; i < listeners_.size(); i++)
+			{
+				buffer[i] = listeners_[i].second;
+			}
 
-                // Create a new readable buffer atomically.
-                update_readable_buffer_core();
-            }
-        }
-    private:
-        template<typename TFunctor>
-        auto add_listener_core(TFunctor&& func)
-        {
-            if (!std::forward<TFunctor>(func))
-            {
-                throw std::runtime_error{ "The listener functor cannot be empty." };
-            }
-            
-            auto&[id, handler] = listeners_.emplace_back(global_counter_++, std::forward<TFunctor>(func));
+			std::atomic_store_explicit(&readable_buffer_, buffer, std::memory_order_release);
+		}
 
-            // Create a new readable buffer atomically.
-            update_readable_buffer_core();
-
-            return id;
-        }
-
-        void update_readable_buffer_core()
-        {
-            std::shared_ptr<function_type[]> buffer{ new function_type[listeners_.size() + 1], [](function_type* inner) { delete[] inner; } };
-
-            size_t index = 0;
-            for (auto&[id, handler] : listeners_)
-            {
-                buffer[index++] = handler;
-            }
-
-            std::atomic_store(&readable_buffer_, buffer);
-        }
-    private:
-        std::shared_ptr<void> lifetime_observer_;
-        std::shared_ptr<function_type[]> readable_buffer_;
-        std::vector<std::pair<uint64_t, function_type>> listeners_;
-    private:
-        inline static std::atomic_uint64_t global_counter_ = 0;
-    };
+		std::shared_ptr<void> lifetime_observer_;
+		std::shared_ptr<function_type[]> readable_buffer_;
+		std::vector<std::pair<std::uint64_t, function_type>> listeners_;
+		inline static std::atomic_uint64_t global_counter_ = 0;
+	};
 }

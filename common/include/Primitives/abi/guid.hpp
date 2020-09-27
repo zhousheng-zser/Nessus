@@ -119,6 +119,18 @@ namespace glasssix::exposing
 	}
 
 	/// <summary>
+	/// Converts a GUID to a string.
+	/// </summary>
+	/// <param name="id">The GUID</param>
+	/// <returns>The string</returns>
+	std::string to_string(const guid& id)
+	{
+		auto chars = to_char_array(id);
+
+		return std::string(chars.data(), chars.size());
+	}
+
+	/// <summary>
 	/// Creates a GUID from a byte buffer.
 	/// </summary>
 	/// <param name="Size">The size in bytes</param>
