@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 3.14.3)
 
-set(target_name license_manager)
+set(target_name license_client)
 set(source_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../license/cpp/client)
 set(common_lib_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../license/cpp)
 set(3rd_party_dir ${source_dir}/../../../3rd-party/cpp)
 
-file(GLOB_RECURSE source_files ${source_dir}/*.cpp ${source_dir}/*.hpp)
+if(WITH_JNI)
+	file(GLOB_RECURSE source_files ${source_dir}/*.cpp ${source_dir}/*.hpp)
+else()
+	file(GLOB source_files ${source_dir}/*.cpp ${source_dir}/*.hpp)
+endif()
+
 add_library(${target_name} SHARED ${source_files})
 
 target_include_directories(${target_name} PRIVATE ${common_lib_dir} ${3rd_party_dir}/asio/include ${3rd_party_dir}/websocketpp/include ${3rd_party_dir}/nlohmann/include ${3rd_party_dir}/openssl/include ${COMMON_INCLUDE_DIRS} E:/Libs/jdk1.8.0_251/include E:/Libs/jdk1.8.0_251/include/Win32)

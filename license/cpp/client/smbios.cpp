@@ -264,6 +264,8 @@ namespace glasssix::smbios
 
 	std::optional<smbios_info> read_smbios_info()
 	{
+		// Stay tuned for x86 linux support.
+#ifdef _WIN32
 		static constexpr std::uint32_t signature = 'RSMB';
 
 		std::uint32_t size = GetSystemFirmwareTable(signature, 0, nullptr, 0);
@@ -280,5 +282,8 @@ namespace glasssix::smbios
 		return version >= 0x0206 ?
 			GetSystemFirmwareTable(signature, 0, raw_data, size) == size ? std::optional{ parse_smbios_data(*raw_data) } : std::nullopt :
 			throw smbios_unsupported_version{};
+#else
+		return std::nullopt;
+#endif
 	}
 }

@@ -113,9 +113,9 @@ namespace glasssix::jni
 			if (std::ifstream stream{ "/proc/cpuinfo", std::ios::in | std::ios::binary })
 			{
 				std::smatch matches;
-				std::string buffer(std::istreambuf_iterator<char>{ stream }, std::istreambuf_iterator<char>{});
+				std::string buffer_(std::istreambuf_iterator<char>{ stream }, std::istreambuf_iterator<char>{});
 
-				return std::regex_search(buffer, matches, pattern) ? matches[1].str() : std::string();
+				return std::regex_search(buffer_, matches, pattern) ? matches[1].str() : std::string();
 			}
 
 			return std::string();
@@ -189,14 +189,13 @@ namespace glasssix::jni
 
 		thread_local auto freeing_handler = [context](JNIEnv*)
 		{
-			if (context)
+			if (context && attached_in_native_code)
 			{
 				context->vm->DetachCurrentThread();
 			}
 		};
 
 		thread_local std::shared_ptr<JNIEnv> result{ creator(), freeing_handler };
-
 
 		return result.get();
 	}

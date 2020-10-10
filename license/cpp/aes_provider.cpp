@@ -16,21 +16,25 @@ namespace glasssix::crypto
 	class aes_provider::impl
 	{
 	public:
-		void set_key_with_iv(exposing::param_span<const std::uint8_t> key, const std::array<std::uint8_t, iv_size>& iv)
+		void set_key(exposing::param_span<const std::uint8_t> key)
 		{
-			// Assigns the IV and the hashed key into internal buffers.
+			// Assigns the hashed key into internal buffers.
 			auto key_hash = hashing::sha3::hash_sha3_512(key.data(), key.size());
 
-			initialization_vector_ = iv;
 			AES_set_encrypt_key(key_hash.data(), static_cast<int>(key_hash.size()) * meta::byte_bits, &encyption_key_);
 			AES_set_decrypt_key(key_hash.data(), static_cast<int>(key_hash.size()) * meta::byte_bits, &decryption_key_);
 		}
 
-		void set_key_with_iv(exposing::param_span<const std::uint8_t> key, exposing::param_span<const std::uint8_t> iv)
+		void set_iv(const std::array<std::uint8_t, iv_size>& iv)
 		{
-			auto real_iv = hashing::sha3::hash_sha3_224(iv.data(), iv.size());
+			initialization_vector_ = iv;
+		}
 
-			set_key_with_iv(key, meta::sub_array<0, iv_size>::get(real_iv));
+		void set_iv(exposing::param_span<const std::uint8_t> iv)
+		{
+			auto hash = hashing::sha3::hash_sha3_224(iv.data(), iv.size());
+
+			std::copy(hash.begin(), hash.begin() + iv_size, initialization_vector_.begin());
 		}
 
 		std::vector<std::uint8_t> encrypt(exposing::param_span<const std::uint8_t> plaintext)
@@ -78,14 +82,19 @@ namespace glasssix::crypto
 	{
 	}
 
-	void aes_provider::set_key_with_iv(exposing::param_span<const std::uint8_t> key, const std::array<std::uint8_t, iv_size>& iv)
+	void aes_provider::set_key(exposing::param_span<const std::uint8_t> key)
 	{
-		impl_->set_key_with_iv(key, iv);
+		impl_->set_key(key);
 	}
 
-	void aes_provider::set_key_with_iv(exposing::param_span<const std::uint8_t> key, exposing::param_span<const std::uint8_t> iv)
+	void aes_provider::set_iv(const std::array<std::uint8_t, iv_size>& iv)
 	{
-		impl_->set_key_with_iv(key, iv);
+		impl_->set_iv(iv);
+	}
+
+	void aes_provider::set_iv(exposing::param_span<const std::uint8_t> iv)
+	{
+		impl_->set_iv(iv);
 	}
 
 	std::vector<std::uint8_t> aes_provider::encrypt(exposing::param_span<const std::uint8_t> plaintext)

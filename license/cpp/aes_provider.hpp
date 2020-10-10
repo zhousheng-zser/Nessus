@@ -25,19 +25,22 @@ namespace glasssix::crypto
 		virtual ~aes_provider();
 
 		/// <summary>
-		/// Sets an AES key and an IV for the instance.
+		/// Sets a new AES key.
 		/// </summary>
-		/// <param name="key">The user key</param>
-		/// <param name="iv">The IV</param>
-		void set_key_with_iv(exposing::param_span<const std::uint8_t> key, const std::array<std::uint8_t, iv_size>& iv);
+		/// <param name="key">The key</param>
+		void set_key(exposing::param_span<const std::uint8_t> key);
 
 		/// <summary>
-		/// Sets an AES key and an IV for the instance.
-		/// The IV will be hashed as a SHA3-224 sequence.
+		/// Sets a new IV.
 		/// </summary>
-		/// <param name="key">The user key</param>
 		/// <param name="iv">The IV</param>
-		void set_key_with_iv(exposing::param_span<const std::uint8_t> key, exposing::param_span<const std::uint8_t> iv);
+		void set_iv(const std::array<std::uint8_t, iv_size>& iv);
+
+		/// <summary>
+		/// Sets a new IV.
+		/// </summary>
+		/// <param name="iv">The IV</param>
+		void set_iv(exposing::param_span<const std::uint8_t> iv);
 
 		/// <summary>
 		/// Encrypts a plaintext.

@@ -3,13 +3,13 @@
 #include "smbios_info.hpp"
 
 #include <optional>
-#include <exception>
+#include <stdexcept>
 
 namespace glasssix::smbios
 {
-	struct smbios_error : std::exception
+	struct smbios_error : std::runtime_error
 	{
-		using exception::exception;
+		using runtime_error::runtime_error;
 	};
 
 	struct smbios_unsupported_version : smbios_error

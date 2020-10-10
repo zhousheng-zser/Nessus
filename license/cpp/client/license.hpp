@@ -11,8 +11,13 @@
 #define EXPORT_NESSUS_LICENSE
 #endif
 
+#include <ctime>
+
 namespace glasssix::license
 {
-	extern "C" EXPORT_NESSUS_LICENSE void check_license_async(void(*callback)(bool, const char*));
-	extern "C" EXPORT_NESSUS_LICENSE void request_license_async(void(*callback)(bool, const char*));
+	using evaluate_license_callback_type = void(*)(void* context, bool valid, const char* message, std::time_t remaining_time);
+	using request_license_async_callback_type = void(*)(void* context, bool success, const char* message, std::time_t remaining_time);
+
+	extern "C" EXPORT_NESSUS_LICENSE void evaluate_license(evaluate_license_callback_type callback);
+	extern "C" EXPORT_NESSUS_LICENSE void request_license_async(request_license_async_callback_type callback);
 }
