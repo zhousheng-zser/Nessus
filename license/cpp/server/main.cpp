@@ -16,7 +16,6 @@
 using namespace glasssix::license;
 namespace crypto = glasssix::crypto;
 namespace exposing = glasssix::exposing;
-namespace time_utils = glasssix::time_utils;
 
 namespace
 {
@@ -26,7 +25,7 @@ namespace
 	authorization_response_message create_response_message(const authorization_request_message& message, const license_record& record)
 	{
 		thread_local crypto::glaucus glaucus;
-		auto timestamp = time_utils::get_timestamp();
+		auto timestamp = glasssix::get_timestamp();
 		auto license = nlohmann::json::to_msgpack(nlohmann::json{ license_info{ message.machine_id, record.expiration_time, timestamp, timestamp } });
 
 		glaucus.generate(message.machine_id, timestamp);
@@ -45,7 +44,7 @@ int main()
 		server.on_request_authorization([&](const authorization_request_message& message)
 			{
 				// Checks the client timestamp.
-				if (std::abs(message.client_timestamp - time_utils::get_timestamp()) >= permissible_error)
+				if (std::abs(message.client_timestamp - glasssix::get_timestamp()) >= permissible_error)
 				{
 					return authorization_response_message{ "The gap between the client time and the server time is too large." };
 				}
@@ -57,7 +56,7 @@ int main()
 					return authorization_response_message{ "The license does not exist." };
 				}
 
-				if (auto time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock().now()); license->expiration_time <= time_utils::get_timestamp())
+				if (license->expiration_time <= glasssix::get_timestamp())
 				{
 					return authorization_response_message{ "The license has been expired." };
 				}
@@ -70,7 +69,7 @@ int main()
 				// Updates the license information.
 				license->authorized_device_count++;
 				database.add_or_update_license(*license);
-				database.add_or_update_authorized_device(authorized_device_record{ license->id, message.machine_id, time_utils::get_timestamp() });
+				database.add_or_update_authorized_device(authorized_device_record{ license->id, message.machine_id, glasssix::get_timestamp() });
 
 				return create_response_message(message, *license);
 			});

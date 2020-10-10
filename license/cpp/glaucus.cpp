@@ -130,7 +130,7 @@ namespace glasssix::crypto
 	class glaucus::impl
 	{
 	public:
-		impl() : engine_{ std::random_device{}() }, user_portrait_{}
+		impl() : engine_ { std::random_device{}() }
 		{
 		}
 
@@ -139,7 +139,7 @@ namespace glasssix::crypto
 
 		}
 
-		void load(std::string_view path, exposing::param_span<std::uint8_t> machine_id)
+		void load(std::string_view path, exposing::param_span<const std::uint8_t> machine_id)
 		{
 			std::error_code code;
 
@@ -169,19 +169,23 @@ namespace glasssix::crypto
 
 			// Initializes cryptography.
 			std::reverse(buffer->begin(), buffer->end());
+			cipher_user_portrait_ = std::move(*buffer);
 			init_user_portrait_cryptography(machine_id, last_write_time);
-			user_portrait_ = make_user_portrait(user_portrait_encrypter_.decrypt(*buffer));
-			init_client_data_cryptography(machine_id, last_write_time);
+
+			auto user_portrait = make_user_portrait(user_portrait_encrypter_.decrypt(cipher_user_portrait_));
+
+			init_client_data_cryptography(user_portrait, machine_id, last_write_time);
 		}
 
 		void save(std::string_view path)
 		{
 			auto timestamp = get_timestamp();
-			auto ciphertext = (user_portrait_encrypter_.set_iv(meta::to_array(timestamp)), user_portrait_encrypter_.encrypt(user_portrait_));
 
-			std::reverse(ciphertext.begin(), ciphertext.end());
+			update_user_portrait_timestamp(timestamp);
 
-			if (!io::write_all_bytes(path, ciphertext))
+			std::reverse(cipher_user_portrait_.begin(), cipher_user_portrait_.end());
+
+			if (!io::write_all_bytes(path, cipher_user_portrait_))
 			{
 				throw crypto_error{ "Failed to create the user portrait file." };
 			}
@@ -206,13 +210,14 @@ namespace glasssix::crypto
 				user_portrait[i] = distribution_(engine_);
 			}
 
-			user_portrait_ = user_portrait;
-			init_client_data_cryptography(machine_id, timestamp);
+			update_user_portrait_timestamp(timestamp, user_portrait);
+			init_client_data_cryptography(user_portrait, machine_id, timestamp);
+			set_client_data_timestamp(timestamp);
 		}
 
-		std::vector<std::uint8_t> user_portrait() const
+		std::vector<std::uint8_t> user_portrait()
 		{
-			return std::vector<std::uint8_t>(user_portrait_.begin(), user_portrait_.end());
+			return cipher_user_portrait_;
 		}
 
 		std::vector<std::uint8_t> forward(exposing::param_span<const std::uint8_t> buffer)
@@ -225,6 +230,14 @@ namespace glasssix::crypto
 			return client_data_encrypter_.decrypt(buffer);
 		}
 	private:
+		void update_user_portrait_timestamp(std::time_t timestamp, exposing::param_span<const std::uint8_t> user_portrait = nullptr)
+		{
+			auto real_user_portrait = user_portrait ? user_portrait : user_portrait_encrypter_.decrypt(cipher_user_portrait_);
+
+			user_portrait_encrypter_.set_iv(meta::to_array(timestamp));
+			cipher_user_portrait_ = user_portrait_encrypter_.encrypt(real_user_portrait);
+		}
+
 		void init_user_portrait_cryptography(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
 		{
 			std::vector<std::uint8_t> buffer;
@@ -239,20 +252,20 @@ namespace glasssix::crypto
 			client_data_encrypter_.set_key(salty_buffer);
 		}
 
-		void init_client_data_cryptography(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
+		void init_client_data_cryptography(exposing::param_span<const std::uint8_t> user_portrait, exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
 		{
 			std::array<std::uint64_t, user_portrait_size> buffer;
 			auto factors = get_obfuscated_factors(machine_id, timestamp);
 
-			std::transform(user_portrait_.begin(), user_portrait_.end(), buffer.begin(), [&, index = std::size_t{}](std::uint64_t inner) mutable { return utils::hash_all(inner, factors[index++]); });
+			std::transform(user_portrait.begin(), user_portrait.end(), buffer.begin(), [&, index = std::size_t{}](std::uint64_t inner) mutable { return utils::hash_all(inner, factors[index++]); });
 			client_data_encrypter_.set_key(make_user_portarit_bytes(buffer));
 		}
 
 		std::default_random_engine engine_;
 		aes_provider client_data_encrypter_;
 		aes_provider user_portrait_encrypter_;
+		std::vector<std::uint8_t> cipher_user_portrait_;
 		std::uniform_int_distribution<std::uint64_t> distribution_;
-		std::array<std::uint64_t, user_portrait_size> user_portrait_;
 	};
 
 	glaucus::glaucus() : impl_{ std::make_unique<impl>() }
@@ -263,22 +276,22 @@ namespace glasssix::crypto
 	{
 	}
 
-	void glaucus::load(std::string_view path, exposing::param_span<std::uint8_t> machine_id)
+	void glaucus::load(std::string_view path, exposing::param_span<const std::uint8_t> machine_id) const
 	{
 		impl_->load(path, machine_id);
 	}
 
-	void glaucus::save(std::string_view path)
+	void glaucus::save(std::string_view path) const
 	{
 		impl_->save(path);
 	}
 
-	void glaucus::set_client_data_timestamp(std::time_t timestamp)
+	void glaucus::set_client_data_timestamp(std::time_t timestamp) const
 	{
 		impl_->set_client_data_timestamp(timestamp);
 	}
 
-	void glaucus::generate(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
+	void glaucus::generate(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp) const
 	{
 		impl_->generate(machine_id, timestamp);
 	}

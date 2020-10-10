@@ -9,7 +9,10 @@
 #include <algorithm>
 #include <condition_variable>
 
+#define NOGDI
+
 #include <asio.hpp>
+#include <logger.hpp>
 #include <delegate.hpp>
 #include <nlohmann/json.hpp>
 #include <websocketpp/server.hpp>
@@ -103,6 +106,7 @@ namespace glasssix::license
 
 		~impl()
 		{
+			close();
 		}
 
 		void listen(std::uint16_t port)
@@ -201,8 +205,9 @@ namespace glasssix::license
 					parse_header(connection, payload);
 				}
 			}
-			catch (const websocketpp::exception& ex)
+			catch (const std::exception& ex)
 			{
+				LOG(ERROR) << ex.what();
 			}
 		}
 
@@ -230,7 +235,7 @@ namespace glasssix::license
 		impl_->close();
 	}
 
-	void authorization_server::on_request_authorization(const std::function<authorization_response_message(const authorization_request_message&)>& handler)
+	void authorization_server::on_request_authorization(const std::function<authorization_response_message(const authorization_request_message&)>& handler) const
 	{
 		impl_->on_request_authorization += handler;
 	}

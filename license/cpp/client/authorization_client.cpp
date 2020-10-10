@@ -8,9 +8,11 @@
 #include <algorithm>
 #include <condition_variable>
 
+#define NOGDI
+
 #include <asio.hpp>
+#include <logger.hpp>
 #include <delegate.hpp>
-#include <fmt/format.h>
 #include <nlohmann/json.hpp>
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio.hpp>
@@ -138,6 +140,10 @@ namespace glasssix::license
 
 		void request_authorization(const authorization_request_message& message)
 		{
+			auto connection = [this] { std::scoped_lock{ mutex_ }; return connection_; }();
+			auto payload = create_message_buffer(message_type::authorization, message);
+
+			client_.send(connection, payload.data(), payload.size(), websocketpp::frame::opcode::BINARY);
 		}
 	private:
 		static void raise_authorization(impl& obj, const nlohmann::json& json)
@@ -200,16 +206,16 @@ namespace glasssix::license
 					parse_header(connection, payload);
 				}
 			}
-			catch (const websocketpp::exception& ex)
+			catch (const std::exception& ex)
 			{
+				LOG(ERROR) << ex.what();
 			}
-
 		}
 
 		std::mutex mutex_;
 		client_type client_;
-		std::condition_variable condition_close_;
 		websocketpp::connection_hdl connection_;
+		std::condition_variable condition_close_;
 	};
 
 	authorization_client::authorization_client() : impl_{ std::make_unique<impl>() }

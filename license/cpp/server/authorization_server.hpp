@@ -21,7 +21,7 @@ namespace glasssix::license
 		virtual ~authorization_server();
 		void listen(std::uint16_t port) const;
 		void close() const;
-		void on_request_authorization(const std::function<authorization_response_message(const authorization_request_message&)>& handler);
+		void on_request_authorization(const std::function<authorization_response_message(const authorization_request_message&)>& handler) const;
 	private:
 		std::unique_ptr<impl> impl_;
 	};

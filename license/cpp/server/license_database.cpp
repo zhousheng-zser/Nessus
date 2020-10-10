@@ -41,14 +41,14 @@ END)"
 	class license_database::impl
 	{
 	public:
-		impl(std::string_view connection_str) : connection_{ std::string(connection_str) }
+		impl(std::string_view connection_str) : connection_{ std::string{ connection_str } }
 		{
 		}
 
 		std::optional<license_record> get_license(const exposing::guid& id)
 		{
 			pqxx::work work{ connection_ };
-			auto records = work.exec_params(std::string(query_get_license), exposing::to_string(id));
+			auto records = work.exec_params(std::string{ query_get_license }, exposing::to_string(id));
 
 			return records.empty() ?
 				std::nullopt :
@@ -70,7 +70,7 @@ END)"
 		{
 			pqxx::work work{ connection_ };
 			std::vector<authorized_device_record> result;
-			auto records = work.exec_params(std::string(query_get_authorized_devices), exposing::to_string(license_id));
+			auto records = work.exec_params(std::string{ query_get_authorized_devices }, exposing::to_string(license_id));
 
 			for (const auto& item : records)
 			{
@@ -90,7 +90,7 @@ END)"
 		{
 			pqxx::work work{ connection_ };
 			std::vector<authorized_device_record> result;
-			auto records = work.exec_params(std::string(query_get_exact_authorized_devices), exposing::to_string(license_id), machine_id);
+			auto records = work.exec_params(std::string{ query_get_exact_authorized_devices }, exposing::to_string(license_id), machine_id);
 
 			for (const auto& item : records)
 			{
@@ -110,7 +110,7 @@ END)"
 		{
 			pqxx::work work{ connection_ };
 			
-			work.exec_params(std::string(query_add_or_update_license), exposing::to_string(record.id), record.organization, record.allowed_device_count, record.authorized_device_count, record.creation_time, record.expiration_time);
+			work.exec_params(std::string{ query_add_or_update_license }, exposing::to_string(record.id), record.organization, record.allowed_device_count, record.authorized_device_count, record.creation_time, record.expiration_time);
 			work.commit();
 		}
 
@@ -118,7 +118,7 @@ END)"
 		{
 			pqxx::work work{ connection_ };
 
-			work.exec_params(std::string(query_add_or_update_authorized_device), exposing::to_string(record.license_id), std::basic_string_view<std::byte>{ reinterpret_cast<const std::byte*>(record.machine_id.data()), record.machine_id.size() }, record.last_authorization_time);
+			work.exec_params(std::string{ query_add_or_update_authorized_device }, exposing::to_string(record.license_id), std::basic_string_view<std::byte>{ reinterpret_cast<const std::byte*>(record.machine_id.data()), record.machine_id.size() }, record.last_authorization_time);
 			work.commit();
 		}
 	private:
@@ -143,7 +143,7 @@ END)"
 		return impl_->get_authorized_devices(license_id);
 	}
 
-	std::vector<authorized_device_record> license_database::get_exact_authorized_devices(const exposing::guid& license_id, std::string_view machine_id)
+	std::vector<authorized_device_record> license_database::get_exact_authorized_devices(const exposing::guid& license_id, std::string_view machine_id) const
 	{
 		return impl_->get_exact_authorized_devices(license_id, machine_id);
 	}
