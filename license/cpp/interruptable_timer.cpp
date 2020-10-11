@@ -15,16 +15,17 @@ namespace glasssix
 		struct timer_info
 		{
 			std::function<void()> callback;
-			std::chrono::milliseconds interval;
+			std::chrono::milliseconds period;
+			std::chrono::milliseconds deferred_time;
 
-			template<typename Callback, typename Interval>
-			timer_info(Callback&& callback, Interval&& interval) : callback{ std::forward<Callback>(callback) }, interval{ std::forward<Interval>(interval) }
+			template<typename Callback, typename Period, typename DeferredTime>
+			timer_info(Callback&& callback, Period&& period, DeferredTime&& deferred_time) : callback{ std::forward<Callback>(callback) }, period{ std::forward<Period>(period) }, deferred_time{ std::forward<DeferredTime>(deferred_time) }
 			{
 			}
 
 			explicit operator bool() const noexcept
 			{
-				return callback && interval > std::chrono::milliseconds::zero();
+				return callback && period > std::chrono::milliseconds::zero();
 			}
 		};
 	}
@@ -47,10 +48,15 @@ namespace glasssix
 			}
 		}
 
-		void start(std::int64_t interval_in_milliseconds, const std::function<void()>& callback)
+		void start(std::int64_t period_in_milliseconds, const std::function<void()>& callback)
+		{
+			start(period_in_milliseconds, 0, callback);
+		}
+
+		void start(std::int64_t period_in_milliseconds, std::int64_t deferred_milliseconds, const std::function<void()>& callback)
 		{
 			stop();
-			change_state(std::make_shared<timer_info>(callback, std::chrono::milliseconds{ interval_in_milliseconds }), true, false);
+			change_state(std::make_shared<timer_info>(callback, std::chrono::milliseconds{ period_in_milliseconds }, std::chrono::milliseconds{ deferred_milliseconds }), true, false);
 		}
 
 		void stop()
@@ -88,13 +94,21 @@ namespace glasssix
 
 				if (auto info = std::atomic_load_explicit(&timer_info_, std::memory_order_acquire); info && *info)
 				{
+					// Processes deferring.
+					if (timer_running_.load(std::memory_order_acquire) && info->deferred_time > std::chrono::milliseconds::zero())
+					{
+						std::unique_lock lock{ mutex_timer_ };
+
+						cond_timer_.wait_for(lock, info->deferred_time, [this] { return !timer_running_.load(std::memory_order_acquire); });
+					}
+
 					while (timer_running_.load(std::memory_order_acquire))
 					{
 						info->callback();
 
 						std::unique_lock lock{ mutex_timer_ };
 
-						cond_timer_.wait_for(lock, info->interval, [this] { return !timer_running_.load(std::memory_order_acquire); });
+						cond_timer_.wait_for(lock, info->period, [this] { return !timer_running_.load(std::memory_order_acquire); });
 					}
 				}
 
@@ -127,6 +141,11 @@ namespace glasssix
 	void interruptable_timer::start(std::int64_t interval_in_milliseconds, const std::function<void()>& callback) const
 	{
 		impl_->start(interval_in_milliseconds, callback);
+	}
+
+	void interruptable_timer::start(std::int64_t period_in_milliseconds, std::int64_t deferred_milliseconds, const std::function<void()>& callback) const
+	{
+		impl_->start(period_in_milliseconds, deferred_milliseconds, callback);
 	}
 
 	void interruptable_timer::stop() const

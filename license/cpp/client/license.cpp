@@ -46,6 +46,8 @@ namespace glasssix::license
 	namespace
 	{
 		constexpr std::int64_t watchdog_period = 1000 * 60 * 5;
+		constexpr std::int64_t watchdog_deferred_time = watchdog_period;
+
 		constexpr crypto::meta_string license_folder{ "glasssix" };
 		constexpr crypto::meta_string license_file{ "product_keeper.dat" };
 		constexpr crypto::meta_string portrait_file{ "user_portrait.dat" };
@@ -239,7 +241,7 @@ namespace glasssix::license
 
 				client_.on_async_error([this](const std::error_code& code)
 					{
-						forward_exceptions([&, this] { throw license_error{ code.message() }; })();
+						forward_exceptions([&] { throw license_error{ code.message() }; })();
 					});
 			}
 
@@ -286,8 +288,9 @@ namespace glasssix::license
 
 			std::call_once(flag, [&]
 				{
+					// In case of expensive initialzation on Android, we defer the first tick of the watchdog to wait for it to succeed completely.
 					global_license_ = std::make_unique<license>(license_key);
-					watchdog_timer.start(watchdog_period, []
+					watchdog_timer.start(watchdog_period, watchdog_deferred_time, []
 						{
 							evaluate_license([](void* context, bool valid, const char* message, std::int64_t remaining_seconds)
 								{
