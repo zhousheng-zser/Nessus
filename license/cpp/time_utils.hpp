@@ -19,7 +19,7 @@ namespace glasssix
 		template<typename DestinationTimePoint, typename SourceTimePoint>
 		DestinationTimePoint time_point_cast(SourceTimePoint&& time_point)
 		{
-			return DestinationTimePoint::clock::now() + (std::forward<SourceTimePoint>(time_point) - SourceTimePoint::clock::now());
+			return DestinationTimePoint::clock::now() + (std::forward<SourceTimePoint>(time_point) - std::decay_t<SourceTimePoint>::clock::now());
 		}
 	}
 
@@ -42,7 +42,7 @@ namespace glasssix
 	/// <param name="limit">The limit of iterations</param>
 	/// <returns></returns>
 	template<typename DestinationTimePoint, typename SourceTimePoint>
-	DestinationTimePoint time_point_cast(SourceTimePoint&& time_point, const SourceTimePoint::duration& tolerance = typename SourceTimePoint::duration{ 100 }, std::size_t limit = 5)
+	DestinationTimePoint time_point_cast(SourceTimePoint&& time_point, const typename SourceTimePoint::duration& tolerance = typename SourceTimePoint::duration{ 100 }, std::size_t limit = 5)
 	{
 		std::size_t index = 0;
 		DestinationTimePoint current;
@@ -50,8 +50,8 @@ namespace glasssix
 
 		do
 		{
-			auto source = details::time_point_cast<SourceTimePoint>(destination);
 			auto destination = details::time_point_cast<DestinationTimePoint>(std::forward<SourceTimePoint>(time_point));
+			auto source = details::time_point_cast<SourceTimePoint>(destination);
 			auto delta = details::abs_duration(source - std::forward<SourceTimePoint>(time_point));
 
 			if (delta < epsilon)

@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <optional>
 #include <string_view>
 
 #include <logger.hpp>
@@ -74,27 +75,31 @@ namespace glasssix::license
 			return fs::path{};
 		}
 
-		std::vector<std::uint8_t> get_machine_id()
+		std::optional<std::vector<std::uint8_t>> get_machine_id()
 		{
 			try
 			{
-				if (auto info = smbios::read_smbios_info())
+				auto info = smbios::read_smbios_info();
+
+				if (!info)
 				{
-					std::string buffer;
-
-					buffer.append(std::to_string(info->processor.processor_id))
-						.append(info->board.serial_number)
-						.append(info->system.serial_number)
-						.append(info->system.uuid);
-
-					auto hash = hashing::sha3::hash_sha3_512(reinterpret_cast<const std::uint8_t*>(buffer.c_str()), buffer.size());
-
-					return std::vector<std::uint8_t>(hash.begin(), hash.end());
+					return std::nullopt;
 				}
+
+				std::string buffer;
+
+				buffer.append(std::to_string(info->processor.processor_id))
+					.append(info->board.serial_number)
+					.append(info->system.serial_number)
+					.append(info->system.uuid);
+
+				auto hash = hashing::sha3::hash_sha3_512(reinterpret_cast<const std::uint8_t*>(buffer.c_str()), buffer.size());
+
+				return std::vector<std::uint8_t>{ hash.begin(), hash.end() };
 			}
 			catch (const std::exception& ex)
 			{
-				return std::vector<std::uint8_t>{};
+				return std::nullopt;
 			}
 		}
 #else
@@ -109,9 +114,9 @@ namespace glasssix::license
 		public:
 			delegate<void, bool, std::string_view> on_authorization;
 
-			license(std::string_view license_key) : machine_id_{ get_machine_id() }, config_{ license_config::from_license_key(license_key) }
+			license(std::string_view license_key) : config_{ license_config::from_license_key(license_key) }, machine_id_{ get_machine_id() }
 			{
-				if (machine_id_.empty())
+				if (!machine_id_ || machine_id_->empty())
 				{
 					throw license_error{ "Failed to get the machine ID." };
 				}
@@ -140,7 +145,7 @@ namespace glasssix::license
 				}
 
 				// Initializes the cryptography.
-				glaucus_.load(portrait_path_.string(), machine_id_);
+				glaucus_.load(portrait_path_.string(), *machine_id_);
 				init_authorization_client();
 			}
 
@@ -165,7 +170,7 @@ namespace glasssix::license
 					throw license_error{ "Failed to parse the current license information." };
 				}
 
-				if (!info->valid(timestamp, machine_id_))
+				if (!info->valid(timestamp, *machine_id_))
 				{
 					throw license_error{ "Invalid or expired license." };
 				}
@@ -202,7 +207,7 @@ namespace glasssix::license
 						client_.request_authorization(authorization_request_message
 							{
 								config_->product_id,
-								machine_id_,
+								*machine_id_,
 								get_timestamp()
 							});
 					}));
@@ -215,7 +220,7 @@ namespace glasssix::license
 						}
 
 						glaucus_.set_client_data_timestamp(message.server_timestamp);
-						glaucus_.load(message.user_portrait, machine_id_, message.server_timestamp);
+						glaucus_.load(message.user_portrait, *machine_id_, message.server_timestamp);
 						glaucus_.save(portrait_path_.string());
 
 						if (!io::write_all_bytes(license_path_.string(), message.license))
@@ -264,8 +269,8 @@ namespace glasssix::license
 			fs::path portrait_path_;
 			crypto::glaucus glaucus_;
 			authorization_client client_;
-			std::vector<std::uint8_t> machine_id_;
 			std::optional<license_config> config_;
+			std::optional<std::vector<std::uint8_t>> machine_id_;
 		};
 
 		std::unique_ptr<license> global_license_;

@@ -141,11 +141,6 @@ namespace glasssix
 		template<typename Callable>
 		auto add_listener(Callable&& handler)
 		{
-			if (!std::forward<Callable>(handler))
-			{
-				throw std::runtime_error{ "The listener cannot be empty." };
-			}
-
 			return listeners_.emplace_back(global_counter_++, std::forward<Callable>(handler)).first;
 		}
 

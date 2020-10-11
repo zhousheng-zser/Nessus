@@ -62,7 +62,15 @@ namespace glasssix::crypto
 		auto make_user_portarit_bytes(const std::array<std::uint64_t, user_portrait_size>& user_portrait)
 		{
 			std::array<std::uint8_t, user_portrait_size * sizeof(std::uint64_t) + user_portrait_salt.size()> result;
-			auto iter = std::transform(user_portrait.begin(), user_portrait.end(), result.begin(), [&](std::uint64_t inner) { return meta::to_array(inner); });
+			auto iter = result.begin();
+
+			for (const auto& item : user_portrait)
+			{
+				auto bytes = meta::to_array(item);
+
+				iter = std::copy(bytes.begin(), bytes.end(), iter);
+			}
+
 			auto salt = client_data_salt.decrypt();
 
 			return (std::copy(reinterpret_cast<const std::uint8_t*>(salt.data()), reinterpret_cast<const std::uint8_t*>(salt.data()) + salt.size(), iter), result);
@@ -209,13 +217,15 @@ namespace glasssix::crypto
 		{
 			std::array<std::uint64_t, user_portrait_size> user_portrait;
 
-			for (std::size_t i = 0; i < user_portrait.size(); i++)
+			for (auto& item : user_portrait)
 			{
-				user_portrait[i] = distribution_(engine_);
+				item = distribution_(engine_);
 			}
 
-			update_user_portrait_timestamp<false>(timestamp, user_portrait);
-			init_client_data_cryptography<false>(user_portrait, machine_id, timestamp);
+			auto bytes = make_user_portarit_bytes(user_portrait);
+
+			update_user_portrait_timestamp<false>(timestamp, bytes);
+			init_client_data_cryptography<false>(bytes, machine_id, timestamp);
 			set_client_data_timestamp(timestamp);
 		}
 
