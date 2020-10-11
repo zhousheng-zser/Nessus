@@ -95,10 +95,13 @@ namespace glasssix::license
 
 			client_.set_close_handler([this](const websocketpp::connection_hdl& handle)
 				{
-					std::scoped_lock lock{ mutex_ };
+					{
+						std::scoped_lock lock{ mutex_ };
 
-					connection_.reset();
-					condition_close_.notify_one();
+						connection_.reset();
+					}
+
+					condition_close_.notify_all();
 				});
 		}
 
@@ -135,7 +138,7 @@ namespace glasssix::license
 			{
 				client_.close(connection_, websocketpp::close::status::going_away, "Shutdown", code);
 			}
-			
+
 			condition_close_.wait(lock, [this] { return connection_.expired(); });
 		}
 

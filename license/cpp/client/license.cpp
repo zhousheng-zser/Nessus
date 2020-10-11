@@ -7,6 +7,7 @@
 #include "license_info.hpp"
 #include "license_error.hpp"
 #include "license_config.hpp"
+#include "interruptable_timer.hpp"
 #include "authorization_client.hpp"
 
 #ifdef __ANDROID__
@@ -32,7 +33,6 @@
 #include <delegate.hpp>
 #include <filesystem.hpp>
 #include <nlohmann/json.hpp>
-#include <asio/steady_timer.hpp>
 #include <abi/platform_encoding.hpp>
 
 #define NOGDI
@@ -45,6 +45,7 @@ namespace glasssix::license
 
 	namespace
 	{
+		constexpr std::int64_t watchdog_period = 1000 * 60 * 5;
 		constexpr crypto::meta_string license_folder{ "glasssix" };
 		constexpr crypto::meta_string license_file{ "product_keeper.dat" };
 		constexpr crypto::meta_string portrait_file{ "user_portrait.dat" };
@@ -273,6 +274,7 @@ namespace glasssix::license
 			std::optional<std::vector<std::uint8_t>> machine_id_;
 		};
 
+		interruptable_timer watchdog_timer;
 		std::unique_ptr<license> global_license_;
 	}
 
@@ -285,11 +287,22 @@ namespace glasssix::license
 			std::call_once(flag, [&]
 				{
 					global_license_ = std::make_unique<license>(license_key);
+					watchdog_timer.start(watchdog_period, []
+						{
+							evaluate_license([](void* context, bool valid, const char* message, std::int64_t remaining_seconds)
+								{
+									if (!valid)
+									{
+										LOG(ERROR) << message;
+										std::terminate();
+									}
+								});
+						});
 				});
 		}
 	}
 
-	EXPORT_NESSUS_LICENSE void request_license_async(const char* license_key, void* context)
+	EXPORT_NESSUS_LICENSE void request_license_async(void* context)
 	{
 		if (global_license_)
 		{
@@ -297,24 +310,16 @@ namespace glasssix::license
 		}
 	}
 
-	EXPORT_NESSUS_LICENSE void set_request_license_async_callback(request_license_async_callback_type callback, void* context)
+	EXPORT_NESSUS_LICENSE void evaluate_license(evaluate_license_callback_type callback, void* context)
 	{
-		if (global_license_ && callback)
-		{
-			global_license_->on_authorization += [=](bool success, std::string_view message) { callback(context, success, message.data()); };
-		}
-	}
-
-	EXPORT_NESSUS_LICENSE void evaluate_license(const char* license_key, evaluate_license_callback_type callback, void* context)
-	{
-		if (!global_license_ && license_key == nullptr || callback == nullptr)
+		if (!global_license_ || callback == nullptr)
 		{
 			return;
 		}
 
 		try
 		{
-			std::int64_t remaining_seconds = license{ license_key }.evaluate().count();
+			std::int64_t remaining_seconds = global_license_->evaluate().count();
 			std::int64_t seconds = remaining_seconds % 60;
 			std::int64_t minutes = remaining_seconds / 60 % 60;
 			std::int64_t hours = remaining_seconds / 3600 % 24;
@@ -325,6 +330,14 @@ namespace glasssix::license
 		catch (const std::exception& ex)
 		{
 			callback(context, false, ex.what(), 0);
+		}
+	}
+
+	EXPORT_NESSUS_LICENSE void set_request_license_async_callback(request_license_async_callback_type callback, void* context)
+	{
+		if (global_license_ && callback)
+		{
+			global_license_->on_authorization += [=](bool success, std::string_view message) { callback(context, success, message.data()); };
 		}
 	}
 }

@@ -94,13 +94,16 @@ namespace glasssix::license
 
 			server_.set_close_handler([this](const websocketpp::connection_hdl& handle)
 				{
-					std::scoped_lock lock{ mutex_ };
-
-					if (auto iter = std::find_if(connections_.begin(), connections_.end(), [&](const websocketpp::connection_hdl& inner) { return inner.lock() == handle.lock(); }); iter != connections_.end())
 					{
-						connections_.erase(iter);
-						condition_erase_.notify_one();
+						std::scoped_lock lock{ mutex_ };
+
+						if (auto iter = std::find_if(connections_.begin(), connections_.end(), [&](const websocketpp::connection_hdl& inner) { return inner.lock() == handle.lock(); }); iter != connections_.end())
+						{
+							connections_.erase(iter);
+						}
 					}
+
+					condition_erase_.notify_all();
 				});
 		}
 
@@ -124,7 +127,7 @@ namespace glasssix::license
 			{
 				server_.stop_listening(code);
 			}
-			
+
 			{
 				std::unique_lock lock{ mutex_ };
 
