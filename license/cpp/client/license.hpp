@@ -11,13 +11,13 @@
 #define EXPORT_NESSUS_LICENSE
 #endif
 
-#include <ctime>
+#include <cstdint>
 
 namespace glasssix::license
 {
-	using evaluate_license_callback_type = void(*)(void* context, bool valid, const char* message, std::time_t remaining_time);
-	using request_license_async_callback_type = void(*)(void* context, bool success, const char* message, std::time_t remaining_time);
+	using evaluate_license_callback_type = void(*)(void* context, bool valid, const char* message, std::int64_t remaining_seconds);
+	using request_license_async_callback_type = void(*)(void* context, bool success, const char* message, std::int64_t remaining_seconds);
 
-	extern "C" EXPORT_NESSUS_LICENSE void evaluate_license(evaluate_license_callback_type callback);
-	extern "C" EXPORT_NESSUS_LICENSE void request_license_async(request_license_async_callback_type callback);
+	extern "C" EXPORT_NESSUS_LICENSE void evaluate_license(const char* license_key, evaluate_license_callback_type callback, void* context = nullptr);
+	extern "C" EXPORT_NESSUS_LICENSE void request_license_async(const char* license_key, request_license_async_callback_type callback, void* context = nullptr);
 }

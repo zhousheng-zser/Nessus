@@ -15,6 +15,7 @@
 
 #include <abi/sha3.hpp>
 #include <abi/meta.hpp>
+#include <fmt/format.h>
 #include <filesystem.hpp>
 #include <hash_utils.hpp>
 
@@ -139,6 +140,12 @@ namespace glasssix::crypto
 
 		}
 
+		void load(exposing::param_span<const std::uint8_t> user_portrait, exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
+		{
+			update_user_portrait_timestamp<true>(timestamp, user_portrait);
+			init_client_data_cryptography<true>(user_portrait, machine_id, timestamp);
+		}
+
 		void load(std::string_view path, exposing::param_span<const std::uint8_t> machine_id)
 		{
 			std::error_code code;
@@ -152,7 +159,7 @@ namespace glasssix::crypto
 
 			if (code)
 			{
-				throw crypto_error{ code.message() };
+				throw crypto_error{ fmt::format(FMT_STRING("Failed to get the timestamp: {}"), code.message()) };
 			}
 
 			auto buffer = io::read_all_bytes(path);
@@ -171,17 +178,14 @@ namespace glasssix::crypto
 			std::reverse(buffer->begin(), buffer->end());
 			cipher_user_portrait_ = std::move(*buffer);
 			init_user_portrait_cryptography(machine_id, last_write_time);
-
-			auto user_portrait = make_user_portrait(user_portrait_encrypter_.decrypt(cipher_user_portrait_));
-
-			init_client_data_cryptography(user_portrait, machine_id, last_write_time);
+			init_client_data_cryptography<true>(cipher_user_portrait_, machine_id, last_write_time);
 		}
 
 		void save(std::string_view path)
 		{
 			auto timestamp = get_timestamp();
 
-			update_user_portrait_timestamp(timestamp);
+			update_user_portrait_timestamp<false>(timestamp);
 
 			std::reverse(cipher_user_portrait_.begin(), cipher_user_portrait_.end());
 
@@ -192,7 +196,7 @@ namespace glasssix::crypto
 
 			if (std::error_code code; (fs::last_write_time(std::string{ path }, from_time_t<fs::file_time_type>(timestamp), code), code))
 			{
-				throw crypto_error{ "Failed to update the file time." };
+				throw crypto_error{ "Failed to update the timestamp." };
 			}
 		}
 
@@ -210,8 +214,8 @@ namespace glasssix::crypto
 				user_portrait[i] = distribution_(engine_);
 			}
 
-			update_user_portrait_timestamp(timestamp, user_portrait);
-			init_client_data_cryptography(user_portrait, machine_id, timestamp);
+			update_user_portrait_timestamp<false>(timestamp, user_portrait);
+			init_client_data_cryptography<false>(user_portrait, machine_id, timestamp);
 			set_client_data_timestamp(timestamp);
 		}
 
@@ -230,9 +234,20 @@ namespace glasssix::crypto
 			return client_data_encrypter_.decrypt(buffer);
 		}
 	private:
+		template<bool Encrypted>
 		void update_user_portrait_timestamp(std::time_t timestamp, exposing::param_span<const std::uint8_t> user_portrait = nullptr)
 		{
-			auto real_user_portrait = user_portrait ? user_portrait : user_portrait_encrypter_.decrypt(cipher_user_portrait_);
+			auto real_user_portrait = [&]
+			{
+				if constexpr (Encrypted)
+				{
+					return user_portrait_encrypter_.decrypt(user_portrait ? user_portrait : cipher_user_portrait_);
+				}
+				else
+				{
+					return user_portrait ? user_portrait : user_portrait_encrypter_.decrypt(cipher_user_portrait_);
+				}
+			}();
 
 			user_portrait_encrypter_.set_iv(meta::to_array(timestamp));
 			cipher_user_portrait_ = user_portrait_encrypter_.encrypt(real_user_portrait);
@@ -248,16 +263,28 @@ namespace glasssix::crypto
 
 			std::copy(reinterpret_cast<const std::uint8_t*>(salt.data()), reinterpret_cast<const std::uint8_t*>(salt.data()) + salt.size(), iter);
 
-			client_data_encrypter_.set_iv(meta::to_array(timestamp));
-			client_data_encrypter_.set_key(salty_buffer);
+			user_portrait_encrypter_.set_iv(meta::to_array(timestamp));
+			user_portrait_encrypter_.set_key(salty_buffer);
 		}
 
+		template<bool Encrypted>
 		void init_client_data_cryptography(exposing::param_span<const std::uint8_t> user_portrait, exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
 		{
 			std::array<std::uint64_t, user_portrait_size> buffer;
 			auto factors = get_obfuscated_factors(machine_id, timestamp);
+			auto real_user_portrait = [&]
+			{
+				if constexpr (Encrypted)
+				{
+					return make_user_portrait(user_portrait_encrypter_.decrypt(user_portrait));
+				}
+				else
+				{
+					return user_portrait;
+				}
+			}();
 
-			std::transform(user_portrait.begin(), user_portrait.end(), buffer.begin(), [&, index = std::size_t{}](std::uint64_t inner) mutable { return utils::hash_all(inner, factors[index++]); });
+			std::transform(real_user_portrait.begin(), real_user_portrait.end(), buffer.begin(), [&, index = std::size_t{}](std::uint64_t inner) mutable { return utils::hash_all(inner, factors[index++]); });
 			client_data_encrypter_.set_key(make_user_portarit_bytes(buffer));
 		}
 
@@ -274,6 +301,11 @@ namespace glasssix::crypto
 
 	glaucus::~glaucus()
 	{
+	}
+
+	void glaucus::load(exposing::param_span<const std::uint8_t> buffer, exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp) const
+	{
+		impl_->load(buffer, machine_id, timestamp);
 	}
 
 	void glaucus::load(std::string_view path, exposing::param_span<const std::uint8_t> machine_id) const

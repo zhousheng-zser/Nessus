@@ -1,8 +1,8 @@
 #include "authorization_server.hpp"
-#include "license_database.hpp"
-#include "license_info.hpp"
-#include "time_utils.hpp"
 #include "glaucus.hpp"
+#include "time_utils.hpp"
+#include "license_info.hpp"
+#include "license_database.hpp"
 
 #include <cmath>
 #include <chrono>
@@ -75,10 +75,6 @@ int main()
 			});
 
 		server.listen(listen_port);
-	}
-	catch (const websocketpp::exception& ex)
-	{
-		LOG(ERROR) << ex.code().message();
 	}
 	catch (const std::exception& ex)
 	{

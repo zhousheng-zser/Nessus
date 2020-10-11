@@ -8,13 +8,13 @@
 #include <vector>
 #include <algorithm>
 #include <condition_variable>
-
 #define NOGDI
 
 #include <asio.hpp>
 #include <logger.hpp>
 #include <delegate.hpp>
 #include <nlohmann/json.hpp>
+#include <abi/param_span.hpp>
 #include <websocketpp/server.hpp>
 #include <websocketpp/config/asio.hpp>
 
@@ -140,7 +140,6 @@ namespace glasssix::license
 				// Waits for all connections to be closed.
 				condition_erase_.wait(lock, [this] { return connections_.empty(); });
 			}
-
 		}
 	private:
 		static void raise_request_authorization(impl& obj, const server_type::connection_ptr& connection, const nlohmann::json& json)
@@ -153,7 +152,7 @@ namespace glasssix::license
 			connection->send(buffer.data(), buffer.size());
 		}
 
-		void parse_content(const server_type::connection_ptr& connection, const protocol_header& header, std::string_view content)
+		void parse_content(const server_type::connection_ptr& connection, const protocol_header& header, exposing::param_span<const std::uint8_t> content)
 		{
 			static constexpr std::array dispatcher_table
 			{
@@ -161,7 +160,7 @@ namespace glasssix::license
 			};
 
 			// Parses the message buffer and omits this item if any error occurs.
-			if (auto json = nlohmann::json::parse(std::string_view{ reinterpret_cast<const char*>(content.data()), content.size() }, nullptr, false); !json.is_discarded())
+			if (auto json = nlohmann::json::from_msgpack(content, true, false); !json.is_discarded())
 			{
 				if (auto iter = std::find_if(dispatcher_table.begin(), dispatcher_table.end(), [&](const auto& inner) { return inner.first == header.type; }); iter != dispatcher_table.end())
 				{
@@ -170,7 +169,7 @@ namespace glasssix::license
 			}
 		}
 
-		void parse_header(const server_type::connection_ptr& connection, std::string_view payload)
+		void parse_header(const server_type::connection_ptr& connection, exposing::param_span<const std::uint8_t> payload)
 		{
 			std::error_code code;
 
@@ -189,7 +188,7 @@ namespace glasssix::license
 				return connection->close(websocketpp::close::status::invalid_payload, "The data size is too small.", code);
 			}
 
-			parse_content(connection, header, payload.substr(header_buffer.size(), header.size));
+			parse_content(connection, header, payload.sub_span(header_buffer.size(), header.size));
 		}
 
 		void on_message(const websocketpp::connection_hdl& handle, const server_type::message_ptr& message)
@@ -202,7 +201,7 @@ namespace glasssix::license
 					auto connection = server_.get_con_from_hdl(handle);
 					auto payload = message->get_payload();
 
-					parse_header(connection, payload);
+					parse_header(connection, exposing::param_span<const std::uint8_t>{ reinterpret_cast<const std::uint8_t*>(payload.c_str()), payload.size() });
 				}
 			}
 			catch (const std::exception& ex)

@@ -32,7 +32,7 @@ namespace glasssix::license
 
 		return protocol_header
 		{
-			std::string(reinterpret_cast<const char*>(buffer.data()), header_text.size()),
+			std::string{ reinterpret_cast<const char*>(buffer.data()), header_text.size() },
 			meta::make_number<std::uint32_t>(meta::sub_array<offset_version, sizeof(version)>::get(buffer)),
 			static_cast<message_type>(meta::make_number<std::uint32_t>(meta::sub_array<offset_type, sizeof(type)>::get(buffer))),
 			meta::make_number<std::uint32_t>(meta::sub_array<offset_size, sizeof(size)>::get(buffer)),

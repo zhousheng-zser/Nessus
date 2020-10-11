@@ -56,7 +56,7 @@ namespace glasssix::crypto
 			// The last byte indicates how many bytes are padded.
 			if (ciphertext.size() <= 1)
 			{
-				return std::vector<std::uint8_t>();
+				return std::vector<std::uint8_t>{};
 			}
 
 			auto subsential_iv{ initialization_vector_ };
