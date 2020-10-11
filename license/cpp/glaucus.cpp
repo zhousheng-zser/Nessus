@@ -33,7 +33,7 @@ namespace glasssix::crypto
 		constexpr meta_string user_portrait_salt{ "The reasonable man adapts himself to the world; the unreasonable one persists in trying to adapt the world to himself." };
 
 		/// <summary>
-		/// Deserializes a raw buffer into a user portrait.
+		/// Deserializes a raw buffer into a numeric buffer.
 		/// </summary>
 		/// <param name="buffer">The buffer</param>
 		/// <returns>The portrait</returns>
@@ -55,25 +55,48 @@ namespace glasssix::crypto
 		}
 
 		/// <summary>
-		/// Serializes a user portrait into raw bytes with salt appended.
+		/// Serializes a numeric buffer into a byte buffer.
 		/// </summary>
-		/// <param name="user_portrait">The user portrait</param>
-		/// <returns>The raw bytes</returns>
-		auto make_user_portarit_bytes(const std::array<std::uint64_t, user_portrait_size>& user_portrait)
+		/// <typeparam name="Number">The numeric type</typeparam>
+		/// <param name="AdditionalSize">The additional buffer size</param>
+		/// <param name="Size">The buffer size</param>
+		/// <param name="buffer">The buffer</param>
+		/// <returns>The buffer</returns>
+		template<std::size_t AdditionalSize = 0, std::size_t Size, typename Number, typename = std::enable_if_t<std::is_arithmetic_v<Number>>>
+		auto make_byte_buffer(const std::array<Number, Size>& buffer)
 		{
-			std::array<std::uint8_t, user_portrait_size * sizeof(std::uint64_t) + user_portrait_salt.size()> result;
+			std::array<std::uint8_t, Size * sizeof(Number) + AdditionalSize> result{};
 			auto iter = result.begin();
 
-			for (const auto& item : user_portrait)
+			for (const auto& item : buffer)
 			{
 				auto bytes = meta::to_array(item);
 
 				iter = std::copy(bytes.begin(), bytes.end(), iter);
 			}
 
-			auto salt = client_data_salt.decrypt();
+			return result;
+		}
 
-			return (std::copy(reinterpret_cast<const std::uint8_t*>(salt.data()), reinterpret_cast<const std::uint8_t*>(salt.data()) + salt.size(), iter), result);
+		/// <summary>
+		/// Serializes a numeric buffer into a byte buffer with salt appended.
+		/// </summary>
+		/// <typeparam name="Number">The numeric type</typeparam>
+		/// <typeparam name="MetaString">The salty type</typeparam>
+		/// <param name="Size">The buffer size</param>
+		/// <param name="buffer">The buffer</param>
+		/// <param name="salt">The salt</param>
+		/// <returns>The salty buffer</returns>
+		template<typename Number, std::size_t Size, typename MetaString, typename = std::enable_if_t<std::is_arithmetic_v<Number>>>
+		auto make_salty_byte_buffer(const std::array<Number, Size>& buffer, MetaString&& salt)
+		{
+			static constexpr std::size_t salty_size = std::decay_t<MetaString>::buffer_size;
+			auto result = make_byte_buffer<salty_size>(buffer);
+			auto salty_buffer = std::forward<MetaString>(salt).decrypt();
+
+			std::copy(reinterpret_cast<const std::uint8_t*>(salty_buffer.data()), reinterpret_cast<const std::uint8_t*>(salty_buffer.data()) + salty_buffer.size(), result.end() - salty_size);
+
+			return result;
 		}
 
 		/// <summary>
@@ -139,7 +162,7 @@ namespace glasssix::crypto
 	class glaucus::impl
 	{
 	public:
-		impl() : engine_ { std::random_device{}() }
+		impl() : engine_{ std::random_device{}() }
 		{
 		}
 
@@ -148,10 +171,12 @@ namespace glasssix::crypto
 
 		}
 
-		void load(exposing::param_span<const std::uint8_t> user_portrait, exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
+		void load(exposing::param_span<const std::uint8_t> machine_id, exposing::param_span<const std::uint8_t> user_portrait, std::time_t timestamp)
 		{
-			update_user_portrait_timestamp<true>(timestamp, user_portrait);
-			init_client_data_cryptography<true>(user_portrait, machine_id, timestamp);
+			set_machine_id(machine_id);
+			cipher_user_portrait_.assign(user_portrait.begin(), user_portrait.end());
+			init_user_portrait_cryptography(timestamp);
+			init_client_data_cryptography(timestamp);
 		}
 
 		void load(std::string_view path, exposing::param_span<const std::uint8_t> machine_id)
@@ -182,19 +207,22 @@ namespace glasssix::crypto
 				throw crypto_error{ "Illegal user portrait file." };
 			}
 
+			set_machine_id(machine_id);
+
 			// Initializes cryptography.
 			std::reverse(buffer->begin(), buffer->end());
 			cipher_user_portrait_ = std::move(*buffer);
-			init_user_portrait_cryptography(machine_id, last_write_time);
-			init_client_data_cryptography<true>(cipher_user_portrait_, machine_id, last_write_time);
+			init_user_portrait_cryptography(last_write_time);
+			init_client_data_cryptography(last_write_time);
 		}
 
 		void save(std::string_view path)
 		{
 			auto timestamp = get_timestamp();
+			auto old_user_portrait = user_portrait_encrypter_.decrypt(cipher_user_portrait_);
 
-			update_user_portrait_timestamp<false>(timestamp);
-
+			init_user_portrait_cryptography(timestamp);
+			cipher_user_portrait_ = user_portrait_encrypter_.encrypt(old_user_portrait);
 			std::reverse(cipher_user_portrait_.begin(), cipher_user_portrait_.end());
 
 			if (!io::write_all_bytes(path, cipher_user_portrait_))
@@ -208,12 +236,17 @@ namespace glasssix::crypto
 			}
 		}
 
+		void set_machine_id(exposing::param_span<const std::uint8_t> machine_id)
+		{
+			machine_id_.assign(machine_id.begin(), machine_id.end());
+		}
+
 		void set_client_data_timestamp(std::time_t timestamp)
 		{
 			client_data_encrypter_.set_iv(meta::to_array(timestamp));
 		}
 
-		void generate(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
+		void generate(exposing::param_span<const std::uint8_t> machine_id, std::time_t client_data_timestamp)
 		{
 			std::array<std::uint64_t, user_portrait_size> user_portrait;
 
@@ -222,11 +255,12 @@ namespace glasssix::crypto
 				item = distribution_(engine_);
 			}
 
-			auto bytes = make_user_portarit_bytes(user_portrait);
+			auto buffer = make_byte_buffer(user_portrait);
 
-			update_user_portrait_timestamp<false>(timestamp, bytes);
-			init_client_data_cryptography<false>(bytes, machine_id, timestamp);
-			set_client_data_timestamp(timestamp);
+			set_machine_id(machine_id);
+			cipher_user_portrait_ = user_portrait_encrypter_.encrypt(buffer);
+			init_client_data_cryptography(client_data_timestamp);
+			set_client_data_timestamp(client_data_timestamp);
 		}
 
 		std::vector<std::uint8_t> user_portrait()
@@ -244,63 +278,30 @@ namespace glasssix::crypto
 			return client_data_encrypter_.decrypt(buffer);
 		}
 	private:
-		template<bool Encrypted>
-		void update_user_portrait_timestamp(std::time_t timestamp, exposing::param_span<const std::uint8_t> user_portrait = nullptr)
-		{
-			auto real_user_portrait = [&]
-			{
-				if constexpr (Encrypted)
-				{
-					return user_portrait_encrypter_.decrypt(user_portrait ? user_portrait : cipher_user_portrait_);
-				}
-				else
-				{
-					return user_portrait ? user_portrait : user_portrait_encrypter_.decrypt(cipher_user_portrait_);
-				}
-			}();
-
-			user_portrait_encrypter_.set_iv(meta::to_array(timestamp));
-			cipher_user_portrait_ = user_portrait_encrypter_.encrypt(real_user_portrait);
-		}
-
-		void init_user_portrait_cryptography(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
+		void init_user_portrait_cryptography(std::time_t timestamp)
 		{
 			std::vector<std::uint8_t> buffer;
-			auto factors = get_obfuscated_factors(machine_id, timestamp);
-			std::array<std::uint8_t, sizeof(factors) + user_portrait_salt.size()> salty_buffer;
-			auto iter = std::copy(factors.rbegin(), factors.rend(), salty_buffer.begin());
-			auto salt = user_portrait_salt.decrypt();
-
-			std::copy(reinterpret_cast<const std::uint8_t*>(salt.data()), reinterpret_cast<const std::uint8_t*>(salt.data()) + salt.size(), iter);
+			auto factors = get_obfuscated_factors(machine_id_, timestamp);
+			auto salty_buffer = make_salty_byte_buffer(factors, user_portrait_salt);
 
 			user_portrait_encrypter_.set_iv(meta::to_array(timestamp));
 			user_portrait_encrypter_.set_key(salty_buffer);
 		}
 
-		template<bool Encrypted>
-		void init_client_data_cryptography(exposing::param_span<const std::uint8_t> user_portrait, exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
+		void init_client_data_cryptography(std::time_t timestamp)
 		{
 			std::array<std::uint64_t, user_portrait_size> buffer;
-			auto factors = get_obfuscated_factors(machine_id, timestamp);
-			auto real_user_portrait = [&]
-			{
-				if constexpr (Encrypted)
-				{
-					return make_user_portrait(user_portrait_encrypter_.decrypt(user_portrait));
-				}
-				else
-				{
-					return user_portrait;
-				}
-			}();
+			auto factors = get_obfuscated_factors(machine_id_, timestamp);
+			auto real_user_portrait = user_portrait_encrypter_.decrypt(cipher_user_portrait_);
 
 			std::transform(real_user_portrait.begin(), real_user_portrait.end(), buffer.begin(), [&, index = std::size_t{}](std::uint64_t inner) mutable { return utils::hash_all(inner, factors[index++]); });
-			client_data_encrypter_.set_key(make_user_portarit_bytes(buffer));
+			client_data_encrypter_.set_key(make_salty_byte_buffer(buffer, client_data_salt));
 		}
 
 		std::default_random_engine engine_;
 		aes_provider client_data_encrypter_;
 		aes_provider user_portrait_encrypter_;
+		std::vector<std::uint8_t> machine_id_;
 		std::vector<std::uint8_t> cipher_user_portrait_;
 		std::uniform_int_distribution<std::uint64_t> distribution_;
 	};
@@ -313,9 +314,9 @@ namespace glasssix::crypto
 	{
 	}
 
-	void glaucus::load(exposing::param_span<const std::uint8_t> buffer, exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp) const
+	void glaucus::load(exposing::param_span<const std::uint8_t> machine_id, exposing::param_span<const std::uint8_t> user_portrait, std::time_t timestamp) const
 	{
-		impl_->load(buffer, machine_id, timestamp);
+		impl_->load(machine_id, user_portrait, timestamp);
 	}
 
 	void glaucus::load(std::string_view path, exposing::param_span<const std::uint8_t> machine_id) const
@@ -333,9 +334,9 @@ namespace glasssix::crypto
 		impl_->set_client_data_timestamp(timestamp);
 	}
 
-	void glaucus::generate(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp) const
+	void glaucus::generate(exposing::param_span<const std::uint8_t> machine_id, std::time_t client_data_timestamp) const
 	{
-		impl_->generate(machine_id, timestamp);
+		impl_->generate(machine_id, client_data_timestamp);
 	}
 
 	std::vector<std::uint8_t> glaucus::user_portrait() const

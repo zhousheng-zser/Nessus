@@ -20,7 +20,7 @@ option(CONTAINS_LICENSE_SERVER "Compile the license server." ON)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	set(CMAKE_FIND_LIBRARY_PREFIXES "lib")
-	set(CMAKE_CL_SHOWINCLUDE_PREFIX "Note: including file: ")
+	add_compile_definitions(-D_WIN32_WINNT=0x0A00)
 endif()
 
 if(WITH_JNI)
@@ -99,7 +99,7 @@ add_subdirectory(license/client)
 
 if(CONTAINS_LICENSE_SERVER)
 	set(PostgreSQL_ROOT "E:/Libs/pgsql-11.5-1")
-	set(PostgreSQL_LIBRARY ${PostgreSQL_ROOT}/libpq.lib)
+	set(PostgreSQL_LIBRARY ${PostgreSQL_ROOT}/lib/libpq.lib)
 	add_subdirectory(3rd-party/libpqxx)
 	add_subdirectory(license/server)
 endif()

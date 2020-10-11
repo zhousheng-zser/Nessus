@@ -223,7 +223,7 @@ namespace glasssix::license
 						}
 
 						glaucus_.set_client_data_timestamp(message.server_timestamp);
-						glaucus_.load(message.user_portrait, *machine_id_, message.server_timestamp);
+						glaucus_.load(*machine_id_, message.user_portrait, message.server_timestamp);
 						glaucus_.save(portrait_path_.string());
 
 						if (!io::write_all_bytes(license_path_.string(), message.license))
@@ -276,6 +276,7 @@ namespace glasssix::license
 			std::optional<std::vector<std::uint8_t>> machine_id_;
 		};
 
+		std::mutex mutex_license;
 		interruptable_timer watchdog_timer;
 		std::unique_ptr<license> global_license_;
 	}
@@ -309,6 +310,8 @@ namespace glasssix::license
 	{
 		if (global_license_)
 		{
+			std::scoped_lock lock{ mutex_license };
+
 			global_license_->request_new();
 		}
 	}
@@ -322,7 +325,7 @@ namespace glasssix::license
 
 		try
 		{
-			std::int64_t remaining_seconds = global_license_->evaluate().count();
+			std::int64_t remaining_seconds = [] { std::scoped_lock lock{ mutex_license }; return global_license_->evaluate().count(); }();
 			std::int64_t seconds = remaining_seconds % 60;
 			std::int64_t minutes = remaining_seconds / 60 % 60;
 			std::int64_t hours = remaining_seconds / 3600 % 24;
@@ -340,6 +343,8 @@ namespace glasssix::license
 	{
 		if (global_license_ && callback)
 		{
+			std::scoped_lock lock{ mutex_license };
+
 			global_license_->on_authorization += [=](bool success, std::string_view message) { callback(context, success, message.data()); };
 		}
 	}
