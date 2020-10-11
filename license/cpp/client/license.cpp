@@ -17,6 +17,7 @@
 #error "Unsupported platform."
 #endif
 
+#include <mutex>
 #include <chrono>
 #include <memory>
 #include <string>
@@ -106,7 +107,7 @@ namespace glasssix::license
 		class license
 		{
 		public:
-			delegate<void, bool, std::string_view, std::int64_t> on_authorization;
+			delegate<void, bool, std::string_view> on_authorization;
 
 			license(std::string_view license_key) : machine_id_{ get_machine_id() }, config_{ license_config::from_license_key(license_key) }
 			{
@@ -188,13 +189,14 @@ namespace glasssix::license
 					}
 					catch (const std::exception& ex)
 					{
-						on_authorization(false, fmt::format(FMT_STRING("An error occurred when reuqesting the server: {}"), ex.what()), 0);
+						on_authorization(false, fmt::format(FMT_STRING("An error occurred when reuqesting the server: {}"), ex.what()));
 					}
 				};
 			}
 
 			void init_authorization_client()
 			{
+				// Implements a Websocket state machine.
 				client_.on_connect(forward_exceptions([this]
 					{
 						client_.request_authorization(authorization_request_message
@@ -209,12 +211,24 @@ namespace glasssix::license
 					{
 						if (!message)
 						{
-							return on_authorization(false, message.status, 0);
+							return on_authorization(false, message.status);
 						}
 
 						glaucus_.set_client_data_timestamp(message.server_timestamp);
-						glaucus_.load(message.user_portrait, message.server_timestamp);
+						glaucus_.load(message.user_portrait, machine_id_, message.server_timestamp);
 						glaucus_.save(portrait_path_.string());
+
+						if (!io::write_all_bytes(license_path_.string(), message.license))
+						{
+							throw license_error{ "Failed to create a license file." };
+						}
+
+						if (std::error_code code; (fs::last_write_time(license_path_, from_time_t<fs::file_time_type>(message.server_timestamp), code), code))
+						{
+							throw license_error{ fmt::format(FMT_STRING("Failed to update the timestamp: {}"), code.message()) };
+						}
+
+						on_authorization(true, message.status);
 					}));
 
 				client_.on_async_error([this](const std::error_code& code)
@@ -253,11 +267,42 @@ namespace glasssix::license
 			std::vector<std::uint8_t> machine_id_;
 			std::optional<license_config> config_;
 		};
+
+		std::unique_ptr<license> global_license_;
+	}
+
+	EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key)
+	{
+		if (license_key)
+		{
+			static std::once_flag flag;
+
+			std::call_once(flag, [&]
+				{
+					global_license_ = std::make_unique<license>(license_key);
+				});
+		}
+	}
+
+	EXPORT_NESSUS_LICENSE void request_license_async(const char* license_key, void* context)
+	{
+		if (global_license_)
+		{
+			global_license_->request_new();
+		}
+	}
+
+	EXPORT_NESSUS_LICENSE void set_request_license_async_callback(request_license_async_callback_type callback, void* context)
+	{
+		if (global_license_ && callback)
+		{
+			global_license_->on_authorization += [=](bool success, std::string_view message) { callback(context, success, message.data()); };
+		}
 	}
 
 	EXPORT_NESSUS_LICENSE void evaluate_license(const char* license_key, evaluate_license_callback_type callback, void* context)
 	{
-		if (license_key == nullptr || callback == nullptr)
+		if (!global_license_ && license_key == nullptr || callback == nullptr)
 		{
 			return;
 		}
@@ -276,10 +321,5 @@ namespace glasssix::license
 		{
 			callback(context, false, ex.what(), 0);
 		}
-
-	}
-
-	EXPORT_NESSUS_LICENSE void request_license_async(const char* license_key, request_license_async_callback_type callback, void* context)
-	{
 	}
 }
