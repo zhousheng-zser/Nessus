@@ -33,7 +33,7 @@ namespace glasssix::crypto
 		std::size_t size = 3 * str.size() / 4;
 		std::vector<std::uint8_t> result(size);
 
-		if (std::size_t real_size = static_cast<std::size_t>(EVP_EncodeBlock(result.data(), reinterpret_cast<const std::uint8_t*>(str.data()), static_cast<int>(str.size()))); real_size != size)
+		if (std::size_t real_size = static_cast<std::size_t>(EVP_DecodeBlock(result.data(), reinterpret_cast<const std::uint8_t*>(str.data()), static_cast<int>(str.size()))); real_size != size)
 		{
 			result.clear();
 			result.shrink_to_fit();

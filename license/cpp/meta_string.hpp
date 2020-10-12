@@ -84,6 +84,11 @@ namespace glasssix::crypto
 		{
 		}
 
+		constexpr std::size_t size() const
+		{
+			return encrypted_buffer_.size();
+		}
+
 		constexpr auto decrypt() const
 		{
 			std::array<char, sizeof...(Indexes)> result{};
@@ -96,9 +101,11 @@ namespace glasssix::crypto
 			return result;
 		}
 
-		constexpr std::size_t size() const
+		std::string decrypt_as_string() const
 		{
-			return encrypted_buffer_.size();
+			auto chars = decrypt();
+
+			return std::string{ chars.begin(), chars.end() };
 		}
 	private:
 		static constexpr int encrypt(char c)

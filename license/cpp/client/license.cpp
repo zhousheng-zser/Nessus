@@ -136,10 +136,10 @@ namespace glasssix::license
 					throw license_error{ "Failed to get the application data directory." };
 				}
 
-				auto license_directory = app_data_directory / license_folder.decrypt().data();
+				auto license_directory = app_data_directory / license_folder.decrypt_as_string();
 
-				license_path_ = license_directory / license_file.decrypt().data();
-				portrait_path_ = license_directory / portrait_file.decrypt().data();
+				license_path_ = license_directory / license_file.decrypt_as_string();
+				portrait_path_ = license_directory / portrait_file.decrypt_as_string();
 
 				// create_directoires returns false with a successful error code if the directory already exists.
 				if (std::error_code code; !fs::create_directories(license_directory, code) && code)
@@ -147,8 +147,6 @@ namespace glasssix::license
 					throw license_error{ fmt::format(FMT_STRING("Failed to create the working directory: {}"), code.message()) };
 				}
 
-				// Initializes the cryptography.
-				glaucus_.load(portrait_path_.string(), *machine_id_);
 				init_authorization_client();
 			}
 
@@ -249,6 +247,8 @@ namespace glasssix::license
 
 			std::time_t bind_license_file_timestamp()
 			{
+				glaucus_.load(portrait_path_.string(), *machine_id_);
+
 				std::error_code code;
 				auto timestamp = to_time_t(fs::last_write_time(license_path_, code));
 
@@ -309,19 +309,25 @@ namespace glasssix::license
 
 			std::call_once(flag, [&]
 				{
-					// In case of expensive initialzation on Android, we defer the first tick of the watchdog to wait for it to succeed completely.
-					global_license_ = std::make_unique<license>(license_key);
-					watchdog_timer.start(watchdog_period, watchdog_deferred_time, []
-						{
-							evaluate_license([](void* context, bool valid, const char* message, std::int64_t remaining_seconds)
-								{
-									if (!valid)
+					try
+					{
+						// In case of expensive initialzation on Android, we defer the first tick of the watchdog to wait for it to succeed completely.
+						global_license_ = std::make_unique<license>(license_key);
+						watchdog_timer.start(watchdog_period, watchdog_deferred_time, []
+							{
+								evaluate_license([](void* context, bool valid, const char* message, std::int64_t remaining_seconds)
 									{
-										LOG(ERROR) << message;
-										std::terminate();
-									}
-								});
-						});
+										if (!valid)
+										{
+											LOG(FATAL) << fmt::format(FMT_STRING("The application has detected a fatal license exception: {}"), message);
+										}
+									});
+							});
+					}
+					catch (const std::exception& ex)
+					{
+						LOG(FATAL) << ex.what();
+					}
 				});
 		}
 	}

@@ -7,6 +7,7 @@
 #include <cmath>
 #include <chrono>
 #include <cstdint>
+#include <iostream>
 
 #include <logger.hpp>
 #include <abi/guid.hpp>
@@ -39,8 +40,8 @@ int main()
 	try
 	{
 		authorization_server server;
-		thread_local license_database database{ "User ID=postgres;Password=Glasssix+1S;Host=127.0.0.1;Port=5432;Database=algorithm_sdk;" };
-
+		thread_local license_database database{ "host=182.140.240.121 port=5432 user=postgres password=Glasssix+1S dbname=algorithm_sdk connect_timeout=10" };
+		
 		server.on_request_authorization([&](const authorization_request_message& message)
 			{
 				// Checks the client timestamp.
@@ -75,9 +76,21 @@ int main()
 			});
 
 		server.listen(listen_port);
+
+		for (std::string buffer;;)
+		{
+			std::cin >> buffer;
+
+			if (buffer == "q" || buffer == "Q")
+			{
+				break;
+			}
+		}
+
+		server.close();
 	}
 	catch (const std::exception& ex)
 	{
-		LOG(WARNING) << ex.what();
+		LOG(ERROR) << ex.what();
 	}
 }

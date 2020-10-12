@@ -30,15 +30,14 @@ namespace glasssix::license
 		struct single_threaded_io_context
 		{
 		public:
-			single_threaded_io_context() : work_guard_{ asio::make_work_guard(context_.get_executor()) }, worker_thread_{ [this] { context_.run(); } }
+			single_threaded_io_context() : work_guard_{ asio::make_work_guard(context_) }, worker_thread_{ [this] { context_.run(); } }
 			{
 			}
 
 			~single_threaded_io_context()
 			{
-				context_.stop();
 				work_guard_.reset();
-
+				
 				if (worker_thread_.joinable())
 				{
 					worker_thread_.join();
@@ -64,8 +63,6 @@ namespace glasssix::license
 			asio::executor_work_guard<asio::io_context::executor_type> work_guard_;
 			std::thread worker_thread_;
 		};
-
-		single_threaded_io_context internal_io_context;
 	}
 
 	class authorization_client::impl
@@ -79,7 +76,7 @@ namespace glasssix::license
 
 		impl()
 		{
-			client_.init_asio(&internal_io_context.get());
+			client_.init_asio(&io_context_.get());
 			client_.set_access_channels(websocketpp::log::alevel::all);
 			client_.clear_access_channels(websocketpp::log::alevel::frame_payload);
 			client_.set_message_handler(std::bind(&impl::on_message, this, std::placeholders::_1, std::placeholders::_2));
@@ -218,6 +215,7 @@ namespace glasssix::license
 
 		std::mutex mutex_;
 		client_type client_;
+		single_threaded_io_context io_context_;
 		websocketpp::connection_hdl connection_;
 		std::condition_variable condition_close_;
 	};

@@ -39,9 +39,8 @@ namespace glasssix::license
 
 			~thread_pool_io_context()
 			{
-				context_.stop();
 				work_guard_.reset();
-
+				
 				for (auto& item : worker_threads_)
 				{
 					if (item.joinable())
@@ -70,8 +69,6 @@ namespace glasssix::license
 			std::vector<std::thread> worker_threads_;
 			asio::executor_work_guard<asio::io_context::executor_type> work_guard_;
 		};
-
-		thread_pool_io_context internal_context;
 	}
 	
 	class authorization_server::impl
@@ -82,7 +79,7 @@ namespace glasssix::license
 
 		impl()
 		{
-			server_.init_asio(&internal_context.get());
+			server_.init_asio(&io_context_.get());
 			server_.set_access_channels(websocketpp::log::alevel::all);
 			server_.clear_access_channels(websocketpp::log::alevel::frame_payload);
 			server_.set_message_handler(std::bind(&impl::on_message, this, std::placeholders::_1, std::placeholders::_2));
@@ -123,7 +120,7 @@ namespace glasssix::license
 		void close()
 		{
 			std::error_code code;
-
+			
 			if (server_.is_listening())
 			{
 				server_.stop_listening(code);
@@ -216,6 +213,7 @@ namespace glasssix::license
 
 		std::mutex mutex_;
 		server_type server_;
+		thread_pool_io_context io_context_;
 		std::condition_variable condition_erase_;
 		std::vector<websocketpp::connection_hdl> connections_;
 	};
