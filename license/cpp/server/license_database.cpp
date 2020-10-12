@@ -84,6 +84,8 @@ END)"
 						item["last_authorization_time"].as<std::time_t>()
 					});
 			}
+
+			return result;
 		}
 
 		std::vector<authorized_device_record> get_exact_authorized_devices(const exposing::guid& license_id, std::string_view machine_id)
@@ -104,6 +106,8 @@ END)"
 						item["last_authorization_time"].as<std::time_t>()
 					});
 			}
+
+			return result;
 		}
 
 		void add_or_update_license(const license_record& record)

@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <condition_variable>
+
 #define NOGDI
 
 #include <asio.hpp>
@@ -72,7 +73,7 @@ namespace glasssix::license
 
 		thread_pool_io_context internal_context;
 	}
-
+	
 	class authorization_server::impl
 	{
 	public:

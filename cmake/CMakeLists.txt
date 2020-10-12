@@ -20,7 +20,7 @@ option(CONTAINS_LICENSE_SERVER "Compile the license server." ON)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	set(CMAKE_FIND_LIBRARY_PREFIXES "lib")
-	add_compile_definitions(-D_WIN32_WINNT=0x0A00)
+	add_definitions(-D_WIN32_WINNT=0x0A00)
 endif()
 
 if(WITH_JNI)
@@ -81,6 +81,8 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	set(CMAKE_IMPORT_LIBRARY_PREFIX lib)
 	set(CMAKE_SHARED_LIBRARY_PREFIX lib)
 	set(CMAKE_STATIC_LIBRARY_PREFIX lib)
+	set(CMAKE_CXX_FLAGS_DEBUG /MDd)
+	set(CMAKE_CXX_FLAGS_RELEASE /MD)
 endif()
 
 include(Dependencies.cmake)
@@ -88,6 +90,9 @@ include(Dependencies.cmake)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+
+# Consuming libfmt.
+add_definitions(-DFMT_SHARED)
 
 add_subdirectory(3rd-party/simdjson)
 add_subdirectory(3rd-party/openssl)

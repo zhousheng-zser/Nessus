@@ -106,6 +106,7 @@ add_definitions( -DOPENSSL_NO_STATIC_ENGINE )
 
 if( MSVC )
   include( MSVCRuntime.cmake )
+  set(MSVC_DYNAMIC_RUNTIME TRUE)
   configure_msvc_runtime()
   set( OPENSSLDIR "C:/ssl" )
   set( ENGINESDIR "C:/engines-1.1" )

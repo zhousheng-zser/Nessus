@@ -78,6 +78,6 @@ int main()
 	}
 	catch (const std::exception& ex)
 	{
-		LOG(ERROR) << ex.what();
+		LOG(WARNING) << ex.what();
 	}
 }

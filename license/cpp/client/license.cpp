@@ -178,6 +178,8 @@ namespace glasssix::license
 					throw license_error{ "Invalid or expired license." };
 				}
 
+				update_timestamp(*info);
+
 				return info->remaining_seconds();
 			}
 
@@ -266,6 +268,24 @@ namespace glasssix::license
 				glaucus_.set_client_data_timestamp(timestamp);
 
 				return timestamp;
+			}
+
+			void update_timestamp(const license_info& info)
+			{
+				auto duplicate{ info };
+				auto timestamp = get_timestamp();
+
+				duplicate.last_running_time = timestamp;
+				
+				if (!io::write_all_bytes(license_path_.string(), duplicate.to_buffer()))
+				{
+					throw license_error{ "Failed to update the license information." };
+				}
+
+				if (std::error_code code; (fs::last_write_time(license_path_, from_time_t<fs::file_time_type>(timestamp), code), code))
+				{
+					throw license_error{ fmt::format(FMT_STRING("Failed to update the license timestamp: {}"), code.message()) };
+				}
 			}
 
 			fs::path license_path_;
