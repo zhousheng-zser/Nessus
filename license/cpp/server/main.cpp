@@ -40,10 +40,11 @@ int main()
 	try
 	{
 		authorization_server server;
-		thread_local license_database database{ "host=182.140.240.121 port=5432 user=postgres password=Glasssix+1S dbname=algorithm_sdk connect_timeout=10" };
-		
-		server.on_request_authorization([&](const authorization_request_message& message)
+
+		server.on_request_authorization([](const authorization_request_message& message)
 			{
+				thread_local license_database database{ "host=182.140.240.121 port=5432 user=postgres password=Glasssix+1S dbname=postgres connect_timeout=10" };
+
 				// Checks the client timestamp.
 				if (std::abs(message.client_timestamp - glasssix::get_timestamp()) >= permissible_error)
 				{
@@ -59,7 +60,7 @@ int main()
 
 				if (license->expiration_time <= glasssix::get_timestamp())
 				{
-					return authorization_response_message{ "The license has been expired." };
+					return authorization_response_message{ "The license has already expired." };
 				}
 
 				if (license->authorized_device_count >= license->allowed_device_count)

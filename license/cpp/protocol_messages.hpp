@@ -49,7 +49,7 @@ namespace glasssix::license
 	template<typename Message>
 	std::vector<std::uint8_t> create_message_buffer(message_type type, Message&& message)
 	{
-		auto json_bytes = nlohmann::json::to_msgpack(nlohmann::json{ std::forward<Message>(message) });
+		auto json_bytes = nlohmann::json::to_msgpack(std::forward<Message>(message));
 		auto header_bytes = protocol_header{ type, static_cast<std::uint32_t>(json_bytes.size()) }.compute_hash_and_dump();
 		std::size_t size = header_bytes.size() + json_bytes.size();
 

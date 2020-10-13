@@ -1,5 +1,6 @@
 #include "protocol_header.hpp"
 
+#include <utility>
 #include <algorithm>
 
 #include <abi/meta.hpp>
@@ -9,6 +10,28 @@ namespace glasssix::license
 {
 	namespace meta = exposing::meta;
 	namespace hashing = exposing::hashing;
+
+	namespace
+	{
+		auto compute_hash_and_dump_helper(const protocol_header& header)
+		{
+			protocol_header::buffer_type result;
+
+			auto version_bytes = meta::to_array(header.version);
+			auto type_bytes = meta::to_array(static_cast<std::uint32_t>(header.type));
+			auto size_bytes = meta::to_array(header.size);
+			auto iter_begin = result.begin();
+			auto iter = std::copy(header.header.begin(), header.header.end(), iter_begin);
+
+			iter = std::copy(version_bytes.begin(), version_bytes.end(), iter);
+			iter = std::copy(type_bytes.begin(), type_bytes.end(), iter);
+			iter = std::copy(size_bytes.begin(), size_bytes.end(), iter);
+
+			auto hash = hashing::sha3::hash_sha3_224(result.data(), iter - iter_begin);
+
+			return (std::copy(hash.begin(), hash.end(), iter), std::pair{ result, hash });
+		}
+	}
 
 	protocol_header::protocol_header(message_type type, std::uint32_t size) : header{ header_text }, version{ client_version }, type{ type }, size{ size }, hash{}
 	{
@@ -20,7 +43,7 @@ namespace glasssix::license
 
 	protocol_header::operator bool() const noexcept
 	{
-		return !hash.empty() && header == header_text && hashing::sha3::hash_sha3_224(meta::to_array(size)) == hash;
+		return !hash.empty() && header == header_text && compute_hash_and_dump_helper(*this).second == hash;
 	}
 
 	protocol_header protocol_header::parse(const buffer_type& buffer)
@@ -42,19 +65,8 @@ namespace glasssix::license
 
 	protocol_header::buffer_type protocol_header::compute_hash_and_dump()
 	{
-		buffer_type result;
+		auto [buffer, hash] = compute_hash_and_dump_helper(*this);
 
-		auto version_bytes = meta::to_array(version);
-		auto type_bytes = meta::to_array(static_cast<std::uint32_t>(type));
-		auto size_bytes = meta::to_array(size);
-		auto iter_begin = result.begin();
-		auto iter = std::copy(header.begin(), header.end(), iter_begin);
-
-		iter = std::copy(version_bytes.begin(), version_bytes.end(), iter);
-		iter = std::copy(type_bytes.begin(), type_bytes.end(), iter);
-		iter = std::copy(size_bytes.begin(), size_bytes.end(), iter);
-		hash = hashing::sha3::hash_sha3_224(result.data(), iter - iter_begin);
-
-		return result;
+		return (this->hash = std::move(hash), buffer);
 	}
 }

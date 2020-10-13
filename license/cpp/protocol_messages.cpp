@@ -16,6 +16,7 @@ namespace glasssix::license
 	{
 		json =
 		{
+			{ "status" , value.status },
 			{ "license", value.license },
 			{ "user_portrait", value.user_portrait },
 			{ "server_timestamp", value.server_timestamp }

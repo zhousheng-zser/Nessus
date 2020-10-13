@@ -13,13 +13,21 @@ namespace glasssix::crypto
 	namespace meta = exposing::meta;
 	namespace hashing = exposing::hashing;
 
+	namespace
+	{
+		std::size_t get_padding_size(std::size_t plaintext_size) noexcept
+		{
+			return  plaintext_size % AES_BLOCK_SIZE > 0 ? (AES_BLOCK_SIZE - plaintext_size % AES_BLOCK_SIZE) : 0;
+		}
+	}
+
 	class aes_provider::impl
 	{
 	public:
 		void set_key(exposing::param_span<const std::uint8_t> key)
 		{
 			// Assigns the hashed key into internal buffers.
-			auto key_hash = hashing::sha3::hash_sha3_512(key.data(), key.size());
+			auto key_hash = hashing::sha3::hash_sha3_256(key.data(), key.size());
 
 			AES_set_encrypt_key(key_hash.data(), static_cast<int>(key_hash.size()) * meta::byte_bits, &encyption_key_);
 			AES_set_decrypt_key(key_hash.data(), static_cast<int>(key_hash.size()) * meta::byte_bits, &decryption_key_);
@@ -39,9 +47,14 @@ namespace glasssix::crypto
 
 		std::vector<std::uint8_t> encrypt(exposing::param_span<const std::uint8_t> plaintext)
 		{
+			if (plaintext.empty())
+			{
+				return std::vector<std::uint8_t>{};
+			}
+
 			// Makes the plain text aligned by 16 bytes.
 			auto subsential_iv{ initialization_vector_ };
-			std::size_t padding_bytes = plaintext.size() % AES_BLOCK_SIZE > 0 ? (AES_BLOCK_SIZE - plaintext.size() % AES_BLOCK_SIZE) : 0;
+			std::size_t padding_bytes = get_padding_size(plaintext.size());
 			std::vector<std::uint8_t> ciphertext(plaintext.size() + padding_bytes + 1);
 
 			// Encrypts the plain text.
@@ -105,5 +118,10 @@ namespace glasssix::crypto
 	std::vector<std::uint8_t> aes_provider::decrypt(exposing::param_span<const std::uint8_t> ciphertext)
 	{
 		return impl_->decrypt(ciphertext);
+	}
+
+	std::size_t aes_provider::get_encrypted_size(std::size_t plaintext_size) noexcept
+	{
+		return plaintext_size == 0 ? plaintext_size : plaintext_size + get_padding_size(plaintext_size) + 1;
 	}
 }

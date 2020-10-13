@@ -183,8 +183,13 @@ namespace glasssix::license
 			protocol_header::buffer_type header_buffer;
 			auto header = (std::copy(payload.begin(), payload.begin() + protocol_header::header_size, header_buffer.begin()), protocol_header::parse(header_buffer));
 
+			if (!header)
+			{
+				return connection->close(websocketpp::close::status::invalid_payload, "Invalid header.", code);
+			}
+
 			// Validates the data size.
-			if (!header || payload.size() - header_buffer.size() < header.size)
+			if (payload.size() - header_buffer.size() < header.size)
 			{
 				return connection->close(websocketpp::close::status::invalid_payload, "The data size is too small.", code);
 			}

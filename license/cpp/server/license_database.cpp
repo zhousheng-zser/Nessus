@@ -1,4 +1,5 @@
 #include "license_database.hpp"
+#include "license_error.hpp"
 
 #include <ctime>
 #include <cstddef>
@@ -10,32 +11,11 @@ namespace glasssix::license
 {
 	namespace
 	{
-		constexpr std::string_view query_get_license{ R"(SELECT id, organization, allowed_device_count, authorized_device_count, extract(epoch from creation_time)::bigint, extract(epoch from expiration_time)::bigint FROM public.licenses WHERE id = $1)" };
-		constexpr std::string_view query_get_authorized_devices{ R"(SELECT id, license_id, machine_id, extract(epoch from last_authorization_time)::bigint FROM public.authorized_devices WHERE license_id = $1)" };
-		constexpr std::string_view query_get_exact_authorized_devices{ R"(SELECT id, license_id, machine_id, extract(epoch from last_authorization_time)::bigint FROM public.authorized_devices WHERE license_id = $1 AND machine_id = $2)" };
-		constexpr std::string_view query_add_or_update_license
-		{
-			R"(IF EXISTS (SELECT 1 FROM public.licenses WHERE id = $1))
-BEGIN
-	UPDATE public.licenses SET organization = $2, allowed_device_count = $3, authorized_device_count = $4, creation_time = to_timestamp($5), expiration_time = to_timestamp($6) WHERE id = $1
-END
-ELSE
-BEGIN
-	INSERT INTO public.licenses (id, organization, allowed_device_count, authorized_device_count, creation_time, expiration_time) VALUES ($1, $2, $3, $4, to_timestamp($5), to_timestamp($6))
-END)"
-		};
-
-		constexpr std::string_view query_add_or_update_authorized_device
-		{
-			R"(IF EXISTS (SELECT 1 FROM public.authorized_devices WHERE license_id = $1))
-BEGIN
-	UPDATE public.authorized_devices SET machine_id = $2, last_authorization_time = to_timestamp($3) WHERE license_id = $1
-END
-ELSE
-BEGIN
-	INSERT INTO public.authorized_devices (id, license_id, machine_id, last_authorization_time) VALUES (uuid_generate_v4(), $1, $2, to_timestamp($3))
-END)"
-		};
+		constexpr std::string_view query_get_license{ R"(SELECT id, organization, allowed_device_count, authorized_device_count, extract(epoch from creation_time)::bigint as creation_time, extract(epoch from expiration_time)::bigint as expiration_time FROM public.licenses WHERE id = $1)" };
+		constexpr std::string_view query_get_authorized_devices{ R"(SELECT license_id, machine_id, extract(epoch from last_authorization_time)::bigint as last_authorization_time FROM public.authorized_devices WHERE license_id = $1)" };
+		constexpr std::string_view query_get_exact_authorized_devices{ R"(SELECT id, license_id, machine_id, extract(epoch from last_authorization_time)::bigint as last_authorization_time FROM public.authorized_devices WHERE license_id = $1 AND machine_id = $2)" };
+		constexpr std::string_view query_add_or_update_license{ R"(INSERT INTO public.licenses (id, organization, allowed_device_count, authorized_device_count, creation_time, expiration_time) VALUES ($1, $2, $3, $4, to_timestamp($5), to_timestamp($6)) ON CONFLICT(id) DO UPDATE SET organization = $2, allowed_device_count = $3, authorized_device_count = $4, creation_time = to_timestamp($5), expiration_time = to_timestamp($6))" };
+		constexpr std::string_view query_add_or_update_authorized_devices{ R"(INSERT INTO public.authorized_devices (license_id, machine_id, last_authorization_time) VALUES ($1, $2, to_timestamp($3)) ON CONFLICT(license_id, machine_id) DO UPDATE SET last_authorization_time = to_timestamp($3))" };
 	}
 
 	class license_database::impl
@@ -43,6 +23,14 @@ END)"
 	public:
 		impl(std::string_view connection_str) : connection_{ std::string{ connection_str } }
 		{
+#ifdef _WIN32
+			connection_.set_client_encoding("gb18030");
+#endif
+
+			if (!connection_.is_open())
+			{
+				throw license_error{ "Failed to connect the database." };
+			}
 		}
 
 		std::optional<license_record> get_license(const exposing::guid& id)
@@ -122,7 +110,7 @@ END)"
 		{
 			pqxx::work work{ connection_ };
 
-			work.exec_params(std::string{ query_add_or_update_authorized_device }, exposing::to_string(record.license_id), std::basic_string_view<std::byte>{ reinterpret_cast<const std::byte*>(record.machine_id.data()), record.machine_id.size() }, record.last_authorization_time);
+			work.exec_params(std::string{ query_add_or_update_authorized_devices }, exposing::to_string(record.license_id), std::basic_string_view<std::byte>{ reinterpret_cast<const std::byte*>(record.machine_id.data()), record.machine_id.size() }, record.last_authorization_time);
 			work.commit();
 		}
 	private:

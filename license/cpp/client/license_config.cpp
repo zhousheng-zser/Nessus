@@ -36,7 +36,7 @@ namespace glasssix::license
 
 	std::string license_config::to_websocket_uri()
 	{
-		return fmt::format(FMT_STRING("ws:://{}:{}"), server, port);
+		return fmt::format(FMT_STRING("ws://{}:{}"), server, port);
 	}
 
 	std::optional<license_config> license_config::from_license_key(std::string_view license_key)

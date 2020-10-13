@@ -55,6 +55,13 @@ namespace glasssix::crypto
 		/// <param name="ciphertext">The ciphertext to deceypt</param>
 		/// <returns>The plaintext</returns>
 		std::vector<std::uint8_t> decrypt(exposing::param_span<const std::uint8_t> ciphertext);
+
+		/// <summary>
+		/// Calcuates the encrypted size of a plaintext.
+		/// </summary>
+		/// <param name="plaintext_size">The size of the plaintext</param>
+		/// <returns>The size of the ciphertext</returns>
+		static std::size_t get_encrypted_size(std::size_t plaintext_size) noexcept;
 	private:
 		std::unique_ptr<impl> impl_;
 	};

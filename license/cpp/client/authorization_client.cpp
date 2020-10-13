@@ -1,5 +1,6 @@
 #include "authorization_client.hpp"
 #include "protocol_header.hpp"
+#include "license_error.hpp"
 
 #include <mutex>
 #include <atomic>
@@ -37,7 +38,7 @@ namespace glasssix::license
 			~single_threaded_io_context()
 			{
 				work_guard_.reset();
-				
+
 				if (worker_thread_.joinable())
 				{
 					worker_thread_.join();
@@ -116,7 +117,7 @@ namespace glasssix::license
 
 			if (code)
 			{
-				throw websocketpp::exception{ fmt::format(FMT_STRING("Failed to create a connection. {}"), code.message()) };
+				throw license_error{ fmt::format(FMT_STRING("Failed to create a connection: {}"), code.message()) };
 			}
 
 			client_.connect(connection);
@@ -149,10 +150,9 @@ namespace glasssix::license
 	private:
 		static void raise_authorization(impl& obj, const nlohmann::json& json)
 		{
-			if (auto response = json.get<authorization_response_message>())
-			{
-				obj.on_authorization(response);
-			}
+			auto response = json.get<authorization_response_message>();
+
+			obj.on_authorization(response);
 		}
 
 		void parse_content(const protocol_header& header, exposing::param_span<const std::uint8_t> content)
@@ -185,8 +185,13 @@ namespace glasssix::license
 			protocol_header::buffer_type header_buffer;
 			auto header = (std::copy(payload.begin(), payload.begin() + protocol_header::header_size, header_buffer.begin()), protocol_header::parse(header_buffer));
 
+			if (!header)
+			{
+				return connection->close(websocketpp::close::status::invalid_payload, "Invalid header.", code);
+			}
+
 			// Validates the data size.
-			if (!header || payload.size() - header_buffer.size() < header.size)
+			if (payload.size() - header_buffer.size() < header.size)
 			{
 				return connection->close(websocketpp::close::status::invalid_payload, "The data size is too small.", code);
 			}

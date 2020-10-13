@@ -202,7 +202,7 @@ namespace glasssix::crypto
 				throw crypto_error{ "Failed to open the user portrait file." };
 			}
 
-			if (buffer->size() != user_portrait_size)
+			if (buffer->size() != aes_provider::get_encrypted_size(user_portrait_size * sizeof(std::uint64_t)))
 			{
 				throw crypto_error{ "Illegal user portrait file." };
 			}
@@ -220,12 +220,12 @@ namespace glasssix::crypto
 		{
 			auto timestamp = get_timestamp();
 			auto old_user_portrait = user_portrait_encrypter_.decrypt(cipher_user_portrait_);
+			auto new_user_portrait = (init_user_portrait_cryptography(timestamp), user_portrait_encrypter_.encrypt(old_user_portrait));
 
-			init_user_portrait_cryptography(timestamp);
-			cipher_user_portrait_ = user_portrait_encrypter_.encrypt(old_user_portrait);
-			std::reverse(cipher_user_portrait_.begin(), cipher_user_portrait_.end());
+			cipher_user_portrait_ = new_user_portrait;
+			std::reverse(new_user_portrait.begin(), new_user_portrait.end());
 
-			if (!io::write_all_bytes(path, cipher_user_portrait_))
+			if (!io::write_all_bytes(path, new_user_portrait))
 			{
 				throw crypto_error{ "Failed to create the user portrait file." };
 			}
@@ -258,6 +258,7 @@ namespace glasssix::crypto
 			auto buffer = make_byte_buffer(user_portrait);
 
 			set_machine_id(machine_id);
+			init_user_portrait_cryptography(client_data_timestamp);
 			cipher_user_portrait_ = user_portrait_encrypter_.encrypt(buffer);
 			init_client_data_cryptography(client_data_timestamp);
 			set_client_data_timestamp(client_data_timestamp);
@@ -292,7 +293,7 @@ namespace glasssix::crypto
 		{
 			std::array<std::uint64_t, user_portrait_size> buffer;
 			auto factors = get_obfuscated_factors(machine_id_, timestamp);
-			auto real_user_portrait = user_portrait_encrypter_.decrypt(cipher_user_portrait_);
+			auto real_user_portrait = make_user_portrait(user_portrait_encrypter_.decrypt(cipher_user_portrait_));
 
 			std::transform(real_user_portrait.begin(), real_user_portrait.end(), buffer.begin(), [&, index = std::size_t{}](std::uint64_t inner) mutable { return utils::hash_all(inner, factors[index++]); });
 			client_data_encrypter_.set_key(make_salty_byte_buffer(buffer, client_data_salt));
