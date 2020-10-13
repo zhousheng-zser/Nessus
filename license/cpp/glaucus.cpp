@@ -162,7 +162,7 @@ namespace glasssix::crypto
 	class glaucus::impl
 	{
 	public:
-		impl() : engine_{ std::random_device{}() }
+		impl() : engine_ { std::random_device{}() }
 		{
 		}
 
@@ -176,7 +176,6 @@ namespace glasssix::crypto
 			set_machine_id(machine_id);
 			cipher_user_portrait_.assign(user_portrait.begin(), user_portrait.end());
 			init_user_portrait_cryptography(timestamp);
-			init_client_data_cryptography(timestamp);
 		}
 
 		void load(std::string_view path, exposing::param_span<const std::uint8_t> machine_id)
@@ -213,7 +212,6 @@ namespace glasssix::crypto
 			std::reverse(buffer->begin(), buffer->end());
 			cipher_user_portrait_ = std::move(*buffer);
 			init_user_portrait_cryptography(last_write_time);
-			init_client_data_cryptography(last_write_time);
 		}
 
 		void save(std::string_view path)
@@ -244,9 +242,10 @@ namespace glasssix::crypto
 		void set_client_data_timestamp(std::time_t timestamp)
 		{
 			client_data_encrypter_.set_iv(meta::to_array(timestamp));
+			init_client_data_cryptography(timestamp);
 		}
 
-		void generate(exposing::param_span<const std::uint8_t> machine_id, std::time_t client_data_timestamp)
+		void generate(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
 		{
 			std::array<std::uint64_t, user_portrait_size> user_portrait;
 
@@ -258,10 +257,10 @@ namespace glasssix::crypto
 			auto buffer = make_byte_buffer(user_portrait);
 
 			set_machine_id(machine_id);
-			init_user_portrait_cryptography(client_data_timestamp);
+			init_user_portrait_cryptography(timestamp);
 			cipher_user_portrait_ = user_portrait_encrypter_.encrypt(buffer);
-			init_client_data_cryptography(client_data_timestamp);
-			set_client_data_timestamp(client_data_timestamp);
+			init_client_data_cryptography(timestamp);
+			set_client_data_timestamp(timestamp);
 		}
 
 		std::vector<std::uint8_t> user_portrait()

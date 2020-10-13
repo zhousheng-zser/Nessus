@@ -4,6 +4,7 @@
 #include <chrono>
 #include <utility>
 #include <cstddef>
+#include <cstdint>
 #include <type_traits>
 
 namespace glasssix
@@ -24,13 +25,27 @@ namespace glasssix
 	}
 
 	/// <summary>
-	/// Retrieves the current timestamp.
+	/// Support for a UTC clock.
 	/// </summary>
-	/// <returns>The current timestamp</returns>
-	inline std::time_t get_timestamp()
+	struct utc_unix_timestamp_clock
 	{
-		return std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-	}
+		using rep = std::chrono::system_clock::rep;
+		using period = std::chrono::system_clock::period;
+		using duration = std::chrono::system_clock::duration;
+		using time_point = std::chrono::time_point<utc_unix_timestamp_clock>;
+
+		static constexpr bool is_steady = false;
+
+		static time_point now() noexcept;
+		static std::time_t to_time_t(const time_point& time) noexcept;
+		static time_point from_time_t(std::time_t timestamp) noexcept;
+	};
+
+	/// <summary>
+	/// Retrieves the current UTC timestamp.
+	/// </summary>
+	/// <returns>The current UTC timestamp</returns>
+	std::time_t get_timestamp();
 
 	/// <summary>
 	/// Converts a time point to another time point.
@@ -52,8 +67,8 @@ namespace glasssix
 		{
 			auto destination = details::time_point_cast<DestinationTimePoint>(std::forward<SourceTimePoint>(time_point));
 			auto source = details::time_point_cast<SourceTimePoint>(destination);
-			auto delta = details::abs_duration(source - std::forward<SourceTimePoint>(time_point));
-
+			auto delta = std::chrono::abs(source - std::forward<SourceTimePoint>(time_point));
+			
 			if (delta < epsilon)
 			{
 				current = destination;
@@ -74,7 +89,7 @@ namespace glasssix
 	template<typename TimePoint>
 	std::time_t to_time_t(TimePoint&& time_point)
 	{
-		return std::chrono::system_clock::to_time_t(time_point_cast<std::chrono::system_clock::time_point>(std::forward<TimePoint>(time_point)));
+		return utc_unix_timestamp_clock::to_time_t(time_point_cast<utc_unix_timestamp_clock::time_point>(std::forward<TimePoint>(time_point)));
 	}
 
 	/// <summary>
@@ -86,6 +101,6 @@ namespace glasssix
 	template<typename TimePoint>
 	TimePoint from_time_t(std::time_t timestamp)
 	{
-		return time_point_cast<TimePoint>(std::chrono::system_clock::from_time_t(timestamp));
+		return time_point_cast<TimePoint>(utc_unix_timestamp_clock::from_time_t(timestamp));
 	}
 }

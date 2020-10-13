@@ -27,7 +27,7 @@ namespace
 	{
 		thread_local crypto::glaucus glaucus;
 		auto timestamp = glasssix::get_timestamp();
-		auto license = nlohmann::json::to_msgpack(nlohmann::json{ license_info{ message.machine_id, record.expiration_time, timestamp, timestamp } });
+		auto license = nlohmann::json::to_msgpack(license_info{ message.machine_id, record.expiration_time, timestamp, timestamp });
 
 		glaucus.generate(message.machine_id, timestamp);
 
@@ -67,10 +67,14 @@ int main()
 				{
 					return authorization_response_message{ "The count of the authorized devices has exceeded the limit of the license." };
 				}
-
-				// Updates the license information.
-				license->authorized_device_count++;
-				database.add_or_update_license(*license);
+				
+				// Increases the authorized device count if it is a new deivce.
+				if (database.get_exact_authorized_devices(license->id, message.machine_id).empty())
+				{
+					license->authorized_device_count++;
+					database.add_or_update_license(*license);
+				}
+				
 				database.add_or_update_authorized_device(authorized_device_record{ license->id, message.machine_id, glasssix::get_timestamp() });
 
 				return create_response_message(message, *license);

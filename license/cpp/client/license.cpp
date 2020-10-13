@@ -222,8 +222,8 @@ namespace glasssix::license
 							return on_authorization(false, message.status);
 						}
 
-						glaucus_.set_client_data_timestamp(message.server_timestamp);
 						glaucus_.load(*machine_id_, message.user_portrait, message.server_timestamp);
+						glaucus_.set_client_data_timestamp(message.server_timestamp);
 						glaucus_.save(portrait_path_.string());
 
 						if (!io::write_all_bytes(license_path_.string(), message.license))
@@ -276,8 +276,9 @@ namespace glasssix::license
 				auto timestamp = get_timestamp();
 
 				duplicate.last_running_time = timestamp;
-				
-				if (!io::write_all_bytes(license_path_.string(), duplicate.to_buffer()))
+				glaucus_.set_client_data_timestamp(timestamp);
+
+				if (!io::write_all_bytes(license_path_.string(), glaucus_.forward(duplicate.to_buffer())))
 				{
 					throw license_error{ "Failed to update the license information." };
 				}
@@ -311,7 +312,7 @@ namespace glasssix::license
 				{
 					try
 					{
-						// In case of expensive initialzation on Android, we defer the first tick of the watchdog to wait for it to succeed completely.
+						// In case of expensive initialzation on Android, we defer the first tick of the watchdog to wait for the initialization to accomplish.
 						global_license_ = std::make_unique<license>(license_key);
 						watchdog_timer.start(watchdog_period, watchdog_deferred_time, []
 							{

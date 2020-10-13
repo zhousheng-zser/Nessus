@@ -11,11 +11,11 @@ namespace glasssix::license
 {
 	namespace
 	{
-		constexpr std::string_view query_get_license{ R"(SELECT id, organization, allowed_device_count, authorized_device_count, extract(epoch from creation_time)::bigint as creation_time, extract(epoch from expiration_time)::bigint as expiration_time FROM public.licenses WHERE id = $1)" };
-		constexpr std::string_view query_get_authorized_devices{ R"(SELECT license_id, machine_id, extract(epoch from last_authorization_time)::bigint as last_authorization_time FROM public.authorized_devices WHERE license_id = $1)" };
-		constexpr std::string_view query_get_exact_authorized_devices{ R"(SELECT id, license_id, machine_id, extract(epoch from last_authorization_time)::bigint as last_authorization_time FROM public.authorized_devices WHERE license_id = $1 AND machine_id = $2)" };
-		constexpr std::string_view query_add_or_update_license{ R"(INSERT INTO public.licenses (id, organization, allowed_device_count, authorized_device_count, creation_time, expiration_time) VALUES ($1, $2, $3, $4, to_timestamp($5), to_timestamp($6)) ON CONFLICT(id) DO UPDATE SET organization = $2, allowed_device_count = $3, authorized_device_count = $4, creation_time = to_timestamp($5), expiration_time = to_timestamp($6))" };
-		constexpr std::string_view query_add_or_update_authorized_devices{ R"(INSERT INTO public.authorized_devices (license_id, machine_id, last_authorization_time) VALUES ($1, $2, to_timestamp($3)) ON CONFLICT(license_id, machine_id) DO UPDATE SET last_authorization_time = to_timestamp($3))" };
+		constexpr std::string_view query_get_license{ R"(SELECT id, organization, allowed_device_count, authorized_device_count, EXTRACT(EPOCH FROM creation_time)::bigint as creation_time, EXTRACT(EPOCH FROM expiration_time)::bigint as expiration_time FROM public.licenses WHERE id = $1)" };
+		constexpr std::string_view query_get_authorized_devices{ R"(SELECT license_id, machine_id, EXTRACT(EPOCH FROM last_authorization_time)::bigint as last_authorization_time FROM public.authorized_devices WHERE license_id = $1)" };
+		constexpr std::string_view query_get_exact_authorized_devices{ R"(SELECT license_id, machine_id, EXTRACT(EPOCH FROM last_authorization_time)::bigint as last_authorization_time FROM public.authorized_devices WHERE license_id = $1 AND machine_id = $2)" };
+		constexpr std::string_view query_add_or_update_license{ R"(INSERT INTO public.licenses (id, organization, allowed_device_count, authorized_device_count, creation_time, expiration_time) VALUES ($1, $2, $3, $4, TO_TIMESTAMP($5) AT TIME ZONE 'UTC', TO_TIMESTAMP($6) AT TIME ZONE 'UTC') ON CONFLICT(id) DO UPDATE SET organization = $2, allowed_device_count = $3, authorized_device_count = $4, creation_time = TO_TIMESTAMP($5) AT TIME ZONE 'UTC', expiration_time = TO_TIMESTAMP($6) AT TIME ZONE 'UTC')" };
+		constexpr std::string_view query_add_or_update_authorized_devices{ R"(INSERT INTO public.authorized_devices (license_id, machine_id, last_authorization_time) VALUES ($1, $2, TO_TIMESTAMP($3) AT TIME ZONE 'UTC') ON CONFLICT(license_id, machine_id) DO UPDATE SET last_authorization_time = TO_TIMESTAMP($3) AT TIME ZONE 'UTC')" };
 	}
 
 	class license_database::impl
@@ -76,11 +76,11 @@ namespace glasssix::license
 			return result;
 		}
 
-		std::vector<authorized_device_record> get_exact_authorized_devices(const exposing::guid& license_id, std::string_view machine_id)
+		std::vector<authorized_device_record> get_exact_authorized_devices(const exposing::guid& license_id, exposing::param_span<const std::uint8_t> machine_id)
 		{
 			pqxx::work work{ connection_ };
 			std::vector<authorized_device_record> result;
-			auto records = work.exec_params(std::string{ query_get_exact_authorized_devices }, exposing::to_string(license_id), machine_id);
+			auto records = work.exec_params(std::string{ query_get_exact_authorized_devices }, exposing::to_string(license_id), std::basic_string_view<std::byte>{ reinterpret_cast<const std::byte*>(machine_id.data()), machine_id.size() });
 
 			for (const auto& item : records)
 			{
@@ -135,7 +135,7 @@ namespace glasssix::license
 		return impl_->get_authorized_devices(license_id);
 	}
 
-	std::vector<authorized_device_record> license_database::get_exact_authorized_devices(const exposing::guid& license_id, std::string_view machine_id) const
+	std::vector<authorized_device_record> license_database::get_exact_authorized_devices(const exposing::guid& license_id, exposing::param_span<const std::uint8_t> machine_id) const
 	{
 		return impl_->get_exact_authorized_devices(license_id, machine_id);
 	}
