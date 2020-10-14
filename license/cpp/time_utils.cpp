@@ -1,9 +1,9 @@
 #include "time_utils.hpp"
 
 #ifdef _WIN32
-#define gmtime_safe gmtime_s
+#define gmtime_safe(a, b) gmtime_s(a, b)
 #else
-#define gmtime_safe gmtime_r
+#define gmtime_safe(a, b) gmtime_r(b, a)
 #endif
 
 namespace glasssix
@@ -18,16 +18,16 @@ namespace glasssix
 
 	utc_unix_timestamp_clock::time_point utc_unix_timestamp_clock::now() noexcept
 	{
-		return time_point{ duration{ get_timestamp() * _XTIME_TICKS_PER_TIME_T } };
+		return time_point{ duration{ get_timestamp() * 10000000LL } };
 	}
 
 	std::time_t utc_unix_timestamp_clock::to_time_t(const utc_unix_timestamp_clock::time_point& time) noexcept
 	{
-		return time.time_since_epoch().count() / _XTIME_TICKS_PER_TIME_T;
+		return time.time_since_epoch().count() / 10000000LL;
 	}
 
 	utc_unix_timestamp_clock::time_point utc_unix_timestamp_clock::from_time_t(std::time_t timestamp) noexcept
 	{
-		return time_point{ duration{ timestamp * _XTIME_TICKS_PER_TIME_T} };
+		return time_point{ duration{ timestamp * 10000000LL} };
 	}
 }

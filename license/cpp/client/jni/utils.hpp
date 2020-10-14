@@ -1,19 +1,12 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 #include <type_traits>
 
 #include <jni.h>
 
 namespace glasssix::jni
 {
-	/// <summary>
-	/// Gets the environment of the current thread.
-	/// </summary>
-	/// <returns>The environment</returns>
-	JNIEnv* get_current_thread_env();
-
 	/// <summary>
 	/// Gets the android device ID.
 	/// </summary>

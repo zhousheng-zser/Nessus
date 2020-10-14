@@ -17,7 +17,7 @@ namespace glasssix
 		{
 		}
 
-		delegate_token(const std::function<void(std::uint64_t)>& remove_handler, std::uint64_t id, const std::weak_ptr<void>& observer) : remove_handler_{ remove_handler }, id_{ id }, observer_{ observer }
+		delegate_token(const std::function<void(std::uint64_t)>& remove_handler, std::uint64_t id, const std::weak_ptr<void>& observer) : id_{ id }, observer_{ observer }, remove_handler_{ remove_handler }
 		{
 		}
 
@@ -85,17 +85,17 @@ namespace glasssix
 			return (add_listener_with_updating(std::forward<Callable>(handler)), *this);
 		}
 
-		template<typename... Args, typename = std::void_t<decltype(std::declval<function_type>()(std::declval<Args>()...))>>
-		Result operator()(Args&&... args)
+		template<typename... Equivalents, typename = std::void_t<decltype(std::declval<function_type>()(std::declval<Equivalents>()...))>>
+		Result operator()(Equivalents&&... args)
 		{
 			// Fetches the buffer automically.
-			std::shared_ptr<function_type[]> buffer = std::atomic_load_explicit(&readable_buffer_, std::memory_order_acquire);
+			std::shared_ptr<function_type> buffer = std::atomic_load_explicit(&readable_buffer_, std::memory_order_acquire);
 
 			if constexpr (std::is_void_v<Result>)
 			{
 				for (auto ptr = buffer.get(); *ptr; ptr++)
 				{
-					(*ptr)(std::forward<Args>(args)...);
+					(*ptr)(std::forward<Equivalents>(args)...);
 				}
 			}
 			else
@@ -105,7 +105,7 @@ namespace glasssix
 
 				for (auto ptr = buffer.get(); *ptr; ptr++)
 				{
-					result = (*ptr)(std::forward<Args>(args)...);
+					result = (*ptr)(std::forward<Equivalents>(args)...);
 				}
 
 				return result;
@@ -146,18 +146,18 @@ namespace glasssix
 
 		void update_readable_buffer()
 		{
-			std::shared_ptr<function_type[]> buffer{ new function_type[listeners_.size() + 1], [](function_type* inner) { delete[] inner; } };
+			std::shared_ptr<function_type> buffer{ new function_type[listeners_.size() + 1], [](function_type* inner) { delete[] inner; } };
 
 			for (std::size_t i = 0; i < listeners_.size(); i++)
 			{
-				buffer[i] = listeners_[i].second;
+				buffer.get()[i] = listeners_[i].second;
 			}
 
 			std::atomic_store_explicit(&readable_buffer_, buffer, std::memory_order_release);
 		}
 
 		std::shared_ptr<void> lifetime_observer_;
-		std::shared_ptr<function_type[]> readable_buffer_;
+		std::shared_ptr<function_type> readable_buffer_;
 		std::vector<std::pair<std::uint64_t, function_type>> listeners_;
 		inline static std::atomic_uint64_t global_counter_ = 0;
 	};

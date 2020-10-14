@@ -16,7 +16,7 @@ endif()
 
 project(Nessus C CXX)
 option(WITH_JNI "Compile java native interface." OFF)
-option(CONTAINS_LICENSE_SERVER "Compile the license server." ON)
+option(CONTAINS_LICENSE_SERVER "Compile the license server." OFF)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	set(CMAKE_FIND_LIBRARY_PREFIXES "lib")

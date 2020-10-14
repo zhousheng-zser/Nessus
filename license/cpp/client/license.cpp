@@ -14,6 +14,10 @@
 #include "jni/utils.hpp"
 #elif defined(_WIN32)
 #include "smbios.hpp"
+
+#define NOGDI
+#define NOMINMAX
+#include <ShlObj.h>
 #else
 #error "Unsupported platform."
 #endif
@@ -35,8 +39,6 @@
 #include <nlohmann/json.hpp>
 #include <abi/platform_encoding.hpp>
 
-#define NOGDI
-#include <ShlObj.h>
 
 namespace glasssix::license
 {
@@ -55,7 +57,7 @@ namespace glasssix::license
 #ifdef __ANDROID__
 		fs::path get_app_data_directory()
 		{
-			return utils::get_application_files_directory();
+			return jni::get_application_files_directory();
 		}
 
 		std::vector<std::uint8_t> get_machine_id()
@@ -333,16 +335,6 @@ namespace glasssix::license
 		}
 	}
 
-	EXPORT_NESSUS_LICENSE void request_license_async(void* context)
-	{
-		if (global_license_)
-		{
-			std::scoped_lock lock{ mutex_license };
-
-			global_license_->request_new();
-		}
-	}
-
 	EXPORT_NESSUS_LICENSE void evaluate_license(evaluate_license_callback_type callback, void* context)
 	{
 		if (!global_license_ || callback == nullptr)
@@ -366,13 +358,20 @@ namespace glasssix::license
 		}
 	}
 
-	EXPORT_NESSUS_LICENSE void set_request_license_async_callback(request_license_async_callback_type callback, void* context)
+	EXPORT_NESSUS_LICENSE void request_license_async(request_license_async_callback_type callback, void* context)
 	{
-		if (global_license_ && callback)
+		struct token_wrapper
+		{
+			std::shared_ptr<delegate_token> token;
+		};
+
+		if (global_license_)
 		{
 			std::scoped_lock lock{ mutex_license };
+			auto wrapper = std::make_shared<token_wrapper>();
 
-			global_license_->on_authorization += [=](bool success, std::string_view message) { callback(context, success, message.data()); };
+			wrapper->token = global_license_->on_authorization.add_listener_auto_removal([=, wrapper = wrapper](bool success, std::string_view message) { callback(context, success, message.data()); });
+			global_license_->request_new();
 		}
 	}
 }

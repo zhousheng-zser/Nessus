@@ -1,4 +1,5 @@
 #include "local_ref.hpp"
+#include "reflection_cache.hpp"
 
 #include <utility>
 
@@ -14,7 +15,7 @@ namespace glasssix::jni
 
 	local_ref::local_ref(jobject obj, bool takeOverOnly) : ref_{}
 	{
-		if (auto env = get_current_thread_env(); env && obj)
+		if (auto env = reflection_cache::instance().get_thread_env(); env && obj)
 		{
 			ref_ = takeOverOnly ? obj : env->NewLocalRef(obj);
 		}
@@ -30,7 +31,7 @@ namespace glasssix::jni
 
 	local_ref::~local_ref()
 	{
-		if (auto env = get_current_thread_env(); env && ref_)
+		if (auto env = reflection_cache::instance().get_thread_env(); env && ref_)
 		{
 			env->DeleteLocalRef(ref_);
 			ref_ = nullptr;
@@ -44,7 +45,7 @@ namespace glasssix::jni
 
 	local_ref& local_ref::operator=(const local_ref& right)
 	{
-		auto env = get_current_thread_env();
+		auto env = reflection_cache::instance().get_thread_env();
 
 		ref_ = env && right.ref_ ? env->NewLocalRef(right.ref_) : nullptr;
 
