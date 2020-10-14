@@ -6,6 +6,7 @@
 #include <array>
 #include <variant>
 #include <type_traits>
+#include <fstream>
 #include <unordered_map>
 
 namespace glasssix::jni
@@ -98,7 +99,7 @@ namespace glasssix::jni
 				}
 			};
 
-			thread_local std::shared_ptr<JNIEnv> result{ creator(), freeing_handler };
+			thread_local std::unique_ptr<JNIEnv, decltype(freeing_handler)> result{ creator(), freeing_handler };
 
 			return result.get();
 		}
@@ -126,7 +127,7 @@ namespace glasssix::jni
 		void add_class_cache(int key, std::string_view name)
 		{
 			auto env = get_thread_env();
-
+			
 			if (env == nullptr)
 			{
 				return;

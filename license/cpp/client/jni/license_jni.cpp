@@ -40,8 +40,8 @@ extern "C"
 					if (auto env = reflection_cache::instance().get_thread_env())
 					{
 						global_ref callback{ static_cast<jobject>(context), true };
-
-						env->CallObjectMethod(callback.get(), internal_caches.method_evaluate_license_callback_run, valid ? JNI_TRUE : JNI_FALSE, env->NewStringUTF(message), remaining_seconds);
+						
+						env->CallVoidMethod(callback.get(), internal_caches.method_evaluate_license_callback_run, static_cast<jboolean>(valid ? JNI_TRUE : JNI_FALSE), env->NewStringUTF(message), remaining_seconds);
 					}
 				}, env->NewGlobalRef(callback));
 		}
@@ -62,7 +62,7 @@ extern "C"
 					{
 						global_ref callback{ static_cast<jobject>(context), true };
 
-						env->CallObjectMethod(callback.get(), internal_caches.method_request_license_async_callback_run, success ? JNI_TRUE : JNI_FALSE, env->NewStringUTF(message));
+						env->CallVoidMethod(callback.get(), internal_caches.method_request_license_async_callback_run, static_cast<jboolean>(success ? JNI_TRUE : JNI_FALSE), env->NewStringUTF(message));
 					}
 				}, env->NewGlobalRef(callback));
 		}

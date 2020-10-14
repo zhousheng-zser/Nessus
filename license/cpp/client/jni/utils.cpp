@@ -28,11 +28,12 @@ namespace glasssix::jni
 		/// </summary>
 		/// <param name="env">The JNI environment</param>
 		/// <returns>The context</returns>
-		jobject get_main_activity_context(JNIEnv* env)
+		local_ref get_main_activity_context(JNIEnv* env)
 		{
-			auto current_activity_thread = env->CallStaticObjectMethod(internal_caches.class_activity_thread.get(), internal_caches.method_activity_thread_current_activity_thread);
-
-			return env->CallObjectMethod(current_activity_thread, internal_caches.method_activity_thread_get_application);
+			local_ref current_activity_thread{ env->CallStaticObjectMethod(internal_caches.class_activity_thread.get(), internal_caches.method_activity_thread_current_activity_thread), true };
+			local_ref result{ env->CallObjectMethod(current_activity_thread.get(), internal_caches.method_activity_thread_get_application), true };
+			
+			return result;
 		}
 
 		/// <summary>
@@ -46,9 +47,9 @@ namespace glasssix::jni
 			if (std::ifstream stream{ "/proc/cpuinfo", std::ios::in | std::ios::binary })
 			{
 				std::smatch matches;
-				std::string buffer_(std::istreambuf_iterator<char>{ stream }, std::istreambuf_iterator<char>{});
+				std::string buffer_{ std::istreambuf_iterator<char>{ stream }, std::istreambuf_iterator<char>{} };
 
-				return std::regex_search(buffer_, matches, pattern) ? matches[1].str() : std::string();
+				return std::regex_search(buffer_, matches, pattern) ? matches[1].str() : std::string{};
 			}
 
 			return std::string{};
@@ -69,15 +70,15 @@ namespace glasssix::jni
 
 			auto context = get_main_activity_context(env);
 
-			if (context == nullptr)
+			if (!context)
 			{
 				return std::string{};
 			}
 
-			local_ref content_resolver{ env->CallObjectMethod(context, internal_caches.method_context_get_content_resolver) };
-			auto android_id = static_cast<jstring>(env->CallStaticObjectMethod(internal_caches.class_settings_secure.get(), internal_caches.method_settings_secure_get_string, content_resolver.get(), env->NewStringUTF("android_id")));
+			local_ref content_resolver{ env->CallObjectMethod(context.get(), internal_caches.method_context_get_content_resolver) };
+			local_ref_ex<jstring> android_id{ static_cast<jstring>(env->CallStaticObjectMethod(internal_caches.class_settings_secure.get(), internal_caches.method_settings_secure_get_string, content_resolver.get(), env->NewStringUTF("android_id"))), true };
 
-			return to_string(android_id);
+			return to_string(android_id.get());
 		}
 	}
 
@@ -101,15 +102,15 @@ namespace glasssix::jni
 
 		auto context = get_main_activity_context(env);
 
-		if (context == nullptr)
+		if (!context)
 		{
 			return std::string{};
 		}
 
-		auto files = env->CallObjectMethod(context, internal_caches.method_context_get_files_dir);
-		auto directory = static_cast<jstring>(env->CallObjectMethod(files, internal_caches.method_file_get_absolute_path));
+		local_ref files{ env->CallObjectMethod(context.get(), internal_caches.method_context_get_files_dir), true };
+		local_ref_ex<jstring> directory{ static_cast<jstring>(env->CallObjectMethod(files.get(), internal_caches.method_file_get_absolute_path)), true };
 
-		return to_string(directory);
+		return to_string(directory.get());
 	}
 
 	std::string to_string(jstring str)

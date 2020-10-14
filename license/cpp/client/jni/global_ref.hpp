@@ -18,7 +18,7 @@ namespace glasssix::jni
 		global_ref(const global_ref& other);
 		global_ref(global_ref&& other) noexcept;
 		virtual ~global_ref();
-		operator bool() const noexcept;
+		explicit operator bool() const noexcept;
 		global_ref& operator=(const global_ref& right);
 		global_ref& operator=(global_ref&& right) noexcept;
 		jobject get() const noexcept;

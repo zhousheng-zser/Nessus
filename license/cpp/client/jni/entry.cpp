@@ -1,9 +1,11 @@
+#include "entry.hpp"
 #include "cache_key.hpp"
 #include "global_ref.hpp"
 #include "reflection_cache.hpp"
 
+#include <fstream>
+
 #include <jni.h>
-#include "entry.hpp"
 
 using namespace glasssix::jni;
 
@@ -87,6 +89,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
 		{
 			{ arg_enum_v<method_key::request_license_async_callback_run>, "run", "(ZLjava/lang/String;)V" }
 		});
+
 
 	internal_caches.class_file = reflection_cache::instance().get_class_cache(arg_enum_v<class_key::file>);
 	internal_caches.class_context = reflection_cache::instance().get_class_cache(arg_enum_v<class_key::context>);

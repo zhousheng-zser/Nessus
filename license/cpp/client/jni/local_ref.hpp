@@ -18,7 +18,7 @@ namespace glasssix::jni
 		local_ref(const local_ref& other);
 		local_ref(local_ref&& other) noexcept;
 		virtual ~local_ref();
-		operator bool() const noexcept;
+		explicit operator bool() const noexcept;
 		local_ref& operator=(const local_ref& right);
 		local_ref& operator=(local_ref&& right) noexcept;
 		jobject get() const noexcept;
