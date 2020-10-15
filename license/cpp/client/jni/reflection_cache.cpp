@@ -6,7 +6,6 @@
 #include <array>
 #include <variant>
 #include <type_traits>
-#include <fstream>
 #include <unordered_map>
 
 namespace glasssix::jni

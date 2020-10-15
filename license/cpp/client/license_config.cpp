@@ -11,7 +11,7 @@ namespace glasssix::license
 		{
 			{ "server", value.server },
 			{ "port", value.port },
-			{ "product_id", value.product_id }
+			{ "license_id", value.license_id }
 		};
 	}
 
@@ -19,12 +19,12 @@ namespace glasssix::license
 	{
 		json["server"].get_to(value.server);
 		json["port"].get_to(value.port);
-		json["product_id"].get_to(value.product_id);
+		json["license_id"].get_to(value.license_id);
 	}
 
 	license_config::operator bool() const noexcept
 	{
-		return !server.empty() && !product_id.empty() && port != 0;
+		return !server.empty() && !license_id.empty() && port != 0;
 	}
 
 	std::string license_config::to_license_key() const

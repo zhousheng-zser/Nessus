@@ -10,6 +10,7 @@ namespace glasssix::jni
 		global_ref_ex<jclass> class_context;
 		global_ref_ex<jclass> class_activity_thread;
 		global_ref_ex<jclass> class_settings_secure;
+		global_ref_ex<jclass> class_license_deadline_callback;
 		global_ref_ex<jclass> class_evaluate_license_callback;
 		global_ref_ex<jclass> class_request_license_async_callback;
 
@@ -19,6 +20,7 @@ namespace glasssix::jni
 		jmethodID method_context_get_content_resolver;
 		jmethodID method_activity_thread_get_application;
 		jmethodID method_activity_thread_current_activity_thread;
+		jmethodID method_license_deadline_callback_run;
 		jmethodID method_evaluate_license_callback_run;
 		jmethodID method_request_license_async_callback_run;
 	};

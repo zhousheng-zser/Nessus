@@ -216,7 +216,7 @@ namespace glasssix::crypto
 
 		void save(std::string_view path)
 		{
-			auto timestamp = get_timestamp();
+			auto timestamp = get_local_timestamp();
 			auto old_user_portrait = user_portrait_encrypter_.decrypt(cipher_user_portrait_);
 			auto new_user_portrait = (init_user_portrait_cryptography(timestamp), user_portrait_encrypter_.encrypt(old_user_portrait));
 

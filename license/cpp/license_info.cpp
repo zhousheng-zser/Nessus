@@ -40,7 +40,7 @@ namespace glasssix::license
 
 	bool license_info::valid(std::time_t timestamp, exposing::param_span<const std::uint8_t> machine_id) const
 	{
-		auto now_timestamp = get_timestamp();
+		auto now_timestamp = get_local_timestamp();
 
 		return this->machine_id.size() == machine_id.size() &&
 			std::equal(this->machine_id.begin(), this->machine_id.end(), machine_id.begin()) &&

@@ -16,7 +16,7 @@ namespace glasssix::license
 	{
 		std::string server;
 		std::uint16_t port;
-		std::string product_id;
+		std::string license_id;
 
 		explicit operator bool() const noexcept;
 		std::string to_license_key() const;

@@ -101,6 +101,14 @@ namespace glasssix::license
 
 					condition_close_.notify_all();
 				});
+			
+			client_.set_fail_handler([this](const websocketpp::connection_hdl& handle)
+				{
+					if (auto connection = client_.get_con_from_hdl(handle))
+					{
+						on_async_error(connection->get_ec());
+					}
+				});
 		}
 
 		~impl()

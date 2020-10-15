@@ -17,6 +17,7 @@
 
 #define NOGDI
 #define NOMINMAX
+#include <Windows.h>
 #include <ShlObj.h>
 #else
 #error "Unsupported platform."
@@ -26,9 +27,11 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 #include <cstdint>
 #include <optional>
+#include <functional>
 #include <string_view>
 
 #include <logger.hpp>
@@ -47,6 +50,7 @@ namespace glasssix::license
 
 	namespace
 	{
+		constexpr std::int64_t deadline_seconds = 3600 * 24 * 5;
 		constexpr std::int64_t watchdog_period = 1000 * 60 * 5;
 		constexpr std::int64_t watchdog_deferred_time = watchdog_period;
 
@@ -211,9 +215,9 @@ namespace glasssix::license
 					{
 						client_.request_authorization(authorization_request_message
 							{
-								config_->product_id,
+								config_->license_id,
 								*machine_id_,
-								get_timestamp()
+								get_local_timestamp()
 							});
 					}));
 
@@ -275,7 +279,7 @@ namespace glasssix::license
 			void update_timestamp(const license_info& info)
 			{
 				auto duplicate{ info };
-				auto timestamp = get_timestamp();
+				auto timestamp = get_local_timestamp();
 
 				duplicate.last_running_time = timestamp;
 				glaucus_.set_client_data_timestamp(timestamp);
@@ -302,36 +306,53 @@ namespace glasssix::license
 		std::mutex mutex_license;
 		interruptable_timer watchdog_timer;
 		std::unique_ptr<license> global_license_;
+		std::shared_ptr<std::thread> watchdog_initialization_thread;
+		std::function<void(std::string_view, std::int64_t)> internal_deadline_callback;
 	}
 
-	EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key)
+	namespace
 	{
-		if (license_key)
+		/// <summary>
+		/// Initializes the watchdog timer.
+		/// </summary>
+		void init_watchdog_timer()
 		{
-			static std::once_flag flag;
-
-			std::call_once(flag, [&]
+			watchdog_initialization_thread.reset(new std::thread
 				{
-					try
+					[]
 					{
-						// In case of expensive initialzation on Android, we defer the first tick of the watchdog to wait for the initialization to accomplish.
-						global_license_ = std::make_unique<license>(license_key);
 						watchdog_timer.start(watchdog_period, watchdog_deferred_time, []
 							{
+								if (!global_license_)
+								{
+									std::cout << "The license has not been initialized correctly and the program will exit immediately." << std::endl;
+									std::terminate();
+								}
+
 								evaluate_license([](void* context, bool valid, const char* message, std::int64_t remaining_seconds)
 									{
+										// Notifies the consumer nearing expiration.
+										if (internal_deadline_callback && remaining_seconds < deadline_seconds)
+										{
+											internal_deadline_callback(message, remaining_seconds);
+										}
+
 										if (!valid)
 										{
-											LOG(FATAL) << fmt::format(FMT_STRING("The application has detected a fatal license exception: {}"), message);
+											std::cout << fmt::format(FMT_STRING("License evaluation failure: {}"), message) << std::endl;
+											std::terminate();
 										}
 									});
 							});
 					}
-					catch (const std::exception& ex)
+				},
+				[](std::thread* inner)
 					{
-						LOG(FATAL) << ex.what();
-					}
-				});
+						if (inner->joinable())
+						{
+							inner->join();
+						}
+					});
 		}
 	}
 
@@ -344,7 +365,13 @@ namespace glasssix::license
 
 		try
 		{
-			std::int64_t remaining_seconds = [] { std::scoped_lock lock{ mutex_license }; return global_license_->evaluate().count(); }();
+			std::int64_t remaining_seconds = []
+			{
+				std::scoped_lock lock{ mutex_license };
+
+				return (watchdog_initialization_thread.reset(), global_license_->evaluate().count());
+			}();
+
 			std::int64_t seconds = remaining_seconds % 60;
 			std::int64_t minutes = remaining_seconds / 60 % 60;
 			std::int64_t hours = remaining_seconds / 3600 % 24;
@@ -367,11 +394,58 @@ namespace glasssix::license
 
 		if (global_license_)
 		{
+
 			std::scoped_lock lock{ mutex_license };
 			auto wrapper = std::make_shared<token_wrapper>();
 
+			watchdog_initialization_thread.reset();
 			wrapper->token = global_license_->on_authorization.add_listener_auto_removal([=, wrapper = wrapper](bool success, std::string_view message) { callback(context, success, message.data()); });
 			global_license_->request_new();
 		}
 	}
+
+	EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key, license_deadline_callback_type deadline_callback, void* context)
+	{
+		if (license_key)
+		{
+			static std::once_flag flag;
+
+			std::call_once(flag, [&]
+				{
+					try
+					{
+						watchdog_initialization_thread.reset();
+
+						if (deadline_callback)
+						{
+							internal_deadline_callback = [=](std::string_view message, std::int64_t remaining_seconds) { deadline_callback(context, message.data(), remaining_seconds); };
+						}
+
+						// In case of expensive initialzation on Android, we defer the first tick of the watchdog to wait for the initialization to accomplish.
+						global_license_ = std::make_unique<license>(license_key);
+					}
+					catch (const std::exception& ex)
+					{
+						LOG(FATAL) << ex.what();
+					}
+				});
+		}
+	}
 }
+
+#ifdef _WIN32
+int WINAPI DllMain(HINSTANCE instance, std::uint32_t reason, void* reserved)
+{
+	if (reason == DLL_PROCESS_ATTACH)
+	{
+		glasssix::license::init_watchdog_timer();
+	}
+
+	return TRUE;
+}
+#else
+__attribute__((constructor)) void dll_constructor()
+{
+	glasssix::license::init_watchdog_timer();
+}
+#endif

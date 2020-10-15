@@ -26,7 +26,7 @@ namespace
 	authorization_response_message create_response_message(const authorization_request_message& message, const license_record& record)
 	{
 		thread_local crypto::glaucus glaucus;
-		auto timestamp = glasssix::get_timestamp();
+		auto timestamp = glasssix::get_local_timestamp();
 		auto license = nlohmann::json::to_msgpack(license_info{ message.machine_id, record.expiration_time, timestamp, timestamp });
 
 		glaucus.generate(message.machine_id, timestamp);
@@ -46,7 +46,7 @@ int main()
 				thread_local license_database database{ "host=182.140.240.121 port=5432 user=postgres password=Glasssix+1S dbname=postgres connect_timeout=10" };
 
 				// Checks the client timestamp.
-				if (std::abs(message.client_timestamp - glasssix::get_timestamp()) >= permissible_error)
+				if (std::abs(message.client_timestamp - glasssix::get_local_timestamp()) >= permissible_error)
 				{
 					return authorization_response_message{ "The gap between the client time and the server time is too large." };
 				}
@@ -58,7 +58,7 @@ int main()
 					return authorization_response_message{ "The license does not exist." };
 				}
 
-				if (license->expiration_time <= glasssix::get_timestamp())
+				if (license->expiration_time <= glasssix::get_local_timestamp())
 				{
 					return authorization_response_message{ "The license has already expired." };
 				}
@@ -75,7 +75,7 @@ int main()
 					database.add_or_update_license(*license);
 				}
 				
-				database.add_or_update_authorized_device(authorized_device_record{ license->id, message.machine_id, glasssix::get_timestamp() });
+				database.add_or_update_authorized_device(authorized_device_record{ license->id, message.machine_id, glasssix::get_local_timestamp() });
 
 				return create_response_message(message, *license);
 			});
