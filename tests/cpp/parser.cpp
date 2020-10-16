@@ -929,55 +929,44 @@ namespace glasssix::unit_test
 			//longinus_thread.join();
 		}
 
-		/*TEST_METHOD(test_romancia_alignment)
+		TEST_METHOD(test_romancia_alignment)
 		{
 			auto parser_ = exposing::make_exported_interface<exposing::nessus::parser>();
 			exposing::param_string result = parser_.init_plugin(u8"plugin_configure.json");
-			exposing::param_string protocol(u8"Longinus.new"), device(u8"{\"device\":-1, \"nms\" : 0.4, \"models_directory\":\"./models\"}");
-			result = parser_.parse(protocol, device, nullptr);
-
-			protocol = u8"Longinus.detect";
 
 			Json::Reader reader;
 			Json::Value newResult;
-			reader.parse(to_narrow_string(result), newResult);
-			std::string instance_guid = newResult["instance_guid"].asString();
-
-			auto message = get_file_bytes("C:\\Users\\Glasssix-ZYF\\Desktop\\addT.txt");
-
 			Json::Value root;
-			reader.parse(message, root);
-			root["instance_guid"] = Json::Value(instance_guid);
 
 			Json::FastWriter writer;
-			std::string message_ = writer.write(root);
 
-			result = parser_.parse(protocol, to_param_string(message_), nullptr);
-			Logger::WriteMessage(result.data());
-
-			Json::Value detectResult;
-			reader.parse(std::string(result.data(), result.size()), detectResult);
-
-
-			exposing::param_string protocol_romancia(u8"Romancia.new"), device_romancia(u8"{\"device\":-1}");
-			result = parser_.parse(protocol_romancia, device_romancia, nullptr);
-
-			protocol_romancia = u8"Romancia.alignFace";
+			exposing::param_string protocol_romancia(u8"Romancia.new"), protocol_gaius(u8"Gaius.new"), device(u8"{\"device\":-1, \"models_directory\":\"./models\"}");
+			result = parser_.parse(protocol_romancia, device, nullptr);
 
 			Json::Value newAlignResult;
 			reader.parse(to_narrow_string(result), newAlignResult);
-			instance_guid = newAlignResult["instance_guid"].asString();
-			Json::Value alignRoot;
-			alignRoot["format"] = root["format"];
-			alignRoot["image"] = root["image"];
-			alignRoot["instance_guid"] = Json::Value(instance_guid);
-			alignRoot["height"] = root["height"];
-			alignRoot["width"] = root["width"];
-			alignRoot["facerectwithfaceinfo_list"] = detectResult["facerectwithfaceinfo_list"];
+			std::string romancia_instance_guid = newAlignResult["instance_guid"].asString();
 
-			message_ = writer.write(alignRoot);
-			result = parser_.parse(protocol_romancia, to_param_string(message_), nullptr);
+			result = parser_.parse(protocol_gaius, device, nullptr);
+
+			Json::Value newGaiusResult;
+			reader.parse(to_narrow_string(result), newGaiusResult);
+			std::string gaius_instance_guid = newGaiusResult["instance_guid"].asString();
+
+			auto jsonstr = get_file_bytes("C:/Users/Glasssix-ZYF/Desktop/mask_уе/lianhe.txt");
+			auto data = get_file_bytes("C:/Users/Glasssix-ZYF/Desktop/mask_уе/lianhe.bin");
+
+			Json::Value fusionroot;
+			reader.parse(jsonstr, fusionroot);
+
+			fusionroot["romancia_instance_guid"] = Json::Value(romancia_instance_guid);
+			fusionroot["gaius_instance_guid"] = Json::Value(gaius_instance_guid);
+
+			exposing::param_string protocol_forward = u8"Fusion.Romancia.alignFace.Gaius.Forward";
+
+			std::string message_ = writer.write(fusionroot);
+			result = parser_.parse(protocol_forward, to_param_string(message_), param_span<std::uint8_t>(reinterpret_cast<std::uint8_t*>(data.data()), data.size()));
 			Logger::WriteMessage(result.data());
-		}*/
+		}
 	};
 }

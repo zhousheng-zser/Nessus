@@ -1277,7 +1277,7 @@ namespace glasssix
 						{
 							{u8"aligned_faces", box(param_span<std::uint8_t>{buffer.data(), buffer.size()})},
 							{u8"num", box(static_cast<int>(romancia_result.size()))},
-							{u8"order", box(format)},
+							{u8"order", box(0)},
 							{u8"has_mask", box(has_mask ? 1 : 0)},
 							{u8"object_id", box(guids[1])}
 						});

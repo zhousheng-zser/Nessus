@@ -173,7 +173,7 @@ namespace glasssix::exposing::nessus
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::romancia, make_exported_interface<face_alignment>(models_directory + u8"/libsvm_model_fft_HSV_YCrCb", device));
+			return add_instance(package_names::romancia, make_exported_interface<face_alignment>(models_directory + u8"/antispoofing80x80", device));
 		}
 
 		unknown_object irisviel_new(const param_hash_map<param_string, unknown_object>& params)

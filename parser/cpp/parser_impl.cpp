@@ -101,7 +101,7 @@ namespace glasssix::exposing::nessus
 				value["status"] = Json::Value("protocol illegal");
 				return to_param_string(writer.write(value));
 			}
-			else if (str_vec.size() != 2)
+			else if ((str_vec[0] != "fusion" && str_vec.size() != 2))
 			{
 				value["status"] = Json::Value("protocol illegal");
 				return to_param_string(writer.write(value));
