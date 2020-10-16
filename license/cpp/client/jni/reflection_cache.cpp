@@ -7,6 +7,7 @@
 #include <variant>
 #include <type_traits>
 #include <unordered_map>
+#include <atomic>
 
 namespace glasssix::jni
 {
