@@ -70,41 +70,29 @@ extern "C" {
 		env->SetLongField(thiz, fid_mObject, (jlong)0);
 		env->DeleteLocalRef(clazz);
 	}
-	
-	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jprotocol, jstring jstr)
+
+	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jprotocol, jstring jstr, jbyteArray dataArray)
 	{
+		if (dataArray == nullptr)
+		{
+			dataArray = env->NewByteArray(4);
+		}
+
 		jclass clazz = env->GetObjectClass(thiz);
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
 		jlong p = env->GetLongField(thiz, fid_mObject);
-		
+
 		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
 
 		glasssix::exposing::param_string protocol = jstring2paramstring(env, jprotocol);
 		glasssix::exposing::param_string jsonstr = jstring2paramstring(env, jstr);
 
-		glasssix::exposing::param_string result = parser_object.parse(protocol, jsonstr);
+		jbyte* data_ptr = env->GetByteArrayElements(dataArray, 0);
+		glasssix::exposing::param_span data(reinterpret_cast<unsigned char*>(data_ptr), env->GetArrayLength(dataArray));
 
-		env->DeleteLocalRef(clazz);
+		glasssix::exposing::param_string result = parser_object.parse(protocol, jsonstr, data);
 
-		return char2Jstring(env, result.data(), result.size());
-	}
-
-	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse1(JNIEnv* env, jobject thiz, jstring jprotocol, jbyteArray jstr)
-	{
-		jclass clazz = env->GetObjectClass(thiz);
-		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
-		jlong p = env->GetLongField(thiz, fid_mObject);
-
-		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
-
-		glasssix::exposing::param_string protocol = jstring2paramstring(env, jprotocol);
-
-		jbyte* data = env->GetByteArrayElements(jstr, 0);
-		glasssix::exposing::param_string jsonstr(reinterpret_cast<char *>(data), env->GetArrayLength(jstr));
-
-		glasssix::exposing::param_string result = parser_object.parse(protocol, jsonstr);
-
-		env->ReleaseByteArrayElements(jstr, data, 0);
+		env->ReleaseByteArrayElements(dataArray, data_ptr, 0);
 		env->DeleteLocalRef(clazz);
 
 		return char2Jstring(env, result.data(), result.size());

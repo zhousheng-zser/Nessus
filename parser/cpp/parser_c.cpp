@@ -42,14 +42,15 @@ extern "C" {
 		return status;
 	}
 
-	PARSER_C_EXPORT char* parser_parse(void* instance, char* protocol, int protocol_len, char* jstr, int jstr_len)
+	PARSER_C_EXPORT char* parser_parse(void* instance, char* protocol, int protocol_len, char* jstr, int jstr_len, char* data, int data_len)
 	{
 		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
 
 		glasssix::exposing::param_string protocol_(protocol, protocol_len);
 		glasssix::exposing::param_string jstr_(jstr, jstr_len);
+		glasssix::exposing::param_span<std::uint8_t> data_(reinterpret_cast<std::uint8_t*>(data), data_len);
 
-		glasssix::exposing::param_string result_ = parser_object.parse(protocol_, jstr_);
+		glasssix::exposing::param_string result_ = parser_object.parse(protocol_, jstr_, data_);
 		std::size_t size = result_.size() + 1;
 		auto result = glasssix::memory::heap_alloc_elements<char>(size);
 		std::memcpy(result, result_.data(), size * sizeof(char));

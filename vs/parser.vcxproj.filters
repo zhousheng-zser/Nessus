@@ -6,14 +6,12 @@
     <ClInclude Include="..\parser\cpp\parser_exception.hpp" />
     <ClInclude Include="..\parser\cpp\parser_impl.hpp" />
     <ClInclude Include="..\parser\cpp\parser.hpp" />
-    <ClInclude Include="..\parser\cpp\parser_internal.hpp" />
     <ClInclude Include="..\parser\cpp\base64_x.hpp" />
     <ClInclude Include="..\parser\cpp\base64.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\parser\cpp\jsoncpp.cpp" />
     <ClCompile Include="..\parser\cpp\parser_impl.cpp" />
-    <ClCompile Include="..\parser\cpp\parser_internal.cpp" />
     <ClCompile Include="..\parser\cpp\jni\parser_jni.cpp" />
     <ClCompile Include="..\parser\cpp\exports.cpp" />
     <ClCompile Include="..\parser\cpp\parser_c.cpp" />

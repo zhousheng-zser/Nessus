@@ -18,18 +18,16 @@
     <ClInclude Include="..\parser\cpp\parser.hpp" />
     <ClInclude Include="..\parser\cpp\parser_exception.hpp" />
     <ClInclude Include="..\parser\cpp\parser_impl.hpp" />
-    <ClInclude Include="..\parser\cpp\parser_internal.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\parser\cpp\exports.cpp" />
     <ClCompile Include="..\parser\cpp\jni\parser_jni.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\parser\cpp\jsoncpp.cpp" />
     <ClCompile Include="..\parser\cpp\parser_c.cpp" />
     <ClCompile Include="..\parser\cpp\parser_impl.cpp" />
-    <ClCompile Include="..\parser\cpp\parser_internal.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -67,13 +65,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\Program Files\Java\jdk1.8.0_212\include;C:\Program Files\Java\jdk1.8.0_212\include\win32;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Program Files\Java\jdk1.8.0_251\include;C:\Program Files\Java\jdk1.8.0_251\include\win32;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\build\out\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\build\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\Program Files\Java\jdk1.8.0_212\include;C:\Program Files\Java\jdk1.8.0_212\include\win32;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Program Files\Java\jdk1.8.0_251\include;C:\Program Files\Java\jdk1.8.0_251\include\win32;$(IncludePath)</IncludePath>
     <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -84,7 +82,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\singleheader;..\3rd-party\cpp\libyuv\include;..\common\include\Primitives;..\register\cpp\PluginRegister;../register/cpp/VisionService;../register/cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>JSON_DLL_BUILD;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;NOGDI;JSON_DLL_BUILD;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -106,7 +104,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>..\3rd-party\cpp\simdjson\singleheader;..\3rd-party\cpp\libyuv\include;..\common\include\Primitives;..\register\cpp\PluginRegister;../register/cpp/VisionService;../register/cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>JSON_DLL_BUILD;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;NOGDI;JSON_DLL_BUILD;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>

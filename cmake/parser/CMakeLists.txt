@@ -12,7 +12,7 @@ if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	target_compile_definitions(${module_name} PRIVATE -DJSON_DLL_BUILD)
+	target_compile_definitions(${module_name} PRIVATE -DJSON_DLL_BUILD -DNOMINMAX -DNOGDI)
 endif()
 
 target_include_directories(${module_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd-party/cpp/simdjson/singleheader 

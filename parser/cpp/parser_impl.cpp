@@ -72,7 +72,7 @@ namespace glasssix::exposing::nessus
 	{
 	public:
 
-		param_string parse(const param_string& protocol, const param_string& jsonstr)
+		param_string parse(const param_string& protocol, const param_string& jsonstr, param_span<std::uint8_t> data)
 		{
 			Json::Value value;
 			std::string protocol_str(protocol.data(), protocol.size());
@@ -96,63 +96,99 @@ namespace glasssix::exposing::nessus
 			}
 
 			std::vector<std::string> str_vec = split(protocol_str, ".");
-			if (str_vec.size() != 2)
+			if ((str_vec[0] == "fusion" && str_vec.size() != 5))
+			{
+				value["status"] = Json::Value("protocol illegal");
+				return to_param_string(writer.write(value));
+			}
+			else if (str_vec.size() != 2)
 			{
 				value["status"] = Json::Value("protocol illegal");
 				return to_param_string(writer.write(value));
 			}
 
-			std::string instance_type = str_vec[0];
-			std::string method = str_vec[1];
-
-			if (method == "new")
+			if (str_vec[0] == "fusion")
 			{
-				guid instance;
-				std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)> func;
+				std::vector<guid> guids;
+
 				try
 				{
-					func = protocol_map.at(protocol_str);
+					guids.push_back(guid(std::string(root["romancia_instance_guid"].get<std::string_view>().value())));
+					guids.push_back(guid(std::string(root["gaius_instance_guid"].get<std::string_view>().value())));
 				}
 				catch (const std::exception&)
 				{
-					value["status"] = Json::Value("Function of the protocol not register");
+					value["status"] = Json::Value("Lack of \"romancia_instance_guid\" or \"gaius_instance_guid\"");
 					return to_param_string(writer.write(value));
 				}
 
-				value = func(plugin, root, instance);
-
-				if (value["status"] == "OK")
+				std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)> func;
+				try
 				{
-					auto array = to_char_array(instance);
-					value["instance_guid"] = Json::Value(std::string(array.begin(), array.end()));
+					func = fusion_protocol_map.at(protocol_str);
 				}
+				catch (const std::exception&)
+				{
+					value["status"] = Json::Value("Protocol \"" + protocol_str+ "\" not register.");
+					return to_param_string(writer.write(value));
+				}
+
+				value = func(plugin, root, data, guids);
 			}
 			else
 			{
-				std::string instance_guid = "";
-				try
-				{
-					instance_guid = std::string(root["instance_guid"].get<std::string_view>().value());
-				}
-				catch (const std::exception&)
-				{
-					value["status"] = Json::Value("Lack of \"instance_guid\"");
-					return to_param_string(writer.write(value));
-				}
+				std::string instance_type = str_vec[0];
+				std::string method = str_vec[1];
 
-				std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)> func;
-				try
+				if (method == "new")
 				{
-					func = protocol_map.at(protocol_str);
-				}
-				catch (const std::exception&)
-				{
-					value["status"] = Json::Value("Function of the protocol not register");
-					return to_param_string(writer.write(value));
-				}
+					guid instance;
+					std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)> func;
+					try
+					{
+						func = basic_protocol_map.at(protocol_str);
+					}
+					catch (const std::exception&)
+					{
+						value["status"] = Json::Value("Function of the protocol not register");
+						return to_param_string(writer.write(value));
+					}
 
-				guid instance(instance_guid);
-				value = func(plugin, root, instance);
+					value = func(plugin, root, data, instance);
+
+					if (value["status"] == "OK")
+					{
+						auto array = to_char_array(instance);
+						value["instance_guid"] = Json::Value(std::string(array.begin(), array.end()));
+					}
+				}
+				else
+				{
+					std::string instance_guid = "";
+					try
+					{
+						instance_guid = std::string(root["instance_guid"].get<std::string_view>().value());
+					}
+					catch (const std::exception&)
+					{
+						value["status"] = Json::Value("Lack of \"instance_guid\"");
+						return to_param_string(writer.write(value));
+					}
+
+					std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)> func;
+					try
+					{
+						func = basic_protocol_map.at(protocol_str);
+					}
+					catch (const std::exception&)
+					{
+						value["status"] = Json::Value("Function of the protocol not register");
+						return to_param_string(writer.write(value));
+					}
+
+					guid instance(instance_guid);
+					value = func(plugin, root, data, instance);
+				}
 			}
 
 			return to_param_string(writer.write(value));
@@ -175,7 +211,7 @@ namespace glasssix::exposing::nessus
 		{
 			Json::Value value;
 			Json::Value protocol_array = Json::Value(Json::arrayValue);
-			for (auto& protocol : protocol_map)
+			for (auto& protocol : basic_protocol_map)
 				protocol_array.append(protocol.first);
 			value["protocol"] = protocol_array;
 
@@ -240,7 +276,8 @@ namespace glasssix::exposing::nessus
 		}
 
 	private:
-		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)>> protocol_map;
+		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> basic_protocol_map;
+		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> fusion_protocol_map;
 		simdjson::dom::parser parser_;
 
 		Json::FastWriter writer;
@@ -248,8 +285,8 @@ namespace glasssix::exposing::nessus
 		static bool ready;
 	};
 
-	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)>> parser_impl::impl::protocol_map = [] {
-		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, guid&)>> protocol_map;
+	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> parser_impl::impl::basic_protocol_map = [] {
+		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> protocol_map;
 		protocol_map["longinus.new"] = &Longinus_new_json;
 		protocol_map["longinus.delete"] = &Longinus_delete_json;
 		protocol_map["longinus.detect"] = &Longinus_detect_json;
@@ -257,6 +294,9 @@ namespace glasssix::exposing::nessus
 		protocol_map["romancia.new"] = &Romancia_new_json;
 		protocol_map["romancia.delete"] = &Romancia_delete_json;
 		protocol_map["romancia.alignface"] = &Romancia_alignFace_json;
+		protocol_map["romancia.blur_detect"] = &Romancia_blur_detect_json;
+		protocol_map["romancia.antispoofing"] = &Romancia_antispoofing_json;
+		protocol_map["romancia.mask_detect"] = &Romancia_mask_detect_json;
 		protocol_map["gaius.new"] = &Gaius_new_json;
 		protocol_map["gaius.delete"] = &Gaius_delete_json;
 		protocol_map["gaius.forward"] = &Gaius_Forward_json;
@@ -277,6 +317,11 @@ namespace glasssix::exposing::nessus
 		protocol_map["irisviel.update_records"] = &Irisviel_update_records_json;
 		return protocol_map;
 	}();
+	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> parser_impl::impl::fusion_protocol_map = [] {
+		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
+		protocol_map["fusion.romancia.alignface.gaius.forward"] = &Fusion_Romancia_alignFace_Gaius_Forward_json;
+		return protocol_map;
+	}();
 	plugin_interface parser_impl::impl::plugin{nullptr};
 	bool parser_impl::impl::ready = false;
 
@@ -292,9 +337,9 @@ namespace glasssix::exposing::nessus
 		}
 	}
 
-	param_string parser_impl::parse(const param_string& protocol, const param_string& jsonstr)
+	param_string parser_impl::parse(const param_string& protocol, const param_string& jsonstr, param_span<std::uint8_t> data)
 	{
-		return impl_->parse(protocol, jsonstr);
+		return impl_->parse(protocol, jsonstr, data);
 	}
 
 	param_string parser_impl::query_all_instance()
