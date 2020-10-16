@@ -32,6 +32,7 @@ Global
 		{CCA2237E-CB02-4550-8D58-7562595A0819}.Debug|x64.ActiveCfg = Debug|x64
 		{CCA2237E-CB02-4550-8D58-7562595A0819}.Debug|x64.Build.0 = Debug|x64
 		{CCA2237E-CB02-4550-8D58-7562595A0819}.Release|x64.ActiveCfg = Release|x64
+		{CCA2237E-CB02-4550-8D58-7562595A0819}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

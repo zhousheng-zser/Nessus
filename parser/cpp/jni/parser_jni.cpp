@@ -70,20 +70,29 @@ extern "C" {
 		env->SetLongField(thiz, fid_mObject, (jlong)0);
 		env->DeleteLocalRef(clazz);
 	}
-	
-	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jprotocol, jstring jstr)
+
+	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jprotocol, jstring jstr, jbyteArray dataArray)
 	{
+		if (dataArray == nullptr)
+		{
+			dataArray = env->NewByteArray(4);
+		}
+
 		jclass clazz = env->GetObjectClass(thiz);
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
 		jlong p = env->GetLongField(thiz, fid_mObject);
 
-		
 		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
 
 		glasssix::exposing::param_string protocol = jstring2paramstring(env, jprotocol);
 		glasssix::exposing::param_string jsonstr = jstring2paramstring(env, jstr);
-		glasssix::exposing::param_string result = parser_object.parse(protocol, jsonstr);
 
+		jbyte* data_ptr = env->GetByteArrayElements(dataArray, 0);
+		glasssix::exposing::param_span data(reinterpret_cast<unsigned char*>(data_ptr), env->GetArrayLength(dataArray));
+
+		glasssix::exposing::param_string result = parser_object.parse(protocol, jsonstr, data);
+
+		env->ReleaseByteArrayElements(dataArray, data_ptr, 0);
 		env->DeleteLocalRef(clazz);
 
 		return char2Jstring(env, result.data(), result.size());
@@ -95,11 +104,12 @@ extern "C" {
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
 		jlong p = env->GetLongField(thiz, fid_mObject);
 
-
 		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
 
 		glasssix::exposing::param_string config_file_path = jstring2paramstring(env, jstr);
 		glasssix::exposing::param_string status = parser_object.init_plugin(config_file_path);
+
+		env->DeleteLocalRef(clazz);
 
 		return char2Jstring(env, status.data(), status.size());
 	}

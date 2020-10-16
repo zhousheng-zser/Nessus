@@ -28,12 +28,6 @@
     <ProjectReference Include="parser.vcxproj">
       <Project>{ecdd701a-668b-4bdd-9a96-5a0b619a4b14}</Project>
     </ProjectReference>
-    <ProjectReference Include="plugin_register.vcxproj">
-      <Project>{acd5e95e-6ad6-4872-985a-e241b19949c5}</Project>
-    </ProjectReference>
-    <ProjectReference Include="vision_service.vcxproj">
-      <Project>{78180b15-4fb6-4c4f-b9e7-806d8d96bf52}</Project>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -93,7 +87,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include;../tests/cpp;..\3rd-party\cpp\simdjson\include;..\common\include\Primitives;..\register\cpp\PluginRegister;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>JSON_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;NOGDI;JSON_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
