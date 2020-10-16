@@ -5,16 +5,22 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
 endif()
 message(STATUS "CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
 
-if(NOT DEFINED CMAKE_MAKE_PROGRAM)
-	message(WARNING "CMAKE_MAKE_PROGRAM: please specify make program in cmake command line.")
+# For Visual Studio Generator (not Ninja), it is unneccessary to set CMAKE_MAKE_PROGRAM.
+if (NOT ${CMAKE_GENERATOR} MATCHES "Visual Studio")
+	if(NOT DEFINED CMAKE_MAKE_PROGRAM)
+		message(WARNING "CMAKE_MAKE_PROGRAM: please specify make program in cmake command line.")
+	endif()
+
+	message(STATUS "CMAKE_MAKE_PROGRAM: ${CMAKE_MAKE_PROGRAM}")
 endif()
-message(STATUS "CMAKE_MAKE_PROGRAM: ${CMAKE_MAKE_PROGRAM}")
 
 project(Nessus C CXX)
-option(WITH_JNI "Compile java native interface." ON)
+option(WITH_JNI "Compile java native interface." OFF)
+option(CONTAINS_LICENSE_SERVER "Compile the license server." OFF)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	set(CMAKE_FIND_LIBRARY_PREFIXES "lib")
+	add_definitions(-D_WIN32_WINNT=0x0A00)
 endif()
 
 if(WITH_JNI)
@@ -83,8 +89,21 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
+# Consuming libfmt.
+add_definitions(-DFMT_SHARED)
+
 add_subdirectory(3rd-party/simdjson)
 add_subdirectory(3rd-party/libyuv)
+add_subdirectory(3rd-party/openssl)
 add_subdirectory(register/VisionService)
 add_subdirectory(register/PluginRegister)
 add_subdirectory(parser)
+add_subdirectory(license)
+add_subdirectory(license/client)
+
+if(CONTAINS_LICENSE_SERVER)
+	set(PostgreSQL_ROOT "E:/Libs/pgsql-11.5-1")
+	set(PostgreSQL_LIBRARY ${PostgreSQL_ROOT}/lib/libpq.lib)
+	add_subdirectory(3rd-party/libpqxx)
+	add_subdirectory(license/server)
+endif()

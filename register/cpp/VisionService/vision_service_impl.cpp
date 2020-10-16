@@ -148,7 +148,7 @@ namespace glasssix::exposing::nessus
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(models_directory + u8"/unicorn.phai", models_directory + u8"/unicorn.racy", device));
+			return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(models_directory + u8"/unicorn.racy", device));
 		}
 
 		unknown_object gaius_new(const param_hash_map<param_string, unknown_object>& params)
@@ -156,7 +156,7 @@ namespace glasssix::exposing::nessus
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::gaius, make_exported_interface<gaius::feature_extractor>(models_directory + u8"/mobile_unicorn.phai", models_directory + u8"/mobile_unicorn.racy", models_directory + u8"/mobile_unicorn_mask.phai", models_directory + u8"/mobile_unicorn_mask.racy", device));
+			return add_instance(package_names::gaius, make_exported_interface<gaius::feature_extractor>(models_directory + u8"/mobile_unicorn.racy", models_directory + u8"/mobile_unicorn_mask.racy", device));
 		}
 
 		unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
@@ -165,7 +165,7 @@ namespace glasssix::exposing::nessus
 			auto nms = unbox<float>(params.get_value(u8"nms"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/retina.phai", models_directory + u8"/retina.racy", models_directory + u8"/pfld-sim.phai", models_directory + u8"/pfld-sim.racy", nms, device));
+			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/retina.racy", models_directory + u8"/pfld-sim.racy", nms, device));
 		}
 
 		unknown_object romancia_new(const param_hash_map<param_string, unknown_object>& params)
