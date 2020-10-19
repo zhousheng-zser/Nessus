@@ -34,7 +34,7 @@ namespace glasssix::license
 		protocol_header(message_type type, std::uint32_t size);
 		protocol_header(std::string_view header, std::uint32_t version, message_type type, std::uint32_t size, const std::array<std::uint8_t, hash_size>& hash);
 		explicit operator bool() const noexcept;
-		static protocol_header parse(const buffer_type& buffer);
 		buffer_type compute_hash_and_dump();
+		static protocol_header parse(const buffer_type& buffer);
 	};
 }
