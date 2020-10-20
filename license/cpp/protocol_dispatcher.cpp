@@ -1,6 +1,7 @@
 #include "protocol_dispatcher.hpp"
 
 #include <vector>
+#include <unordered_map>
 
 namespace glasssix::license
 {

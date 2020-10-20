@@ -5,7 +5,7 @@
 #include <memory>
 #include <cstdint>
 #include <functional>
-#include <unordered_map>
+#include <initializer_list>
 
 #include <nlohmann/json.hpp>
 #include <abi/param_span.hpp>
