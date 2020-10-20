@@ -101,6 +101,18 @@ namespace glasssix::crypto
 			return result;
 		}
 
+		constexpr auto decrypt_as_bytes() const
+		{
+			std::array<std::uint8_t, sizeof...(Indexes)> result{};
+
+			for (std::size_t i = 0; i < sizeof...(Indexes); i++)
+			{
+				result[i] = static_cast<std::uint8_t>(decrypt(encrypted_buffer_[i]));
+			}
+
+			return result;
+		}
+
 		std::string decrypt_as_string() const
 		{
 			auto chars = decrypt();
