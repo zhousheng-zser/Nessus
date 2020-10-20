@@ -154,6 +154,7 @@ namespace glasssix::smbios
 
 		struct raw_smbios_processor_info
 		{
+			smbios_header header;
 			std::uint8_t socket_designation;
 			std::uint8_t type;
 			std::uint8_t family;
