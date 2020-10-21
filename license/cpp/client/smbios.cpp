@@ -1,7 +1,11 @@
 #include "smbios.hpp"
+#include "io.hpp"
+#include "meta_string.hpp"
 
 #include <new>
 #include <string>
+#include <variant>
+#include <utility>
 #include <algorithm>
 #include <functional>
 #include <string_view>
@@ -10,15 +14,35 @@
 #include <abi/meta.hpp>
 
 #ifdef _WIN32
+#define NOGDI
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#elif defined(__linux__) && !defined(__ANDROID__)
+#include <fstream>
 #endif
 
 namespace glasssix::smbios
 {
 	namespace
 	{
+#if defined(__linux__) && !defined(__ANDROID__)
+		constexpr crypto::meta_string anchor_string_v2{ "_SM_" };
+		constexpr crypto::meta_string anchor_string_v3{ "_SM3_" };
+		constexpr crypto::meta_string dmi_table{ "/sys/firmware/dmi/tables/DMI" };
+		constexpr crypto::meta_string smbios_entry_point{ "/sys/firmware/dmi/tables/smbios_entry_point" };
+#endif
+
+		template<typename... Callables> struct alternatives : Callables...
+		{
+			using Callables::operator()...;
+		};
+
+		template<typename... Callables> alternatives(Callables...)->alternatives<Callables...>;
+
+		/// <summary>
+		/// Available SMBIOS types.
+		/// </summary>
 		enum class smbios_data_type : std::uint8_t
 		{
 			bios_info = 0,
@@ -27,7 +51,46 @@ namespace glasssix::smbios
 			processor_info = 4
 		};
 
-		struct raw_smbios_data
+		/// <summary>
+		/// SMBIOS entry point 2.x.
+		/// </summary>
+		struct smbios_entry_point_v2
+		{
+			std::uint8_t anchor_string[4];
+			std::uint8_t checksum;
+			std::uint8_t length;
+			std::uint8_t major_version;
+			std::uint8_t minor_version;
+			std::uint16_t max_size;
+			std::uint8_t revision;
+			std::uint8_t formatted_area[5];
+			std::uint8_t intermediate_anchor_string[5];
+			std::uint8_t intermediate_checksum;
+			std::uint16_t table_length;
+			std::uint32_t table_address;
+			std::uint16_t number_of_structures;
+			std::uint8_t bcd_revision;
+			std::uint8_t dummy_padding;
+		};
+
+		/// <summary>
+		/// SMBIOS entry point 3.x.
+		/// </summary>
+		struct smbios_entry_point_v3
+		{
+			std::uint8_t anchor_string[5];
+			std::uint8_t checksum;
+			std::uint8_t length;
+			std::uint8_t major_version;
+			std::uint8_t minor_version;
+			std::uint8_t decrev;
+			std::uint8_t revision;
+			std::uint8_t reserved;
+			std::uint32_t max_table_size;
+			std::uint64_t table_address;
+		};
+
+		struct win32_raw_smbios_data
 		{
 			std::uint8_t used_20_calling_method;
 			std::uint8_t smbios_major_version;
@@ -91,6 +154,7 @@ namespace glasssix::smbios
 
 		struct raw_smbios_processor_info
 		{
+			smbios_header header;
 			std::uint8_t socket_designation;
 			std::uint8_t type;
 			std::uint8_t family;
@@ -222,7 +286,7 @@ namespace glasssix::smbios
 			processor_info.part_number = locate_string(buffer, raw_processor_info.part_number);
 		}
 
-		smbios_info parse_smbios_data(const raw_smbios_data& raw_data)
+		smbios_info parse_smbios_data(const std::uint8_t* raw_data, std::size_t size)
 		{
 			static constexpr std::array dispatcher_table
 			{
@@ -234,7 +298,7 @@ namespace glasssix::smbios
 
 			smbios_info result;
 
-			for (auto ptr = raw_data.smbios_table_data, end_ptr = ptr + raw_data.length; ptr < end_ptr; ptr += 2)
+			for (auto ptr = raw_data, end_ptr = ptr + size; ptr < end_ptr; ptr += 2)
 			{
 				auto& header = *std::launder(reinterpret_cast<const smbios_header*>(ptr));
 				auto buffer = reinterpret_cast<const char*>(&header) + header.length;
@@ -256,16 +320,53 @@ namespace glasssix::smbios
 
 			return result;
 		}
+
+#if defined(__linux__) && !defined(__ANDROID__)
+		/// <summary>
+		/// Try to get the SMBIOS entry point.
+		/// </summary>
+		/// <returns>The entry point</returns>
+		std::optional<std::variant<smbios_entry_point_v2, smbios_entry_point_v3>> get_smbios_entry_point()
+		{
+			auto entry_point_buffer = io::read_all_bytes(smbios_entry_point.decrypt_as_string());
+
+			if (!entry_point_buffer || entry_point_buffer->size() < std::max(anchor_string_v2.size(), anchor_string_v3.size()))
+			{
+				return std::nullopt;
+			}
+
+			std::array<std::uint8_t, anchor_string_v2.size()> assuming_anchor_string_v2;
+			std::array<std::uint8_t, anchor_string_v3.size()> assuming_anchor_string_v3;
+
+			std::copy(entry_point_buffer->begin(), entry_point_buffer->begin() + anchor_string_v2.size(), assuming_anchor_string_v2.begin());
+			std::copy(entry_point_buffer->begin(), entry_point_buffer->begin() + anchor_string_v3.size(), assuming_anchor_string_v3.begin());
+
+			if (assuming_anchor_string_v2 == anchor_string_v2.decrypt_as_bytes())
+			{
+				smbios_entry_point_v2 result{};
+
+				return (std::copy(entry_point_buffer->begin(), entry_point_buffer->end(), reinterpret_cast<std::uint8_t*>(&result)), result);
+			}
+
+			if (assuming_anchor_string_v3 == anchor_string_v3.decrypt_as_bytes())
+			{
+				smbios_entry_point_v3 result{};
+
+				return (std::copy(entry_point_buffer->begin(), entry_point_buffer->end(), reinterpret_cast<std::uint8_t*>(&result)), result);
+			}
+
+			return std::nullopt;
+		}
+#endif
 	}
 
 	smbios_unsupported_version::smbios_unsupported_version() : smbios_error{ "The current SMBIOS version is too low. The minimum version should be 2.6." }
 	{
 	}
 
+#ifdef _WIN32
 	std::optional<smbios_info> read_smbios_info()
 	{
-		// Stay tuned for x86 linux support.
-#ifdef _WIN32
 		static constexpr std::uint32_t signature = 'RSMB';
 
 		std::uint32_t size = GetSystemFirmwareTable(signature, 0, nullptr, 0);
@@ -276,14 +377,40 @@ namespace glasssix::smbios
 		}
 
 		auto buffer = new std::uint8_t[size];
-		auto raw_data = new (buffer) raw_smbios_data;
+		auto raw_data = new (buffer) win32_raw_smbios_data;
 		std::uint16_t version = (static_cast<std::uint16_t>(raw_data->smbios_major_version) << 8) + raw_data->smbios_minor_version;
 
 		return version >= 0x0206 ?
-			GetSystemFirmwareTable(signature, 0, raw_data, size) == size ? std::optional{ parse_smbios_data(*raw_data) } : std::nullopt :
+			GetSystemFirmwareTable(signature, 0, raw_data, size) == size ? std::optional{ parse_smbios_data(raw_data->smbios_table_data, raw_data->length) } : std::nullopt :
 			throw smbios_unsupported_version{};
-#else
-		return std::nullopt;
-#endif
 	}
+#elif defined(__ANDROID__)
+	std::optional<smbios_info> read_smbios_info()
+	{
+		return std::nullopt;
+	}
+#elif defined(__linux__)
+	std::optional<smbios_info> read_smbios_info()
+	{
+		// Reads the entry point data.
+		auto entry_point = get_smbios_entry_point();
+
+		if (!entry_point)
+		{
+			return std::nullopt;
+		}
+
+		std::uint16_t version = std::visit([](auto&& inner) { return static_cast<std::uint16_t>(std::forward<decltype(inner)>(inner).major_version << 8) + std::forward<decltype(inner)>(inner).minor_version; }, *entry_point);
+
+		if (version < 0x0206)
+		{
+			throw smbios_unsupported_version{};
+		}
+
+		// Parses the DMI data.
+		auto dmi_data = io::read_all_bytes(dmi_table.decrypt_as_string());
+
+		return dmi_data ? std::optional{ parse_smbios_data(dmi_data->data(), dmi_data->size()) } : std::nullopt;
+	}
+#endif
 }

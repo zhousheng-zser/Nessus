@@ -162,12 +162,6 @@ namespace glasssix::exposing::impl
 		static constexpr T value{};
 	};
 
-	template<>
-	struct null_value<bool>
-	{
-		static constexpr bool value{};
-	};
-
 	/// <summary>
 	/// Gets a null type of a specified type.
 	/// </summary>

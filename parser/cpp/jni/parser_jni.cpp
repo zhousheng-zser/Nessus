@@ -1,4 +1,5 @@
 #include "../parser.hpp"
+#include "license.hpp"
 
 #include <memory>
 #include <cstdlib>
@@ -50,8 +51,10 @@ static jstring char2Jstring(JNIEnv* env, const char* pat, size_t len)
 #ifdef __cplusplus
 extern "C" {
 #endif
-	JNIEXPORT void JNICALL Java_com_glasssix_parser_Parser_init(JNIEnv* env, jobject thiz)
+	JNIEXPORT void JNICALL Java_com_glasssix_parser_Parser_init(JNIEnv* env, jobject thiz, jstring license_key)
 	{
+		init_license_system(jstring2string(env, license_key).c_str());
+
 		jclass clazz = env->GetObjectClass(thiz);
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
 		auto parser_object = glasssix::exposing::make_exported_interface<glasssix::exposing::nessus::parser>();

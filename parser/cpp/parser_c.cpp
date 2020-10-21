@@ -1,11 +1,8 @@
+#include "parser_c.hpp"
 #include "parser.hpp"
-#include <memory.hpp>
+#include "license.hpp"
 
-#ifdef _WIN32
-#define PARSER_C_EXPORT __declspec(dllexport)
-#else
-#define PARSER_C_EXPORT 
-#endif
+#include <memory.hpp>
 
 bool parser_module_ready = []
 {
@@ -27,8 +24,10 @@ extern "C" {
 		instance = nullptr;
 	}
 
-	PARSER_C_EXPORT char* parser_init_plugin(void* instance, char* config_file_path, int len)
+	PARSER_C_EXPORT char* parser_init_plugin(void* instance, char* config_file_path, int len, char* license_key)
 	{
+		init_license_system(license_key);
+
 		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
 
 		glasssix::exposing::param_string config_file_path_(config_file_path, len);

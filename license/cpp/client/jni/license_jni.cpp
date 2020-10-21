@@ -9,7 +9,6 @@
 #include <jni.h>
 
 using namespace glasssix::jni;
-using namespace glasssix::license;
 
 namespace
 {
@@ -23,22 +22,30 @@ extern "C"
 	 * Method:    initSystem
 	 * Signature: (Ljava/lang/String;Lcom/glasssix/license/LicenseDeadlineCallback;)V
 	 */
-	JNIEXPORT void JNICALL Java_com_glasssix_license_License_initSystem(JNIEnv* env, jclass clazz, jstring license_key, jobject deadline_callback)
+	JNIEXPORT void JNICALL Java_com_glasssix_license_License_initSystem(JNIEnv* env, jclass clazz, jstring license_key)
 	{
-		if (deadline_callback)
+		init_license_system(to_string(license_key).c_str());
+	}
+
+	/*
+	 * Class:     com_glasssix_license_License
+	 * Method:    requestAsync
+	 * Signature: (Lcom/glasssix/license/RequestLicenseAsyncCallback;)V
+	 */
+	JNIEXPORT void JNICALL Java_com_glasssix_license_License_requestAsync(JNIEnv* env, jclass clazz, jobject callback)
+	{
+		if (callback)
 		{
-			return init_license_system(to_string(license_key).c_str(), [](void* context, const char* message, std::int64_t remaining_seconds)
+			request_license_async([](void* context, bool success, const char* message)
 				{
 					if (auto env = reflection_cache::instance().get_thread_env())
 					{
 						global_ref callback{ static_cast<jobject>(context), true };
 
-						env->CallVoidMethod(callback.get(), internal_caches.method_license_deadline_callback_run, env->NewStringUTF(message), remaining_seconds);
+						env->CallVoidMethod(callback.get(), internal_caches.method_request_license_async_callback_run, static_cast<jboolean>(success ? JNI_TRUE : JNI_FALSE), env->NewStringUTF(message));
 					}
-				}, env->NewGlobalRef(deadline_callback));
+				}, env->NewGlobalRef(callback));
 		}
-
-		init_license_system(to_string(license_key).c_str());
 	}
 
 	/*
@@ -64,20 +71,20 @@ extern "C"
 
 	/*
 	 * Class:     com_glasssix_license_License
-	 * Method:    requestAsync
-	 * Signature: (Lcom/glasssix/license/RequestLicenseAsyncCallback;)V
+	 * Method:    setDeadlineCallback
+	 * Signature: (Lcom/glasssix/license/LicenseDeadlineCallback;)V
 	 */
-	JNIEXPORT void JNICALL Java_com_glasssix_license_License_requestAsync(JNIEnv* env, jclass clazz, jobject callback)
+	JNIEXPORT void JNICALL Java_com_glasssix_license_License_setDeadlineCallback(JNIEnv* env, jclass clazz, jobject callback)
 	{
 		if (callback)
 		{
-			request_license_async([](void* context, bool success, const char* message)
+			set_license_deadline_callback([](void* context, const char* message, std::int64_t remaining_seconds)
 				{
 					if (auto env = reflection_cache::instance().get_thread_env())
 					{
 						global_ref callback{ static_cast<jobject>(context), true };
 
-						env->CallVoidMethod(callback.get(), internal_caches.method_request_license_async_callback_run, static_cast<jboolean>(success ? JNI_TRUE : JNI_FALSE), env->NewStringUTF(message));
+						env->CallVoidMethod(callback.get(), internal_caches.method_license_deadline_callback_run, env->NewStringUTF(message), remaining_seconds);
 					}
 				}, env->NewGlobalRef(callback));
 		}

@@ -1,12 +1,14 @@
 #include "authorization_server.hpp"
 #include "license_database.hpp"
 #include "protocol_header.hpp"
+#include "protocol_dispatcher.hpp"
 
 #include <array>
 #include <mutex>
 #include <thread>
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include <condition_variable>
 
 #define NOGDI
@@ -77,7 +79,11 @@ namespace glasssix::license
 		using server_type = websocketpp::server<websocketpp::config::asio>;
 		delegate<authorization_response_message, const authorization_request_message&> on_request_authorization;
 
-		impl()
+		impl() :
+			dispatcher_
+			{
+				{ message_type::authorization, std::bind(&impl::raise_request_authorization, this, std::placeholders::_1, std::placeholders::_2) }
+			}
 		{
 			server_.init_asio(&io_context_.get());
 			server_.set_access_channels(websocketpp::log::alevel::all);
@@ -143,58 +149,15 @@ namespace glasssix::license
 			}
 		}
 	private:
-		static void raise_request_authorization(impl& obj, const server_type::connection_ptr& connection, const nlohmann::json& json)
+		void raise_request_authorization(const std::shared_ptr<void>& context, const nlohmann::json& json)
 		{
 			auto request = json.get<authorization_request_message>();
-			auto response = obj.on_request_authorization(request);
+			auto response = on_request_authorization(request);
 			auto buffer = create_message_buffer(message_type::authorization, response);
+			auto connection = std::static_pointer_cast<server_type::connection_ptr::element_type>(context);
 
 			// Sends the response message to the client.
 			connection->send(buffer.data(), buffer.size());
-		}
-
-		void parse_content(const server_type::connection_ptr& connection, const protocol_header& header, exposing::param_span<const std::uint8_t> content)
-		{
-			static constexpr std::array dispatcher_table
-			{
-				std::pair{ message_type::authorization, &impl::raise_request_authorization }
-			};
-
-			// Parses the message buffer and omits this item if any error occurs.
-			if (auto json = nlohmann::json::from_msgpack(content, true, false); !json.is_discarded())
-			{
-				if (auto iter = std::find_if(dispatcher_table.begin(), dispatcher_table.end(), [&](const auto& inner) { return inner.first == header.type; }); iter != dispatcher_table.end())
-				{
-					iter->second(*this, connection, json);
-				}
-			}
-		}
-
-		void parse_header(const server_type::connection_ptr& connection, exposing::param_span<const std::uint8_t> payload)
-		{
-			std::error_code code;
-
-			// Validates the header size.
-			if (payload.size() < protocol_header::header_size)
-			{
-				return connection->close(websocketpp::close::status::invalid_payload, "The payload size cannot be smaller than header size.", code);
-			}
-
-			protocol_header::buffer_type header_buffer;
-			auto header = (std::copy(payload.begin(), payload.begin() + protocol_header::header_size, header_buffer.begin()), protocol_header::parse(header_buffer));
-
-			if (!header)
-			{
-				return connection->close(websocketpp::close::status::invalid_payload, "Invalid header.", code);
-			}
-
-			// Validates the data size.
-			if (payload.size() - header_buffer.size() < header.size)
-			{
-				return connection->close(websocketpp::close::status::invalid_payload, "The data size is too small.", code);
-			}
-
-			parse_content(connection, header, payload.sub_span(header_buffer.size(), header.size));
 		}
 
 		void on_message(const websocketpp::connection_hdl& handle, const server_type::message_ptr& message)
@@ -207,7 +170,10 @@ namespace glasssix::license
 					auto connection = server_.get_con_from_hdl(handle);
 					auto payload = message->get_payload();
 
-					parse_header(connection, exposing::param_span<const std::uint8_t>{ reinterpret_cast<const std::uint8_t*>(payload.c_str()), payload.size() });
+					dispatcher_.parse(exposing::param_span<const std::uint8_t>{ reinterpret_cast<const std::uint8_t*>(payload.c_str()), payload.size() }, connection, [&](std::string_view message)
+						{
+							connection->close(websocketpp::close::status::invalid_payload, std::string{ message });
+						});
 				}
 			}
 			catch (const std::exception& ex)
@@ -218,6 +184,7 @@ namespace glasssix::license
 
 		std::mutex mutex_;
 		server_type server_;
+		protocol_dispatcher dispatcher_;
 		thread_pool_io_context io_context_;
 		std::condition_variable condition_erase_;
 		std::vector<websocketpp::connection_hdl> connections_;

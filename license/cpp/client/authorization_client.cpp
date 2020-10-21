@@ -1,12 +1,14 @@
 #include "authorization_client.hpp"
 #include "protocol_header.hpp"
 #include "license_error.hpp"
+#include "protocol_dispatcher.hpp"
 
 #include <mutex>
 #include <atomic>
 #include <thread>
 #include <cstdint>
 #include <algorithm>
+#include <functional>
 #include <condition_variable>
 
 #define NOGDI
@@ -75,7 +77,11 @@ namespace glasssix::license
 		delegate<void, const std::error_code&> on_async_error;
 		delegate<void, const authorization_response_message&> on_authorization;
 
-		impl()
+		impl() : 
+			dispatcher_
+			{
+				{ message_type::authorization, std::bind(&impl::raise_authorization, this, std::placeholders::_1, std::placeholders::_2) }
+			}
 		{
 			client_.init_asio(&io_context_.get());
 			client_.set_access_channels(websocketpp::log::alevel::all);
@@ -156,55 +162,9 @@ namespace glasssix::license
 			client_.send(connection, payload.data(), payload.size(), websocketpp::frame::opcode::BINARY);
 		}
 	private:
-		static void raise_authorization(impl& obj, const nlohmann::json& json)
+		void raise_authorization(const std::shared_ptr<void>& context, const nlohmann::json& json)
 		{
-			auto response = json.get<authorization_response_message>();
-
-			obj.on_authorization(response);
-		}
-
-		void parse_content(const protocol_header& header, exposing::param_span<const std::uint8_t> content)
-		{
-			static constexpr std::array dispatcher_table
-			{
-				std::pair{ message_type::authorization, &impl::raise_authorization }
-			};
-
-			// Parses the message buffer and omits this item if any error occurs.
-			if (auto json = nlohmann::json::from_msgpack(content, true, false); !json.is_discarded())
-			{
-				if (auto iter = std::find_if(dispatcher_table.begin(), dispatcher_table.end(), [&](const auto& inner) { return inner.first == header.type; }); iter != dispatcher_table.end())
-				{
-					iter->second(*this, json);
-				}
-			}
-		}
-
-		void parse_header(const client_type::connection_ptr& connection, exposing::param_span<const std::uint8_t> payload)
-		{
-			std::error_code code;
-
-			// Validates the header size.
-			if (payload.size() < protocol_header::header_size)
-			{
-				return connection->close(websocketpp::close::status::invalid_payload, "The payload size cannot be smaller than header size.", code);
-			}
-
-			protocol_header::buffer_type header_buffer;
-			auto header = (std::copy(payload.begin(), payload.begin() + protocol_header::header_size, header_buffer.begin()), protocol_header::parse(header_buffer));
-
-			if (!header)
-			{
-				return connection->close(websocketpp::close::status::invalid_payload, "Invalid header.", code);
-			}
-
-			// Validates the data size.
-			if (payload.size() - header_buffer.size() < header.size)
-			{
-				return connection->close(websocketpp::close::status::invalid_payload, "The data size is too small.", code);
-			}
-
-			parse_content(header, payload.sub_span(header_buffer.size(), header.size));
+			on_authorization(json.get<authorization_response_message>());
 		}
 
 		void on_message(const websocketpp::connection_hdl& handle, const client_type::message_ptr& message)
@@ -217,7 +177,10 @@ namespace glasssix::license
 					auto connection = client_.get_con_from_hdl(handle);
 					auto payload = message->get_payload();
 
-					parse_header(connection, exposing::param_span<const std::uint8_t>{ reinterpret_cast<const std::uint8_t*>(payload.c_str()), payload.size() });
+					dispatcher_.parse(exposing::param_span<const std::uint8_t>{ reinterpret_cast<const std::uint8_t*>(payload.c_str()), payload.size() }, nullptr, [&](std::string_view message)
+						{
+							connection->close(websocketpp::close::status::invalid_payload, std::string{ message });
+						});
 				}
 			}
 			catch (const std::exception& ex)
@@ -228,6 +191,7 @@ namespace glasssix::license
 
 		std::mutex mutex_;
 		client_type client_;
+		protocol_dispatcher dispatcher_;
 		single_threaded_io_context io_context_;
 		websocketpp::connection_hdl connection_;
 		std::condition_variable condition_close_;

@@ -46,6 +46,13 @@ namespace glasssix::license
 		return !hash.empty() && header == header_text && compute_hash_and_dump_helper(*this).second == hash;
 	}
 
+	protocol_header::buffer_type protocol_header::compute_hash_and_dump()
+	{
+		auto [buffer, hash] = compute_hash_and_dump_helper(*this);
+
+		return (this->hash = std::move(hash), buffer);
+	}
+
 	protocol_header protocol_header::parse(const buffer_type& buffer)
 	{
 		static constexpr std::size_t offset_version = header_text.size();
@@ -61,12 +68,5 @@ namespace glasssix::license
 			meta::make_number<std::uint32_t>(meta::sub_array<offset_size, sizeof(size)>::get(buffer)),
 			meta::sub_array<offset_hash, hash_size>::get(buffer)
 		};
-	}
-
-	protocol_header::buffer_type protocol_header::compute_hash_and_dump()
-	{
-		auto [buffer, hash] = compute_hash_and_dump_helper(*this);
-
-		return (this->hash = std::move(hash), buffer);
 	}
 }

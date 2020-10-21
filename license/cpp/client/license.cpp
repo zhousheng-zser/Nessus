@@ -19,6 +19,7 @@
 #define NOMINMAX
 #include <Windows.h>
 #include <ShlObj.h>
+#elif defined(__liunx__)
 #else
 #error "Unsupported platform."
 #endif
@@ -58,20 +59,7 @@ namespace glasssix::license
 		constexpr crypto::meta_string license_file{ "product_keeper.dat" };
 		constexpr crypto::meta_string portrait_file{ "user_portrait.dat" };
 
-#ifdef __ANDROID__
-		fs::path get_app_data_directory()
-		{
-			return jni::get_application_files_directory();
-		}
-
-		std::vector<std::uint8_t> get_machine_id()
-		{
-			auto device_id = jni::get_android_device_id();
-			auto hash = hashing::sha3::hash_sha3_512(reinterpret_cast<const std::uint8_t*>(device_id.c_str()), device_id.size());
-
-			return std::vector<std::uint8_t>{ hash.begin(), hash.end() };
-		}
-#elif defined(_WIN32)
+#ifdef _WIN32
 		fs::path get_app_data_directory()
 		{
 			if (wchar_t* buffer = nullptr; SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_DEFAULT, nullptr, &buffer)))
@@ -79,11 +67,31 @@ namespace glasssix::license
 				std::unique_ptr<void, decltype(&CoTaskMemFree)> buffer_scope{ buffer, &CoTaskMemFree };
 
 				return platform_encoding::win32::wide_to_narrow(buffer);
-			}
+	}
 
 			return fs::path{};
+}
+#elif defined(__ANDROID__)
+		fs::path get_app_data_directory()
+		{
+			return jni::get_application_files_directory();
 		}
+#elif defined(__linux__)
+		fs::path get_app_data_directory()
+		{
+			return "/usr/local/etc"
+		}
+#endif
 
+#ifdef __ANDROID__
+		std::vector<std::uint8_t> get_machine_id()
+		{
+			auto device_id = jni::get_android_device_id();
+			auto hash = hashing::sha3::hash_sha3_512(reinterpret_cast<const std::uint8_t*>(device_id.c_str()), device_id.size());
+
+			return std::vector<std::uint8_t>{ hash.begin(), hash.end() };
+		}
+#elif defined(_WIN32) || defined(__linux__)
 		std::optional<std::vector<std::uint8_t>> get_machine_id()
 		{
 			try
@@ -111,8 +119,6 @@ namespace glasssix::license
 				return std::nullopt;
 			}
 		}
-#else
-#error "Unsupported platform."
 #endif
 
 		/// <summary>
@@ -307,7 +313,7 @@ namespace glasssix::license
 		interruptable_timer watchdog_timer;
 		std::unique_ptr<license> global_license_;
 		std::shared_ptr<std::thread> watchdog_initialization_thread;
-		std::function<void(std::string_view, std::int64_t)> internal_deadline_callback;
+		std::shared_ptr<std::function<void(std::string_view, std::int64_t)>> internal_deadline_callback;
 	}
 
 	namespace
@@ -331,10 +337,12 @@ namespace glasssix::license
 
 								evaluate_license([](void* context, bool valid, const char* message, std::int64_t remaining_seconds)
 									{
+										auto deadline_callback = std::atomic_load_explicit(&internal_deadline_callback, std::memory_order_acquire);
+
 										// Notifies the consumer nearing expiration.
-										if (internal_deadline_callback && remaining_seconds < deadline_seconds)
+										if (deadline_callback && *deadline_callback && remaining_seconds < deadline_seconds)
 										{
-											internal_deadline_callback(message, remaining_seconds);
+											(*deadline_callback)(message, remaining_seconds);
 										}
 
 										if (!valid)
@@ -355,81 +363,87 @@ namespace glasssix::license
 					});
 		}
 	}
+}
 
-	EXPORT_NESSUS_LICENSE void evaluate_license(evaluate_license_callback_type callback, void* context)
+using namespace glasssix;
+using namespace glasssix::license;
+
+EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key)
+{
+	if (license_key)
 	{
-		if (!global_license_ || callback == nullptr)
-		{
-			return;
-		}
+		static std::once_flag flag;
 
-		try
-		{
-			std::int64_t remaining_seconds = []
+		std::call_once(flag, [&]
 			{
-				std::scoped_lock lock{ mutex_license };
-
-				return (watchdog_initialization_thread.reset(), global_license_->evaluate().count());
-			}();
-
-			std::int64_t seconds = remaining_seconds % 60;
-			std::int64_t minutes = remaining_seconds / 60 % 60;
-			std::int64_t hours = remaining_seconds / 3600 % 24;
-			std::int64_t days = remaining_seconds / 86400;
-
-			callback(context, true, fmt::format(FMT_STRING("License remaining time: {}d {:02}:{:02}:{:02}."), days, hours, minutes, seconds).c_str(), remaining_seconds);
-		}
-		catch (const std::exception& ex)
-		{
-			callback(context, false, ex.what(), 0);
-		}
-	}
-
-	EXPORT_NESSUS_LICENSE void request_license_async(request_license_async_callback_type callback, void* context)
-	{
-		struct token_wrapper
-		{
-			std::shared_ptr<delegate_token> token;
-		};
-
-		if (global_license_)
-		{
-
-			std::scoped_lock lock{ mutex_license };
-			auto wrapper = std::make_shared<token_wrapper>();
-
-			watchdog_initialization_thread.reset();
-			wrapper->token = global_license_->on_authorization.add_listener_auto_removal([=, wrapper = wrapper](bool success, std::string_view message) { callback(context, success, message.data()); });
-			global_license_->request_new();
-		}
-	}
-
-	EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key, license_deadline_callback_type deadline_callback, void* context)
-	{
-		if (license_key)
-		{
-			static std::once_flag flag;
-
-			std::call_once(flag, [&]
+				try
 				{
-					try
-					{
-						watchdog_initialization_thread.reset();
+					// In case of expensive initialzation on Android, we defer the first tick of the watchdog to wait for the initialization to accomplish.
+					watchdog_initialization_thread.reset();
+					global_license_ = std::make_unique<glasssix::license::license>(license_key);
+				}
+				catch (const std::exception& ex)
+				{
+					LOG(FATAL) << ex.what();
+				}
+			});
+	}
+}
 
-						if (deadline_callback)
-						{
-							internal_deadline_callback = [=](std::string_view message, std::int64_t remaining_seconds) { deadline_callback(context, message.data(), remaining_seconds); };
-						}
+EXPORT_NESSUS_LICENSE void evaluate_license(evaluate_license_callback_type callback, void* context)
+{
+	if (!global_license_ || callback == nullptr)
+	{
+		return;
+	}
 
-						// In case of expensive initialzation on Android, we defer the first tick of the watchdog to wait for the initialization to accomplish.
-						global_license_ = std::make_unique<license>(license_key);
-					}
-					catch (const std::exception& ex)
-					{
-						LOG(FATAL) << ex.what();
-					}
-				});
-		}
+	try
+	{
+		std::int64_t remaining_seconds = []
+		{
+			std::scoped_lock lock{ mutex_license };
+
+			return (watchdog_initialization_thread.reset(), global_license_->evaluate().count());
+		}();
+
+		std::int64_t seconds = remaining_seconds % 60;
+		std::int64_t minutes = remaining_seconds / 60 % 60;
+		std::int64_t hours = remaining_seconds / 3600 % 24;
+		std::int64_t days = remaining_seconds / 86400;
+
+		callback(context, true, fmt::format(FMT_STRING("License remaining time: {}d {:02}:{:02}:{:02}."), days, hours, minutes, seconds).c_str(), remaining_seconds);
+	}
+	catch (const std::exception& ex)
+	{
+		callback(context, false, ex.what(), 0);
+	}
+}
+
+EXPORT_NESSUS_LICENSE void request_license_async(request_license_async_callback_type callback, void* context)
+{
+	struct token_wrapper
+	{
+		std::shared_ptr<delegate_token> token;
+	};
+
+	if (global_license_)
+	{
+		watchdog_initialization_thread.reset();
+
+		auto wrapper = std::make_shared<token_wrapper>();
+		std::scoped_lock lock{ mutex_license };
+
+		wrapper->token = global_license_->on_authorization.add_listener_auto_removal([=, wrapper = wrapper](bool success, std::string_view message) { callback(context, success, message.data()); });
+		global_license_->request_new();
+	}
+}
+
+EXPORT_NESSUS_LICENSE void set_license_deadline_callback(license_deadline_callback_type callback, void* context)
+{
+	if (callback)
+	{
+		watchdog_initialization_thread.reset();
+		std::atomic_store_explicit(&internal_deadline_callback, std::make_shared<decltype(internal_deadline_callback)::element_type>([=](std::string_view message, std::int64_t remaining_seconds) { callback(context, message.data(), remaining_seconds); }), std::memory_order_release);
 	}
 }
 
