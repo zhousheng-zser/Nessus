@@ -19,6 +19,7 @@
 #define NOMINMAX
 #include <Windows.h>
 #include <ShlObj.h>
+#elif defined(__liunx__)
 #else
 #error "Unsupported platform."
 #endif
@@ -58,20 +59,7 @@ namespace glasssix::license
 		constexpr crypto::meta_string license_file{ "product_keeper.dat" };
 		constexpr crypto::meta_string portrait_file{ "user_portrait.dat" };
 
-#ifdef __ANDROID__
-		fs::path get_app_data_directory()
-		{
-			return jni::get_application_files_directory();
-		}
-
-		std::vector<std::uint8_t> get_machine_id()
-		{
-			auto device_id = jni::get_android_device_id();
-			auto hash = hashing::sha3::hash_sha3_512(reinterpret_cast<const std::uint8_t*>(device_id.c_str()), device_id.size());
-
-			return std::vector<std::uint8_t>{ hash.begin(), hash.end() };
-		}
-#elif defined(_WIN32)
+#ifdef _WIN32
 		fs::path get_app_data_directory()
 		{
 			if (wchar_t* buffer = nullptr; SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_DEFAULT, nullptr, &buffer)))
@@ -79,11 +67,31 @@ namespace glasssix::license
 				std::unique_ptr<void, decltype(&CoTaskMemFree)> buffer_scope{ buffer, &CoTaskMemFree };
 
 				return platform_encoding::win32::wide_to_narrow(buffer);
-			}
+	}
 
 			return fs::path{};
+}
+#elif defined(__ANDROID__)
+		fs::path get_app_data_directory()
+		{
+			return jni::get_application_files_directory();
 		}
+#elif defined(__linux__)
+		fs::path get_app_data_directory()
+		{
+			return "/usr/local/etc"
+		}
+#endif
 
+#ifdef __ANDROID__
+		std::vector<std::uint8_t> get_machine_id()
+		{
+			auto device_id = jni::get_android_device_id();
+			auto hash = hashing::sha3::hash_sha3_512(reinterpret_cast<const std::uint8_t*>(device_id.c_str()), device_id.size());
+
+			return std::vector<std::uint8_t>{ hash.begin(), hash.end() };
+		}
+#elif defined(_WIN32) || defined(__linux__)
 		std::optional<std::vector<std::uint8_t>> get_machine_id()
 		{
 			try
@@ -111,8 +119,6 @@ namespace glasssix::license
 				return std::nullopt;
 			}
 		}
-#else
-#error "Unsupported platform."
 #endif
 
 		/// <summary>

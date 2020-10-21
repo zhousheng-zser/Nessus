@@ -384,7 +384,12 @@ namespace glasssix::smbios
 			GetSystemFirmwareTable(signature, 0, raw_data, size) == size ? std::optional{ parse_smbios_data(raw_data->smbios_table_data, raw_data->length) } : std::nullopt :
 			throw smbios_unsupported_version{};
 	}
-#elif defined(__linux__) && !defined(__ANDROID__)
+#elif defined(__ANDROID__)
+	std::optional<smbios_info> read_smbios_info()
+	{
+		return std::nullopt;
+	}
+#elif defined(__linux__)
 	std::optional<smbios_info> read_smbios_info()
 	{
 		// Reads the entry point data.
