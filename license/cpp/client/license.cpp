@@ -17,7 +17,6 @@
 
 #define NOGDI
 #define NOMINMAX
-#include <Windows.h>
 #include <ShlObj.h>
 #elif defined(__linux__)
 #include "smbios.hpp"
@@ -383,7 +382,8 @@ EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key)
 				}
 				catch (const std::exception& ex)
 				{
-					LOG(FATAL) << ex.what();
+					std::cout << ex.what() << std::endl;
+					std::terminate();
 				}
 			});
 	}
@@ -446,19 +446,7 @@ EXPORT_NESSUS_LICENSE void set_license_deadline_callback(license_deadline_callba
 	}
 }
 
-#ifdef _WIN32
-int WINAPI DllMain(HINSTANCE instance, std::uint32_t reason, void* reserved)
+auto dummy_initializer = []
 {
-	if (reason == DLL_PROCESS_ATTACH)
-	{
-		glasssix::license::init_watchdog_timer();
-	}
-
-	return TRUE;
-}
-#else
-__attribute__((constructor)) void dll_constructor()
-{
-	glasssix::license::init_watchdog_timer();
-}
-#endif
+	return (glasssix::license::init_watchdog_timer(), 0);
+}();
