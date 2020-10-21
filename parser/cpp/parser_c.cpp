@@ -41,11 +41,11 @@ extern "C" {
 		return status;
 	}
 
-	PARSER_C_EXPORT char* parser_parse(void* instance, const char* protocol, size_t protocol_len, const char* jstr, size_t jstr_len, char* data, size_t data_len)
+	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, size_t topic_len, const char* jstr, size_t jstr_len, char* data, size_t data_len)
 	{
 		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
 
-		glasssix::exposing::param_string protocol_(protocol, protocol_len);
+		glasssix::exposing::param_string protocol_(topic, topic_len);
 		glasssix::exposing::param_string jstr_(jstr, jstr_len);
 		glasssix::exposing::param_span<std::uint8_t> data_(reinterpret_cast<std::uint8_t*>(data), data_len);
 
