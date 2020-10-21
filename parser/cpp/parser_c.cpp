@@ -24,7 +24,7 @@ extern "C" {
 		instance = nullptr;
 	}
 
-	PARSER_C_EXPORT char* parser_init_plugin(void* instance, char* config_file_path, int len, char* license_key)
+	PARSER_C_EXPORT char* parser_init_plugin(void* instance, const char* config_file_path, size_t len, const char* license_key)
 	{
 		init_license_system(license_key);
 
@@ -41,7 +41,7 @@ extern "C" {
 		return status;
 	}
 
-	PARSER_C_EXPORT char* parser_parse(void* instance, char* protocol, int protocol_len, char* jstr, int jstr_len, char* data, int data_len)
+	PARSER_C_EXPORT char* parser_parse(void* instance, const char* protocol, size_t protocol_len, const char* jstr, size_t jstr_len, char* data, size_t data_len)
 	{
 		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
 
