@@ -5,7 +5,7 @@ set(source_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../license/cpp/client)
 set(common_lib_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../license/cpp)
 set(3rd_party_dir ${source_dir}/../../../3rd-party/cpp)
 
-if(WITH_JNI OR ANDROID)
+if(WITH_JNI OR ANDROID_NDK)
 	file(GLOB_RECURSE source_files ${source_dir}/*.cpp ${source_dir}/*.hpp)
 else()
 	file(GLOB source_files ${source_dir}/*.cpp ${source_dir}/*.hpp)
