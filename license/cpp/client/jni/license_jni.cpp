@@ -9,7 +9,6 @@
 #include <jni.h>
 
 using namespace glasssix::jni;
-using namespace glasssix::license;
 
 namespace
 {

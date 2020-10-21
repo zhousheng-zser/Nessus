@@ -53,7 +53,7 @@ extern "C" {
 #endif
 	JNIEXPORT void JNICALL Java_com_glasssix_parser_Parser_init(JNIEnv* env, jobject thiz, jstring license_key)
 	{
-		glasssix::license::init_license_system(jstring2string(env, license_key).c_str());
+		init_license_system(jstring2string(env, license_key).c_str());
 
 		jclass clazz = env->GetObjectClass(thiz);
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");

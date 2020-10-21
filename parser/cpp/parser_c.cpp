@@ -26,7 +26,7 @@ extern "C" {
 
 	PARSER_C_EXPORT char* parser_init_plugin(void* instance, char* config_file_path, int len, char* license_key)
 	{
-		glasssix::license::init_license_system(license_key);
+		init_license_system(license_key);
 
 		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
 
