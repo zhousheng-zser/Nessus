@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #ifdef EXPORT_NESSUS_LICENSE
 #undef EXPORT_NESSUS_LICENSE
 #define EXPORT_NESSUS_LICENSE __declspec(dllexport)
