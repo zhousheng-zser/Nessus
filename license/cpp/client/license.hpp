@@ -9,7 +9,7 @@
 #endif
 #else
 #undef EXPORT_NESSUS_LICENSE
-#define EXPORT_NESSUS_LICENSE
+#define EXPORT_NESSUS_LICENSE __attribute__((visibility("default")))
 #endif
 
 #include <cstdint>

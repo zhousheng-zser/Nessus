@@ -6,7 +6,7 @@
 #ifdef _WIN32
 #define PARSER_C_EXPORT __declspec(dllexport)
 #else
-#define PARSER_C_EXPORT 
+#define PARSER_C_EXPORT __attribute__((visibility("default")))
 #endif
 
 bool parser_module_ready = []
