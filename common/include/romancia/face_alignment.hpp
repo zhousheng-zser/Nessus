@@ -121,4 +121,3 @@ namespace glasssix::romancia
 		using inherits::inherits;
 	};
 }
-

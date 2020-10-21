@@ -46,7 +46,7 @@
         },
         {
           "name": "WITH_JNI",
-          "value": "False",
+          "value": "TRUE",
           "type": "BOOL"
         },
         {

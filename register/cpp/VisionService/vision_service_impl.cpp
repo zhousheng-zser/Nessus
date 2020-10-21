@@ -165,7 +165,7 @@ namespace glasssix::exposing::nessus
 			auto nms = unbox<float>(params.get_value(u8"nms"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/retina.racy", models_directory + u8"/pfld-sim.racy", nms, device));
+			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/retina.racy", models_directory + u8"/pfld_small_gen_age_sim.racy", nms, device));
 		}
 
 		unknown_object romancia_new(const param_hash_map<param_string, unknown_object>& params)
