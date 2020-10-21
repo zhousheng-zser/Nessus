@@ -378,11 +378,15 @@ namespace glasssix::smbios
 
 		auto buffer = new std::uint8_t[size];
 		auto raw_data = new (buffer) win32_raw_smbios_data;
+
+		if (GetSystemFirmwareTable(signature, 0, raw_data, size) != size)
+		{
+			return std::nullopt;
+		}
+
 		std::uint16_t version = (static_cast<std::uint16_t>(raw_data->smbios_major_version) << 8) + raw_data->smbios_minor_version;
 
-		return version >= 0x0206 ?
-			GetSystemFirmwareTable(signature, 0, raw_data, size) == size ? std::optional{ parse_smbios_data(raw_data->smbios_table_data, raw_data->length) } : std::nullopt :
-			throw smbios_unsupported_version{};
+		return version >= 0x0206 ? parse_smbios_data(raw_data->smbios_table_data, raw_data->length) : throw smbios_unsupported_version{};
 	}
 #elif defined(__ANDROID__)
 	std::optional<smbios_info> read_smbios_info()

@@ -44,7 +44,7 @@ namespace glasssix::jni
 		{
 		}
 
-		std::optional<java_vm_context> init(JavaVM* vm)
+		std::shared_ptr<java_vm_context> init(JavaVM* vm)
 		{
 			static constexpr std::array available_versions
 			{
@@ -58,17 +58,17 @@ namespace glasssix::jni
 			
 			if (auto iter = std::find_if(available_versions.begin(), available_versions.end(), [&](int inner) { return vm->GetEnv(adapter, inner) == JNI_OK; }); iter != available_versions.end())
 			{
-				java_vm_context result{ vm, *iter };
+				auto result = std::make_shared<java_vm_context>(java_vm_context{ vm, *iter });
 
-				return (context_.store(result, std::memory_order::memory_order_release), result);
+				return (std::atomic_store_explicit(&context_, result, std::memory_order::memory_order_release), result);
 			}
 
-			return std::nullopt;
+			return nullptr;
 		}
 
 		JNIEnv* get_thread_env() const
 		{
-			auto context = context_.load(std::memory_order_acquire);
+			auto context = std::atomic_load_explicit(&context_, std::memory_order_acquire);
 
 			if (!context)
 			{
@@ -104,9 +104,9 @@ namespace glasssix::jni
 			return result.get();
 		}
 
-		std::optional<java_vm_context> context() const
+		std::shared_ptr<java_vm_context> context() const
 		{
-			return context_.load(std::memory_order::memory_order_acquire);
+			return std::atomic_load_explicit(&context_, std::memory_order::memory_order_acquire);
 		}
 
 		global_ref_ex<jclass> get_class_cache(int key) const
@@ -190,7 +190,7 @@ namespace glasssix::jni
 			}
 		}
 
-		std::atomic<std::optional<java_vm_context>> context_;
+		std::shared_ptr<java_vm_context> context_;
 		std::unordered_map<cache_key, std::variant<global_ref_ex<jclass>, jfieldID, jmethodID>> cache_;
 	};
 
@@ -202,7 +202,7 @@ namespace glasssix::jni
 	{
 	}
 
-	std::optional<java_vm_context> reflection_cache::init(JavaVM* vm) const
+	std::shared_ptr<java_vm_context> reflection_cache::init(JavaVM* vm) const
 	{
 		return impl_->init(vm);
 	}
@@ -212,7 +212,7 @@ namespace glasssix::jni
 		return impl_->get_thread_env();
 	}
 
-	std::optional<java_vm_context> reflection_cache::context() const
+	std::shared_ptr<java_vm_context> reflection_cache::context() const
 	{
 		return impl_->context();
 	}
