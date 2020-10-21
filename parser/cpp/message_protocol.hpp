@@ -234,10 +234,6 @@ namespace glasssix
 					face.set_y(root["face"]["y"].get<int64_t>().value());
 					face.set_width(root["face"]["width"].get<int64_t>().value());
 					face.set_height(root["face"]["height"].get<int64_t>().value());
-					int x = root["face"]["x"].get<int64_t>().value();
-					int y = root["face"]["y"].get<int64_t>().value();
-					int h = root["face"]["height"].get<int64_t>().value();
-					int w = root["face"]["width"].get<int64_t>().value();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
@@ -262,6 +258,8 @@ namespace glasssix
 						jobj_rect["width"] = Json::Int(result.width());
 						jobj_rect["height"] = Json::Int(result.height());
 						jobj_rect["confidence"] = Json::Value(result.confidence());
+						jobj_rect["prob_age_index"] = Json::Value(result.prob_age_index());
+						jobj_rect["prob_gender_index"] = Json::Value(result.prob_gender_index());
 
 						jobj_rect["yaw"] = Json::Value(result.yaw());
 						jobj_rect["pitch"] = Json::Value(result.pitch());
@@ -686,6 +684,77 @@ namespace glasssix
 					value["status"] = Json::Value(ex.what_to_narrow());
 				}
 				
+				return value;
+			}
+
+			inline Json::Value Gaius_make_mask_Forward_json(plugin_interface& plugin, simdjson::dom::element& root, param_span<std::uint8_t>& data, guid& instance)
+			{
+				Json::Value value;
+
+				std::uint8_t mask[64 * 128] = {0};
+				try
+				{
+					int format = static_cast<int>(root["format"].get<int64_t>().value());
+					if (format < 0 || format > 1)
+						throw parser_exception("Error: format < 0 || format > 1");
+
+					auto aligned_face_array = root["aligned_images"].get<simdjson::dom::array>().value();
+					std::vector<uint8_t> aligned_faces_vec;
+					int num = 0;
+					memory::tensor<std::uint8_t> temp(gaius_forward_aligned_buffer_len, -1, memory::NCHW, &memory::pool_allocator_default<std::uint8_t>::get());
+					std::uint8_t* ptr = temp.mutable_cpu_data();
+					for (auto i : aligned_face_array)
+					{
+						std::string_view aligned_face_base64_str = i.get<std::string_view>().value();
+						if (aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len))
+							throw parser_exception("Error: aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len)");
+
+						size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
+						if (aligned_face_decode_len != gaius_forward_aligned_buffer_len)
+							throw parser_exception("aligned_face_decode_len != gaius_forward_aligned_buffer_len");
+
+
+						for (size_t j = 0; j < 3; j++)
+						{
+							std::copy(mask, mask + 64 * 64, ptr + j * 128 * 128 + 64 * 128);
+						}
+
+						aligned_faces_vec.insert(aligned_faces_vec.end(), ptr, ptr + gaius_forward_aligned_buffer_len);
+						num++;
+					}
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
+							{u8"num", box(num)},
+							{u8"order", box(format)},
+							{u8"has_mask", box(true)},
+							{u8"object_id", box(instance)}
+						});
+
+					auto result = plugin.execute(u8"gaius.Forward", param).as<param_vector<param_vector<float>>>();
+
+					Json::Value jobj_features;
+					for (size_t i = 0; i < result.size(); i++)
+					{
+						Json::Value jarray_feature;
+						for (size_t j = 0; j < result[i].size(); j++)
+							jarray_feature["feature"].append(result[i][j]);
+						jobj_features.append(jarray_feature);
+					}
+
+					value["features"] = jobj_features;
+					value["status"] = Json::Value("OK");
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"] = Json::Value(ex.what());
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"] = Json::Value(ex.what_to_narrow());
+				}
+
 				return value;
 			}
 

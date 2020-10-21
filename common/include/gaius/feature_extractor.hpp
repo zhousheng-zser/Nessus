@@ -86,4 +86,3 @@ namespace glasssix::gaius
 		using inherits::inherits;
 	};
 }
-

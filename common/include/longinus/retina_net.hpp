@@ -101,4 +101,3 @@ namespace glasssix::longinus
 		using inherits::inherits;
 	};
 }
-

@@ -77,6 +77,7 @@ namespace libyuv {
     (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2) || \
      defined(GCC_HAS_AVX2))
 #define HAS_I422TOARGBROW_AVX2
+#define HAS_NV21TOARGBROW_AVX2
 #define HAS_NV21TORGB24ROW_AVX2
 #define HAS_ARGBTORGB24ROW_AVX2
 #endif

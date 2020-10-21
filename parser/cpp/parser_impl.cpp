@@ -300,6 +300,7 @@ namespace glasssix::exposing::nessus
 		protocol_map["gaius.new"] = &Gaius_new_json;
 		protocol_map["gaius.delete"] = &Gaius_delete_json;
 		protocol_map["gaius.forward"] = &Gaius_Forward_json;
+		protocol_map["gaius.make_mask_forward"] = &Gaius_make_mask_Forward_json;
 		protocol_map["cassius.new"] = &Cassius_new_json;
 		protocol_map["cassius.delete"] = &Cassius_delete_json;
 		protocol_map["cassius.forward"] = &Cassius_Forward_json;
