@@ -19,9 +19,8 @@
 #define NOMINMAX
 #include <Windows.h>
 #include <ShlObj.h>
-#elif defined(__liunx__)
-#else
-#error "Unsupported platform."
+#elif defined(__linux__)
+#include "smbios.hpp"
 #endif
 
 #include <mutex>
@@ -79,7 +78,7 @@ namespace glasssix::license
 #elif defined(__linux__)
 		fs::path get_app_data_directory()
 		{
-			return "/usr/local/etc"
+			return "/usr/local/etc";
 		}
 #endif
 

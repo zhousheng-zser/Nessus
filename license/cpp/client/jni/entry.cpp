@@ -38,7 +38,7 @@ namespace
 
 	license_reflection_caches internal_caches;
 }
-
+#ifdef __ANDROID__
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
 	auto context = reflection_cache::instance().init(vm);
@@ -120,6 +120,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
 JNIEXPORT void JNI_OnUnload(JavaVM* vm, void* reserved)
 {
 }
+#endif
 
 namespace glasssix::jni
 {

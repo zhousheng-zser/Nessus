@@ -13,10 +13,10 @@
 #endif
 
 #ifdef __cplusplus
-#include <cstdint>
+#include <cstddef>
 extern "C" {
 #else
-#include <stdint.h>
+#include <stddef.h>
 #endif
 
 	/// <summary>

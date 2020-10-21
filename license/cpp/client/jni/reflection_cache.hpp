@@ -27,9 +27,9 @@ namespace glasssix::jni
 		friend singleton;
 
 		virtual ~reflection_cache();
-		std::optional<java_vm_context> init(JavaVM* vm) const;
+		std::shared_ptr<java_vm_context> init(JavaVM* vm) const;
 		JNIEnv* get_thread_env() const;
-		std::optional<java_vm_context> context() const;
+		std::shared_ptr<java_vm_context> context() const;
 		global_ref_ex<jclass> get_class_cache(int key) const;
 		jfieldID get_field_cache(int key) const;
 		jmethodID get_method_cache(int key) const;
