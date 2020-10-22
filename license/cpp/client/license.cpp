@@ -361,6 +361,11 @@ namespace glasssix::license
 						}
 					});
 		}
+
+		auto dummy_initializer = []
+		{
+			return (init_watchdog_timer(), 0);
+		}();
 	}
 }
 
@@ -447,7 +452,4 @@ EXPORT_NESSUS_LICENSE void set_license_deadline_callback(license_deadline_callba
 	}
 }
 
-auto dummy_initializer = []
-{
-	return (glasssix::license::init_watchdog_timer(), 0);
-}();
+
