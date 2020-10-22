@@ -43,7 +43,7 @@ int main()
 
 		server.on_request_authorization([](const authorization_request_message& message)
 			{
-				thread_local license_database database{ "host=182.140.240.121 port=5432 user=postgres password=Glasssix+1S dbname=postgres connect_timeout=10" };
+				thread_local license_database database{ "host=127.0.0.1 port=5432 user=postgres password=Glasssix+1S dbname=postgres connect_timeout=10" };
 
 				// Checks the client timestamp.
 				if (std::abs(message.client_timestamp - glasssix::get_local_timestamp()) >= permissible_error)

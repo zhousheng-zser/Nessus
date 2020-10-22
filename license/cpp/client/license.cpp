@@ -31,6 +31,7 @@
 #include <thread>
 #include <vector>
 #include <cstdint>
+#include <cstdlib>
 #include <optional>
 #include <functional>
 #include <string_view>
@@ -332,7 +333,7 @@ namespace glasssix::license
 								if (!global_license_)
 								{
 									std::cout << "The license has not been initialized correctly and the program will exit immediately." << std::endl;
-									std::terminate();
+									std::quick_exit(0);
 								}
 
 								evaluate_license([](void* context, bool valid, const char* message, std::int64_t remaining_seconds)
@@ -348,7 +349,7 @@ namespace glasssix::license
 										if (!valid)
 										{
 											std::cout << fmt::format(FMT_STRING("License evaluation failure: {}"), message) << std::endl;
-											std::terminate();
+											std::quick_exit(0);
 										}
 									});
 							});
@@ -384,7 +385,8 @@ EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key)
 				}
 				catch (const std::exception& ex)
 				{
-					LOG(FATAL) << ex.what();
+					std::cout << fmt::format(FMT_STRING("Failed to initialize the license system: {}"), ex.what()) << std::endl;
+					std::quick_exit(0);
 				}
 			});
 	}
