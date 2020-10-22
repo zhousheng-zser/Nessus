@@ -25,6 +25,10 @@
           "name": "COMMON_LIBRARY_DIRS",
           "value": "E:/Code/Excalibur_new_arch/cmake/out/build/x64-Debug/lib",
           "type": "STRING"
+        },
+        {
+          "name": "CONTAINS_LICENSE_SERVER",
+          "value": "True"
         }
       ]
     },

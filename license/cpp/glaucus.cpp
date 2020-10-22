@@ -4,14 +4,17 @@
 #include "aes_provider.hpp"
 #include "crypto_error.hpp"
 #include "io.hpp"
+#include "number_utils.hpp"
 
 #include <array>
 #include <random>
 #include <string>
 #include <cstddef>
+#include <utility>
 #include <stdexcept>
 #include <algorithm>
 #include <type_traits>
+#include <iostream>
 
 #include <abi/sha3.hpp>
 #include <abi/meta.hpp>
@@ -37,9 +40,9 @@ namespace glasssix::crypto
 		/// </summary>
 		/// <param name="buffer">The buffer</param>
 		/// <returns>The portrait</returns>
-		std::array<std::uint64_t, user_portrait_size> make_user_portrait(exposing::param_span<const std::uint8_t> buffer)
+		std::vector<std::uint64_t> make_user_portrait(exposing::param_span<const std::uint8_t> buffer)
 		{
-			std::array<std::uint64_t, user_portrait_size> result;
+			std::vector<std::uint64_t> result(buffer.size() / sizeof(std::uint64_t));
 
 			for (std::size_t i = 0; i < result.size(); i++)
 			{
@@ -57,18 +60,17 @@ namespace glasssix::crypto
 		/// <summary>
 		/// Serializes a numeric buffer into a byte buffer.
 		/// </summary>
-		/// <typeparam name="Number">The numeric type</typeparam>
-		/// <param name="AdditionalSize">The additional buffer size</param>
-		/// <param name="Size">The buffer size</param>
+		/// <typeparam name="Buffer">The buffer type</typeparam>
 		/// <param name="buffer">The buffer</param>
+		/// <param name="additional_size">The additional size</param>
 		/// <returns>The buffer</returns>
-		template<std::size_t AdditionalSize = 0, std::size_t Size, typename Number, typename = std::enable_if_t<std::is_arithmetic_v<Number>>>
-		auto make_byte_buffer(const std::array<Number, Size>& buffer)
+		template<typename Buffer>
+		std::vector<std::uint8_t> make_byte_buffer(Buffer&& buffer, std::size_t additional_size = 0)
 		{
-			std::array<std::uint8_t, Size * sizeof(Number) + AdditionalSize> result{};
+			std::vector<std::uint8_t> result(std::forward<Buffer>(buffer).size() * sizeof(typename std::decay_t<Buffer>::value_type) + additional_size);
 			auto iter = result.begin();
 
-			for (const auto& item : buffer)
+			for (const auto& item : std::forward<Buffer>(buffer))
 			{
 				auto bytes = meta::to_array(item);
 
@@ -81,17 +83,16 @@ namespace glasssix::crypto
 		/// <summary>
 		/// Serializes a numeric buffer into a byte buffer with salt appended.
 		/// </summary>
-		/// <typeparam name="Number">The numeric type</typeparam>
+		/// <typeparam name="Buffer">The buffer type</typeparam>
 		/// <typeparam name="MetaString">The salty type</typeparam>
-		/// <param name="Size">The buffer size</param>
 		/// <param name="buffer">The buffer</param>
 		/// <param name="salt">The salt</param>
 		/// <returns>The salty buffer</returns>
-		template<typename Number, std::size_t Size, typename MetaString, typename = std::enable_if_t<std::is_arithmetic_v<Number>>>
-		auto make_salty_byte_buffer(const std::array<Number, Size>& buffer, MetaString&& salt)
+		template<typename Buffer, typename MetaString>
+		std::vector<std::uint8_t> make_salty_byte_buffer(Buffer&& buffer, MetaString&& salt)
 		{
 			static constexpr std::size_t salty_size = std::decay_t<MetaString>::buffer_size;
-			auto result = make_byte_buffer<salty_size>(buffer);
+			auto result = make_byte_buffer(std::forward<Buffer>(buffer), salty_size);
 			auto salty_buffer = std::forward<MetaString>(salt).decrypt();
 
 			std::copy(reinterpret_cast<const std::uint8_t*>(salty_buffer.data()), reinterpret_cast<const std::uint8_t*>(salty_buffer.data()) + salty_buffer.size(), result.end() - salty_size);
@@ -127,7 +128,6 @@ namespace glasssix::crypto
 				return meta::apply_index_sequence<sha3_512_hash_size / sizeof(std::uint64_t)>([&](auto... indexes)
 					{
 						auto seed = static_cast<int>(timestamp % minutes_of_day);
-
 						auto timestamp_hash = hashing::sha3::hash_sha3_512(origin_timestamp);
 						auto number_hash = hashing::sha3::hash_sha3_512(meta::to_array(number));
 						auto machine_id_hash = hashing::sha3::hash_sha3_512(reverse_machine_id.data(), reverse_machine_id.size());
@@ -148,11 +148,11 @@ namespace glasssix::crypto
 			};
 
 			// Finalizes the result.
-			std::array<std::uint64_t, user_portrait_size> result;
+			std::vector<std::uint64_t> result(user_portrait_size);
 
-			for (std::size_t i = result.size() - 1; i != 0; i--)
+			for (std::size_t i = 0, j = result.size() - 1; i < result.size(); i++, j--)
 			{
-				result[i] = factor_generator(i);
+				result[j] = factor_generator(j);
 			}
 
 			return result;
@@ -247,7 +247,7 @@ namespace glasssix::crypto
 
 		void generate(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
 		{
-			std::array<std::uint64_t, user_portrait_size> user_portrait;
+			std::vector<std::uint64_t> user_portrait(user_portrait_size);
 
 			for (auto& item : user_portrait)
 			{
@@ -290,9 +290,9 @@ namespace glasssix::crypto
 
 		void init_client_data_cryptography(std::time_t timestamp)
 		{
-			std::array<std::uint64_t, user_portrait_size> buffer;
 			auto factors = get_obfuscated_factors(machine_id_, timestamp);
 			auto real_user_portrait = make_user_portrait(user_portrait_encrypter_.decrypt(cipher_user_portrait_));
+			std::vector<std::uint64_t> buffer(real_user_portrait.size());
 
 			std::transform(real_user_portrait.begin(), real_user_portrait.end(), buffer.begin(), [&, index = std::size_t{}](std::uint64_t inner) mutable { return utils::hash_all(inner, factors[index++]); });
 			client_data_encrypter_.set_key(make_salty_byte_buffer(buffer, client_data_salt));
