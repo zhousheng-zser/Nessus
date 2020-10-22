@@ -451,5 +451,3 @@ EXPORT_NESSUS_LICENSE void set_license_deadline_callback(license_deadline_callba
 		std::atomic_store_explicit(&internal_deadline_callback, std::make_shared<decltype(internal_deadline_callback)::element_type>([=](std::string_view message, std::int64_t remaining_seconds) { callback(context, message.data(), remaining_seconds); }), std::memory_order_release);
 	}
 }
-
-
