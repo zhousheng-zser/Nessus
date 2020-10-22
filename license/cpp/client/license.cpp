@@ -29,6 +29,7 @@
 #include <thread>
 #include <vector>
 #include <cstdint>
+#include <cstdlib>
 #include <optional>
 #include <functional>
 #include <string_view>
@@ -311,7 +312,7 @@ namespace glasssix::license
 		interruptable_timer watchdog_timer;
 		std::unique_ptr<license> global_license_;
 		std::shared_ptr<std::thread> watchdog_initialization_thread;
-		std::shared_ptr<std::function<void(std::string_view, std::int64_t)>> internal_deadline_callback;
+		delegate<void, std::string_view, std::int64_t> deadline_callback;
 	}
 
 	namespace
@@ -330,23 +331,21 @@ namespace glasssix::license
 								if (!global_license_)
 								{
 									std::cout << "The license has not been initialized correctly and the program will exit immediately." << std::endl;
-									std::terminate();
+									std::quick_exit(0);
 								}
 
 								evaluate_license([](void* context, bool valid, const char* message, std::int64_t remaining_seconds)
 									{
-										auto deadline_callback = std::atomic_load_explicit(&internal_deadline_callback, std::memory_order_acquire);
-
 										// Notifies the consumer nearing expiration.
-										if (deadline_callback && *deadline_callback && remaining_seconds < deadline_seconds)
+										if (remaining_seconds < deadline_seconds)
 										{
-											(*deadline_callback)(message, remaining_seconds);
+											deadline_callback(message, remaining_seconds);
 										}
 
 										if (!valid)
 										{
 											std::cout << fmt::format(FMT_STRING("License evaluation failure: {}"), message) << std::endl;
-											std::terminate();
+											std::quick_exit(0);
 										}
 									});
 							});
@@ -360,6 +359,11 @@ namespace glasssix::license
 						}
 					});
 		}
+
+		auto dummy_initializer = []
+		{
+			return (init_watchdog_timer(), 0);
+		}();
 	}
 }
 
@@ -382,8 +386,8 @@ EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key)
 				}
 				catch (const std::exception& ex)
 				{
-					std::cout << ex.what() << std::endl;
-					std::terminate();
+					std::cout << fmt::format(FMT_STRING("Failed to initialize the license system: {}"), ex.what()) << std::endl;
+					std::quick_exit(0);
 				}
 			});
 	}
@@ -442,11 +446,6 @@ EXPORT_NESSUS_LICENSE void set_license_deadline_callback(license_deadline_callba
 	if (callback)
 	{
 		watchdog_initialization_thread.reset();
-		std::atomic_store_explicit(&internal_deadline_callback, std::make_shared<decltype(internal_deadline_callback)::element_type>([=](std::string_view message, std::int64_t remaining_seconds) { callback(context, message.data(), remaining_seconds); }), std::memory_order_release);
+		deadline_callback += [=](std::string_view message, std::int64_t remaining_seconds) { callback(context, message.data(), remaining_seconds); };
 	}
 }
-
-auto dummy_initializer = []
-{
-	return (glasssix::license::init_watchdog_timer(), 0);
-}();
