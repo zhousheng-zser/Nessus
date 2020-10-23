@@ -5,9 +5,6 @@
 #include "license_info.hpp"
 #include "license_database.hpp"
 
-#include "aes_provider.hpp"
-#include "number_utils.hpp"
-
 #include <cmath>
 #include <chrono>
 #include <cstdint>
@@ -35,28 +32,6 @@ namespace
 		auto license = nlohmann::json::to_msgpack(license_info{ message.machine_id, record.expiration_time, timestamp, timestamp });
 
 		glaucus.generate(message.machine_id, timestamp);
-
-		auto x = glaucus.forward(std::vector<std::uint8_t>{1, 2, 3});
-
-		std::cout << "=====" << std::endl;
-
-		std::cout << "User P:" << glasssix::buffer_to_hex_string(glasssix::exposing::hashing::sha3::hash_sha3_224(glaucus.user_portrait().data(), glaucus.user_portrait().size())) << std::endl;
-		std::cout << "Time:" << timestamp << std::endl;
-		std::cout << "License:" << glasssix::buffer_to_hex_string(glasssix::exposing::hashing::sha3::hash_sha3_224(glaucus.forward(license).data(), glaucus.forward(license).size())) << std::endl;
-
-		glasssix::crypto::aes_provider p;
-
-		p.set_iv(std::vector<std::uint8_t>{1, 2, 3});
-		p.set_key(std::vector<std::uint8_t>{1, 2, 3, 4, 5});
-		auto pp  = p.decrypt(p.encrypt(std::vector<std::uint8_t>{100}));
-
-		std::cout << "ENCRYPT(100):" << glasssix::buffer_to_hex_string(glasssix::exposing::hashing::sha3::hash_sha3_224(pp.data(), pp.size())) << std::endl;
-
-
-
-		for (auto v : x) std::cout << (int)v;
-		std::cout << std::endl;
-		std::cout << "=====" << std::endl;
 
 		return authorization_response_message{ "OK", glaucus.forward(license), glaucus.user_portrait(), timestamp };
 	}
@@ -127,6 +102,6 @@ int main()
 	}
 	catch (const std::exception& ex)
 	{
-		LOG(ERROR) << ex.what();
+		LOG_ND(ERROR) << ex.what();
 	}
 }
