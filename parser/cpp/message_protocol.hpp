@@ -165,6 +165,7 @@ namespace glasssix
 					int width = static_cast<int>(root["width"].get<int64_t>().value());
 					int min_size = static_cast<int>(root["min_size"].get<int64_t>().value());
 					float threshold = static_cast<float>(root["threshold"].get<double>().value());
+					bool do_attributing = root["do_attributing"].get<bool>().value();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
@@ -177,6 +178,7 @@ namespace glasssix
 							{u8"min_size", box(min_size)},
 							{u8"threshold", box(threshold)},
 							{u8"order", box(static_cast<int>(frame.order()))},
+							{u8"do_attributing", box(do_attributing? 1 : 0)},
 							{u8"object_id", box(instance)}
 						});
 
@@ -186,12 +188,22 @@ namespace glasssix
 
 					for (auto obj : result)
 					{
-						Json::Value jobj_rect;
-						jobj_rect["x"] = Json::Int(obj.x());
-						jobj_rect["y"] = Json::Int(obj.y());
-						jobj_rect["width"] = Json::Int(obj.width());
-						jobj_rect["height"] = Json::Int(obj.height());
-						jobj_rect["confidence"] = Json::Value(obj.confidence());
+						Json::Value jobj_face;
+						jobj_face["x"] = Json::Int(obj.x());
+						jobj_face["y"] = Json::Int(obj.y());
+						jobj_face["width"] = Json::Int(obj.width());
+						jobj_face["height"] = Json::Int(obj.height());
+						jobj_face["confidence"] = Json::Value(obj.confidence());
+
+						if (do_attributing)
+						{
+							jobj_face["attributes"]["yaw"] = Json::Value(obj.yaw());
+							jobj_face["attributes"]["pitch"] = Json::Value(obj.pitch());
+							jobj_face["attributes"]["roll"] = Json::Value(obj.roll());
+							jobj_face["attributes"]["prob_age_index"] = Json::Int(obj.prob_age_index());
+							jobj_face["attributes"]["prob_gender_index"] = Json::Int(obj.prob_gender_index());
+						}
+
 						Json::Value jarray_landmark;
 
 						for (const auto &pt : obj.pts())
@@ -202,8 +214,8 @@ namespace glasssix
 							jobj_point["y"] = Json::Int((int)pt.value());
 							jarray_landmark.append(jobj_point);
 						}
-						jobj_rect["landmark"] = jarray_landmark;
-						jarray_rect.append(jobj_rect);
+						jobj_face["landmark"] = jarray_landmark;
+						jarray_rect.append(jobj_face);
 					}
 
 					value["facerectwithfaceinfo_list"] = jarray_rect;
@@ -249,21 +261,21 @@ namespace glasssix
 						});
 					auto result = plugin.execute(u8"longinus.trace", param).as<longinus::face_info>();
 
-					Json::Value jobj_rect;
+					Json::Value jobj_face;
 					if (result.confidence() > 0.1)
 					{
 						value["trace_success"] = Json::Value(true);
-						jobj_rect["x"] = Json::Int(result.x());
-						jobj_rect["y"] = Json::Int(result.y());
-						jobj_rect["width"] = Json::Int(result.width());
-						jobj_rect["height"] = Json::Int(result.height());
-						jobj_rect["confidence"] = Json::Value(result.confidence());
-						jobj_rect["prob_age_index"] = Json::Value(result.prob_age_index());
-						jobj_rect["prob_gender_index"] = Json::Value(result.prob_gender_index());
+						jobj_face["x"] = Json::Int(result.x());
+						jobj_face["y"] = Json::Int(result.y());
+						jobj_face["width"] = Json::Int(result.width());
+						jobj_face["height"] = Json::Int(result.height());
+						jobj_face["confidence"] = Json::Value(result.confidence());
 
-						jobj_rect["yaw"] = Json::Value(result.yaw());
-						jobj_rect["pitch"] = Json::Value(result.pitch());
-						jobj_rect["roll"] = Json::Value(result.roll());
+						jobj_face["attributes"]["prob_age_index"] = Json::Int(result.prob_age_index());
+						jobj_face["attributes"]["prob_gender_index"] = Json::Int(result.prob_gender_index());
+						jobj_face["attributes"]["yaw"] = Json::Value(result.yaw());
+						jobj_face["attributes"]["pitch"] = Json::Value(result.pitch());
+						jobj_face["attributes"]["roll"] = Json::Value(result.roll());
 
 						Json::Value jarray_landmark;
 
@@ -275,14 +287,14 @@ namespace glasssix
 							jobj_point["y"] = Json::Int((int)pt.value());
 							jarray_landmark.append(jobj_point);
 						}
-						jobj_rect["landmark"] = jarray_landmark;
+						jobj_face["landmark"] = jarray_landmark;
 					}
 					else
 					{
 						value["trace_success"] = Json::Value(false);
 					}
 					
-					value["facerectwithfaceinfo"] = jobj_rect;
+					value["facerectwithfaceinfo"] = jobj_face;
 					value["status"] = Json::Value("OK");
 				}
 				catch (const std::exception& ex)
@@ -547,9 +559,9 @@ namespace glasssix
 							{u8"object_id", box(instance)}
 						});
 
-					auto result = unbox<double>(plugin.execute(u8"romancia.antispoofing", param));
+					auto result = unbox<std::int32_t>(plugin.execute(u8"romancia.antispoofing", param));
 
-					if (result == 1.0)
+					if (result == 1)
 						value["is_alive"] = Json::Value(true);
 					else
 						value["is_alive"] = Json::Value(false);

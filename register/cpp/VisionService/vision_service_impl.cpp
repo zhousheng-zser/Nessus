@@ -216,8 +216,9 @@ namespace glasssix::exposing::nessus
 			auto min_size = unbox<std::int32_t>(params.get_value(u8"min_size"));
 			auto threshold = unbox<float>(params.get_value(u8"threshold"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			std::int32_t do_attributing = unbox<std::int32_t>(params.get_value(u8"do_attributing"));
 
-			return instance.get(image, channels, height, width, min_size, threshold, order);
+			return instance.detect(image, channels, height, width, min_size, threshold, order, do_attributing ? true : false);
 		}
 
 		unknown_object longinus_trace(const param_hash_map<param_string, unknown_object>& params)
@@ -283,7 +284,7 @@ namespace glasssix::exposing::nessus
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return box(instance.antispoofing(face, image, channels, height, width, order));
+			return box(instance.antispoofing(face, image, channels, height, width, order) ? 1 : 0);
 		}
 
 		void irisviel_clear(const param_hash_map<param_string, unknown_object>& params)
