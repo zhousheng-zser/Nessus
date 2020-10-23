@@ -42,7 +42,6 @@
 #include <nlohmann/json.hpp>
 #include <abi/platform_encoding.hpp>
 
-
 namespace glasssix::license
 {
 	namespace hashing = exposing::hashing;
@@ -52,7 +51,7 @@ namespace glasssix::license
 	{
 		constexpr std::int64_t deadline_seconds = 3600 * 24 * 5;
 		constexpr std::int64_t watchdog_period = 1000 * 60 * 5;
-		constexpr std::int64_t watchdog_deferred_time = watchdog_period;
+		constexpr std::int64_t watchdog_deferred_time = 30 * 1000;
 
 		constexpr crypto::meta_string license_folder{ "glasssix" };
 		constexpr crypto::meta_string license_file{ "product_keeper.dat" };
@@ -66,10 +65,10 @@ namespace glasssix::license
 				std::unique_ptr<void, decltype(&CoTaskMemFree)> buffer_scope{ buffer, &CoTaskMemFree };
 
 				return platform_encoding::win32::wide_to_narrow(buffer);
-	}
+			}
 
 			return fs::path{};
-}
+		}
 #elif defined(__ANDROID__)
 		fs::path get_app_data_directory()
 		{
@@ -83,7 +82,7 @@ namespace glasssix::license
 #endif
 
 #ifdef __ANDROID__
-		std::vector<std::uint8_t> get_machine_id()
+		std::optional<std::vector<std::uint8_t>> get_machine_id()
 		{
 			auto device_id = jni::get_android_device_id();
 			auto hash = hashing::sha3::hash_sha3_512(reinterpret_cast<const std::uint8_t*>(device_id.c_str()), device_id.size());
@@ -167,6 +166,8 @@ namespace glasssix::license
 			/// <returns>The remaining time in seconds</returns>
 			std::chrono::seconds evaluate()
 			{
+				std::scoped_lock lock{ mutex_ };
+
 				auto timestamp = bind_license_file_timestamp();
 				auto bytes = io::read_all_bytes(license_path_.string());
 
@@ -194,6 +195,8 @@ namespace glasssix::license
 
 			void request_new()
 			{
+				std::scoped_lock lock{ mutex_ };
+
 				client_.connect(config_->to_websocket_uri());
 			}
 		private:
@@ -218,6 +221,8 @@ namespace glasssix::license
 				// Implements a Websocket state machine.
 				client_.on_connect(forward_exceptions([this]
 					{
+						std::scoped_lock lock{ mutex_ };
+
 						client_.request_authorization(authorization_request_message
 							{
 								config_->license_id,
@@ -233,6 +238,8 @@ namespace glasssix::license
 							return on_authorization(false, message.status);
 						}
 
+						std::scoped_lock lock{ mutex_ };
+
 						glaucus_.load(*machine_id_, message.user_portrait, message.server_timestamp);
 						glaucus_.set_client_data_timestamp(message.server_timestamp);
 						glaucus_.save(portrait_path_.string());
@@ -242,9 +249,9 @@ namespace glasssix::license
 							throw license_error{ "Failed to create a license file." };
 						}
 
-						if (std::error_code code; (fs::last_write_time(license_path_, from_time_t<fs::file_time_type>(message.server_timestamp), code), code))
+						if (!set_file_last_write_timestamp(license_path_.string(), message.server_timestamp))
 						{
-							throw license_error{ fmt::format(FMT_STRING("Failed to update the timestamp: {}"), code.message()) };
+							throw license_error{ "Failed to update the timestamp: {}" };
 						}
 
 						on_authorization(true, message.status);
@@ -260,12 +267,11 @@ namespace glasssix::license
 			{
 				glaucus_.load(portrait_path_.string(), *machine_id_);
 
-				std::error_code code;
-				auto timestamp = to_time_t(fs::last_write_time(license_path_, code));
+				auto timestamp = get_file_last_write_timestamp(license_path_.string());
 
-				if (code)
+				if (!timestamp)
 				{
-					throw license_error{ fmt::format(FMT_STRING("Failed to get the timestamp: {}"), code.message()) };
+					throw license_error{ "Failed to get the timestamp." };
 				}
 
 				auto bytes = io::read_all_bytes(license_path_.string());
@@ -276,9 +282,9 @@ namespace glasssix::license
 				}
 
 				// Sets the timestamp for encryption and decryption.
-				glaucus_.set_client_data_timestamp(timestamp);
+				glaucus_.set_client_data_timestamp(*timestamp);
 
-				return timestamp;
+				return *timestamp;
 			}
 
 			void update_timestamp(const license_info& info)
@@ -294,12 +300,13 @@ namespace glasssix::license
 					throw license_error{ "Failed to update the license information." };
 				}
 
-				if (std::error_code code; (fs::last_write_time(license_path_, from_time_t<fs::file_time_type>(timestamp), code), code))
+				if (!set_file_last_write_timestamp(license_path_.string(), timestamp))
 				{
-					throw license_error{ fmt::format(FMT_STRING("Failed to update the license timestamp: {}"), code.message()) };
+					throw license_error{ "Failed to update the license timestamp." };
 				}
 			}
 
+			std::mutex mutex_;
 			fs::path license_path_;
 			fs::path portrait_path_;
 			crypto::glaucus glaucus_;
@@ -308,7 +315,6 @@ namespace glasssix::license
 			std::optional<std::vector<std::uint8_t>> machine_id_;
 		};
 
-		std::mutex mutex_license;
 		interruptable_timer watchdog_timer;
 		std::unique_ptr<license> global_license_;
 		std::shared_ptr<std::thread> watchdog_initialization_thread;
@@ -330,7 +336,7 @@ namespace glasssix::license
 							{
 								if (!global_license_)
 								{
-									std::cout << "The license has not been initialized correctly and the program will exit immediately." << std::endl;
+									LOG_ND(ERROR) << "The license has not been initialized correctly and the program will exit immediately." << std::endl;
 									std::quick_exit(0);
 								}
 
@@ -344,7 +350,7 @@ namespace glasssix::license
 
 										if (!valid)
 										{
-											std::cout << fmt::format(FMT_STRING("License evaluation failure: {}"), message) << std::endl;
+											LOG_ND(ERROR) << fmt::format(FMT_STRING("License evaluation failure: {}"), message) << std::endl;
 											std::quick_exit(0);
 										}
 									});
@@ -386,7 +392,7 @@ EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key)
 				}
 				catch (const std::exception& ex)
 				{
-					std::cout << fmt::format(FMT_STRING("Failed to initialize the license system: {}"), ex.what()) << std::endl;
+					LOG_ND(ERROR) << fmt::format(FMT_STRING("Failed to initialize the license system: {}"), ex.what()) << std::endl;
 					std::quick_exit(0);
 				}
 			});
@@ -402,13 +408,9 @@ EXPORT_NESSUS_LICENSE void evaluate_license(evaluate_license_callback_type callb
 
 	try
 	{
-		std::int64_t remaining_seconds = []
-		{
-			std::scoped_lock lock{ mutex_license };
+		watchdog_initialization_thread.reset();
 
-			return (watchdog_initialization_thread.reset(), global_license_->evaluate().count());
-		}();
-
+		std::int64_t remaining_seconds = global_license_->evaluate().count();
 		std::int64_t seconds = remaining_seconds % 60;
 		std::int64_t minutes = remaining_seconds / 60 % 60;
 		std::int64_t hours = remaining_seconds / 3600 % 24;
@@ -434,8 +436,6 @@ EXPORT_NESSUS_LICENSE void request_license_async(request_license_async_callback_
 		watchdog_initialization_thread.reset();
 
 		auto wrapper = std::make_shared<token_wrapper>();
-		std::scoped_lock lock{ mutex_license };
-
 		wrapper->token = global_license_->on_authorization.add_listener_auto_removal([=, wrapper = wrapper](bool success, std::string_view message) { callback(context, success, message.data()); });
 		global_license_->request_new();
 	}
