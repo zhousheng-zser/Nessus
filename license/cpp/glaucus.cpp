@@ -4,7 +4,6 @@
 #include "aes_provider.hpp"
 #include "crypto_error.hpp"
 #include "io.hpp"
-#include "number_utils.hpp"
 
 #include <array>
 #include <random>
@@ -14,7 +13,6 @@
 #include <stdexcept>
 #include <algorithm>
 #include <type_traits>
-#include <iostream>
 
 #include <abi/sha3.hpp>
 #include <abi/meta.hpp>
@@ -29,9 +27,9 @@ namespace glasssix::crypto
 
 	namespace
 	{
-		constexpr std::time_t minutes_of_day = 1440;
 		constexpr std::size_t user_portrait_size = 512;
 		constexpr std::size_t sha3_512_hash_size = hashing::sha3::details::hash_context<hashing::sha3::sha3_type::sha3_512>::final_hash_size;
+		constexpr meta_string factor_salt{ "Cowards die many times before their deaths." };
 		constexpr meta_string client_data_salt{ "Don't part with your illusions when they are gone you may still exist, but you have ceased to live." };
 		constexpr meta_string user_portrait_salt{ "The reasonable man adapts himself to the world; the unreasonable one persists in trying to adapt the world to himself." };
 
@@ -101,12 +99,36 @@ namespace glasssix::crypto
 		}
 
 		/// <summary>
+		/// Converts a SHA3-512 hash value to a uint64_t.
+		/// </summary>
+		/// <param name="hash">The hash</param>
+		/// <returns>The hash</returns>
+		std::uint64_t sha3_512_hash_to_uint64_t(const std::array<std::uint8_t, sha3_512_hash_size>& hash)
+		{
+			std::uint64_t result = 0;
+			auto helper = [](auto&& hash, std::size_t index)
+			{
+				auto item = meta::apply_index_sequence<sizeof(std::uint64_t)>([&](auto... sub_indexes)
+					{
+						return std::array{ std::forward<decltype(hash)>(hash)[index * sizeof(std::uint64_t) + sub_indexes]... };
+					});
+
+				return meta::make_number<std::uint64_t>(item);
+			};
+
+			return meta::apply_index_sequence<sha3_512_hash_size / sizeof(std::uint64_t)>([&](auto... indexes)
+				{
+					return (helper(hash, indexes) ^ ...);
+				});
+		}
+
+		/// <summary>
 		/// Gets obfuscated factors.
 		/// </summary>
 		/// <param name="machine_id">The machine ID</param>
 		/// <param name="timestamp">The timestamp</param>
 		/// <returns>The result</returns>
-		auto get_obfuscated_factors(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
+		std::vector<std::uint64_t> get_obfuscated_factors(exposing::param_span<const std::uint8_t> machine_id, std::time_t timestamp)
 		{
 			auto origin_timestamp = meta::to_array(static_cast<std::uint64_t>(timestamp));
 			auto reverse_timestamp = meta::to_array(static_cast<std::uint64_t>(timestamp), false);
@@ -122,29 +144,16 @@ namespace glasssix::crypto
 				reverse_machine_id[i] ^= machine_id.data()[i];
 			}
 
+			auto salt_hash = sha3_512_hash_to_uint64_t(hashing::sha3::hash_sha3_512(factor_salt.decrypt_as_bytes()));
+			std::uint64_t timestamp_hash = sha3_512_hash_to_uint64_t(hashing::sha3::hash_sha3_512(origin_timestamp));
+			std::uint64_t machine_id_hash = sha3_512_hash_to_uint64_t(hashing::sha3::hash_sha3_512(reverse_machine_id.data(), reverse_machine_id.size()));
+			std::uint64_t original_timestamp_hash = sha3_512_hash_to_uint64_t(hashing::sha3::hash_sha3_512(meta::to_array(static_cast<std::uint64_t>(timestamp))));
+
 			// A helper function to create factors.
-			auto factor_generator = [&](std::size_t number)
+			auto factor_generator = [&](std::uint64_t number)
 			{
-				return meta::apply_index_sequence<sha3_512_hash_size / sizeof(std::uint64_t)>([&](auto... indexes)
-					{
-						auto seed = static_cast<int>(timestamp % minutes_of_day);
-						auto timestamp_hash = hashing::sha3::hash_sha3_512(origin_timestamp);
-						auto number_hash = hashing::sha3::hash_sha3_512(meta::to_array(number));
-						auto machine_id_hash = hashing::sha3::hash_sha3_512(reverse_machine_id.data(), reverse_machine_id.size());
-						auto helper = [&](auto&& hash, std::size_t index)
-						{
-							auto item = meta::apply_index_sequence<sizeof(std::uint64_t)>([&](auto... sub_indexes)
-								{
-									return std::array{ std::forward<decltype(hash)>(hash)[index * sizeof(std::uint64_t) + sub_indexes]... };
-								});
-
-							return meta::make_number<std::uint64_t>(item);
-						};
-
-						auto result = (meta::rotl(utils::hash_all(helper(number_hash, indexes), helper(timestamp_hash, indexes), helper(machine_id_hash, indexes)), seed) ^ ...);
-
-						return result;
-					});
+				return meta::rotl(original_timestamp_hash ^ timestamp_hash ^ machine_id_hash ^ salt_hash ^
+					sha3_512_hash_to_uint64_t(hashing::sha3::hash_sha3_512(meta::to_array(number))), static_cast<int>(number));
 			};
 
 			// Finalizes the result.
@@ -162,7 +171,7 @@ namespace glasssix::crypto
 	class glaucus::impl
 	{
 	public:
-		impl() : engine_ { std::random_device{}() }
+		impl() : engine_{ std::random_device{}() }
 		{
 		}
 
@@ -187,11 +196,11 @@ namespace glasssix::crypto
 				throw crypto_error{ "The user portrait file does not exist." };
 			}
 
-			auto last_write_time = to_time_t(fs::last_write_time(path, code));
+			auto last_write_time = get_file_last_write_timestamp(path);
 
-			if (code)
+			if (!last_write_time)
 			{
-				throw crypto_error{ fmt::format(FMT_STRING("Failed to get the timestamp: {}"), code.message()) };
+				throw crypto_error{ "Failed to get the timestamp." };
 			}
 
 			auto buffer = io::read_all_bytes(path);
@@ -211,7 +220,7 @@ namespace glasssix::crypto
 			// Initializes cryptography.
 			std::reverse(buffer->begin(), buffer->end());
 			cipher_user_portrait_ = std::move(*buffer);
-			init_user_portrait_cryptography(last_write_time);
+			init_user_portrait_cryptography(*last_write_time);
 		}
 
 		void save(std::string_view path)
@@ -228,7 +237,7 @@ namespace glasssix::crypto
 				throw crypto_error{ "Failed to create the user portrait file." };
 			}
 
-			if (std::error_code code; (fs::last_write_time(std::string{ path }, from_time_t<fs::file_time_type>(timestamp), code), code))
+			if (!set_file_last_write_timestamp(path, timestamp))
 			{
 				throw crypto_error{ "Failed to update the timestamp." };
 			}
@@ -241,7 +250,7 @@ namespace glasssix::crypto
 
 		void set_client_data_timestamp(std::time_t timestamp)
 		{
-			client_data_encrypter_.set_iv(meta::to_array(timestamp));
+			client_data_encrypter_.set_iv(meta::to_array(static_cast<std::uint64_t>(timestamp)));
 			init_client_data_cryptography(timestamp);
 		}
 
@@ -259,7 +268,6 @@ namespace glasssix::crypto
 			set_machine_id(machine_id);
 			init_user_portrait_cryptography(timestamp);
 			cipher_user_portrait_ = user_portrait_encrypter_.encrypt(buffer);
-			init_client_data_cryptography(timestamp);
 			set_client_data_timestamp(timestamp);
 		}
 
@@ -280,21 +288,21 @@ namespace glasssix::crypto
 	private:
 		void init_user_portrait_cryptography(std::time_t timestamp)
 		{
-			std::vector<std::uint8_t> buffer;
 			auto factors = get_obfuscated_factors(machine_id_, timestamp);
 			auto salty_buffer = make_salty_byte_buffer(factors, user_portrait_salt);
 
-			user_portrait_encrypter_.set_iv(meta::to_array(timestamp));
+			user_portrait_encrypter_.set_iv(meta::to_array(static_cast<std::uint64_t>(timestamp)));
 			user_portrait_encrypter_.set_key(salty_buffer);
 		}
 
 		void init_client_data_cryptography(std::time_t timestamp)
 		{
+			std::size_t index = 0;
 			auto factors = get_obfuscated_factors(machine_id_, timestamp);
 			auto real_user_portrait = make_user_portrait(user_portrait_encrypter_.decrypt(cipher_user_portrait_));
 			std::vector<std::uint64_t> buffer(real_user_portrait.size());
 
-			std::transform(real_user_portrait.begin(), real_user_portrait.end(), buffer.begin(), [&, index = std::size_t{}](std::uint64_t inner) mutable { return utils::hash_all(inner, factors[index++]); });
+			std::transform(real_user_portrait.begin(), real_user_portrait.end(), buffer.begin(), [&](std::uint64_t inner) { return inner ^ factors[index++]; });
 			client_data_encrypter_.set_key(make_salty_byte_buffer(buffer, client_data_salt));
 		}
 

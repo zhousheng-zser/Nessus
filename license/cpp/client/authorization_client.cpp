@@ -84,8 +84,8 @@ namespace glasssix::license
 			}
 		{
 			client_.init_asio(&io_context_.get());
-			client_.set_access_channels(websocketpp::log::alevel::all);
-			client_.clear_access_channels(websocketpp::log::alevel::frame_payload);
+			client_.clear_error_channels(websocketpp::log::elevel::all);
+			client_.clear_access_channels(websocketpp::log::alevel::all);
 			client_.set_message_handler(std::bind(&impl::on_message, this, std::placeholders::_1, std::placeholders::_2));
 			client_.set_open_handler([this](const websocketpp::connection_hdl& handle)
 				{
@@ -185,7 +185,7 @@ namespace glasssix::license
 			}
 			catch (const std::exception& ex)
 			{
-				LOG(ERROR) << ex.what();
+				LOG_ND(ERROR) << ex.what();
 			}
 		}
 

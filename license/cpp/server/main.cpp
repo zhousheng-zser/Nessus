@@ -5,6 +5,9 @@
 #include "license_info.hpp"
 #include "license_database.hpp"
 
+#include "aes_provider.hpp"
+#include "number_utils.hpp"
+
 #include <cmath>
 #include <chrono>
 #include <cstdint>
@@ -33,6 +36,28 @@ namespace
 
 		glaucus.generate(message.machine_id, timestamp);
 
+		auto x = glaucus.forward(std::vector<std::uint8_t>{1, 2, 3});
+
+		std::cout << "=====" << std::endl;
+
+		std::cout << "User P:" << glasssix::buffer_to_hex_string(glasssix::exposing::hashing::sha3::hash_sha3_224(glaucus.user_portrait().data(), glaucus.user_portrait().size())) << std::endl;
+		std::cout << "Time:" << timestamp << std::endl;
+		std::cout << "License:" << glasssix::buffer_to_hex_string(glasssix::exposing::hashing::sha3::hash_sha3_224(glaucus.forward(license).data(), glaucus.forward(license).size())) << std::endl;
+
+		glasssix::crypto::aes_provider p;
+
+		p.set_iv(std::vector<std::uint8_t>{1, 2, 3});
+		p.set_key(std::vector<std::uint8_t>{1, 2, 3, 4, 5});
+		auto pp  = p.decrypt(p.encrypt(std::vector<std::uint8_t>{100}));
+
+		std::cout << "ENCRYPT(100):" << glasssix::buffer_to_hex_string(glasssix::exposing::hashing::sha3::hash_sha3_224(pp.data(), pp.size())) << std::endl;
+
+
+
+		for (auto v : x) std::cout << (int)v;
+		std::cout << std::endl;
+		std::cout << "=====" << std::endl;
+
 		return authorization_response_message{ "OK", glaucus.forward(license), glaucus.user_portrait(), timestamp };
 	}
 }
@@ -47,7 +72,7 @@ int main()
 			{
 				thread_local license_database database{ "host=127.0.0.1 port=5432 user=postgres password=Glasssix+1S dbname=postgres connect_timeout=10" };
 
-				std::cout << fmt::format(FMT_STRING("Client [License ID: {}][Machine ID: {}] is requesting a new license."), message.product_id, glasssix::buffer_to_hex_string(message.machine_id)) << std::endl;
+				LOG_ND(INFO) << fmt::format(FMT_STRING("Client [License ID: {}][Machine ID: {}] is requesting a new license."), message.product_id, glasssix::buffer_to_hex_string(message.machine_id)) << std::endl;
 
 				// Checks the client timestamp.
 				if (std::abs(message.client_timestamp - glasssix::get_local_timestamp()) >= permissible_error)
@@ -72,7 +97,7 @@ int main()
 					return authorization_response_message{ "The count of the authorized devices has exceeded the limit of the license." };
 				}
 				
-				std::cout << fmt::format(FMT_STRING("License information [ID: {}][Organization: {}]"), exposing::to_string(license->id), license->organization) << std::endl;
+				LOG_ND(INFO) << fmt::format(FMT_STRING("License information [ID: {}][Organization: {}]"), exposing::to_string(license->id), license->organization) << std::endl;
 
 				// Increases the authorized device count if it is a new deivce.
 				if (database.get_exact_authorized_devices(license->id, message.machine_id).empty())
