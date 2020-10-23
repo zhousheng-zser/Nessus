@@ -1,4 +1,3 @@
 {
-	"plugin_directory" : ".",
-	"plugin_list" : ["libplugin_register.so", "libvision_service.so", "libgaius.so", "libcassius.so", "liblonginus.so", "libromancia.so", "libirisviel.so"]
+	"plugin_list" : ["plugin_register", "vision_service", "gaius", "cassius", "longinus", "romancia", "irisviel"]
 }
