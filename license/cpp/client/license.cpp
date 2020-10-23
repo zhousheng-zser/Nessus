@@ -336,7 +336,7 @@ namespace glasssix::license
 							{
 								if (!global_license_)
 								{
-									LOG_ND(ERROR) << "The license has not been initialized correctly and the program will exit immediately." << std::endl;
+									LOG_ND(ERROR) << "The license has not been initialized correctly and the program will exit immediately.";
 									std::quick_exit(0);
 								}
 
@@ -350,9 +350,14 @@ namespace glasssix::license
 
 										if (!valid)
 										{
-											LOG_ND(ERROR) << fmt::format(FMT_STRING("License evaluation failure: {}"), message) << std::endl;
+											LOG_ND(ERROR) << fmt::format(FMT_STRING("License evaluation failure: {}"), message);
 											std::quick_exit(0);
 										}
+									});
+
+								request_license_async([](void* context, bool success, const char* message)
+									{
+										LOG_ND(INFO) << message;
 									});
 							});
 					}
@@ -392,7 +397,7 @@ EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key)
 				}
 				catch (const std::exception& ex)
 				{
-					LOG_ND(ERROR) << fmt::format(FMT_STRING("Failed to initialize the license system: {}"), ex.what()) << std::endl;
+					LOG_ND(ERROR) << fmt::format(FMT_STRING("Failed to initialize the license system: {}"), ex.what());
 					std::quick_exit(0);
 				}
 			});
