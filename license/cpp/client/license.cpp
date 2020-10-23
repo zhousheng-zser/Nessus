@@ -441,7 +441,7 @@ EXPORT_NESSUS_LICENSE void request_license_async(request_license_async_callback_
 		watchdog_initialization_thread.reset();
 
 		auto wrapper = std::make_shared<token_wrapper>();
-		wrapper->token = global_license_->on_authorization.add_listener_auto_removal([=, wrapper = wrapper](bool success, std::string_view message) mutable { wrapper.reset(); callback(context, success, message.data()); });
+		wrapper->token = global_license_->on_authorization.add_listener_auto_removal([=, wrapper = wrapper](bool success, std::string_view message) mutable { wrapper->token.reset(); callback(context, success, message.data()); });
 		global_license_->request_new();
 	}
 }
