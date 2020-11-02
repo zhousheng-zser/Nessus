@@ -24,13 +24,13 @@ extern "C" {
 		instance = nullptr;
 	}
 
-	PARSER_C_EXPORT char* parser_init_plugin(void* instance, const char* config_file_path, size_t len, const char* license_key)
+	PARSER_C_EXPORT char* parser_init_plugin(void* instance, const char* config_file_path, const char* license_key)
 	{
 		init_license_system(license_key);
 
 		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
 
-		glasssix::exposing::param_string config_file_path_(config_file_path, len);
+		glasssix::exposing::param_string config_file_path_(config_file_path);
 		auto status_ = parser_object.init_plugin(config_file_path_);
 		std::size_t size = status_.size() + 1;
 		auto status = glasssix::memory::heap_alloc_elements<char>(size);
@@ -41,12 +41,12 @@ extern "C" {
 		return status;
 	}
 
-	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, size_t topic_len, const char* jstr, size_t jstr_len, char* data, size_t data_len)
+	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, const char* jstr, char* data, size_t data_len)
 	{
 		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
 
-		glasssix::exposing::param_string protocol_(topic, topic_len);
-		glasssix::exposing::param_string jstr_(jstr, jstr_len);
+		glasssix::exposing::param_string protocol_(topic);
+		glasssix::exposing::param_string jstr_(jstr);
 		glasssix::exposing::param_span<std::uint8_t> data_(reinterpret_cast<std::uint8_t*>(data), data_len);
 
 		glasssix::exposing::param_string result_ = parser_object.parse(protocol_, jstr_, data_);

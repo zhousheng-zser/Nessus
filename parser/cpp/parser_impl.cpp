@@ -1,11 +1,13 @@
 #include "parser_impl.hpp"
-#include "simdjson.h"
-#include "json.h"
 #include "plugin_interface.hpp"
 #include "vision_service.hpp"
 #include "plugin_manager.hpp"
 
+#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
 #include "message_protocol.hpp"
+#else
+#include "message_protocol_jsoncpp.hpp"
+#endif
 
 #include <filesystem.hpp>
 #include <os_context.hpp>
@@ -71,39 +73,43 @@ namespace glasssix::exposing::nessus
 	class parser_impl::impl
 	{
 	public:
-
-		param_string parse(const param_string& protocol, const param_string& jsonstr, param_span<std::uint8_t> data)
+#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
+		param_string parse(const param_string& topic, const param_string& jstr_param, param_span<std::uint8_t> data)
 		{
 			Json::Value value;
-			std::string protocol_str(protocol.data(), protocol.size());
-			std::transform(protocol_str.begin(), protocol_str.end(), protocol_str.begin(), ::tolower);
-			std::string_view jsonstr_view(jsonstr.data(), jsonstr.size());
+			std::string topic_str(topic.data(), topic.size());
+			std::transform(topic_str.begin(), topic_str.end(), topic_str.begin(), ::tolower);
+			std::string_view jstr_param_view(jstr_param.data(), jstr_param.size());
 			if (!ready)
 			{
-				value["status"] = Json::Value("parser init plugin exception");
+				value["status"]["message"] = Json::Value("parser hasn't been inited plugin");
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_OPERATION));
 				return to_param_string(writer.write(value));
 			}
 
 			simdjson::dom::element root;
 			try
 			{
-				root = parser_.parse(jsonstr_view);
+				root = parser_.parse(jstr_param_view);
 			}
-			catch (const std::exception&)
+			catch (const std::exception& ex)
 			{
-				value["status"] = Json::Value("parse json error");
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
 				return to_param_string(writer.write(value));
 			}
 
-			std::vector<std::string> str_vec = split(protocol_str, ".");
+			std::vector<std::string> str_vec = split(topic_str, ".");
 			if ((str_vec[0] == "fusion" && str_vec.size() != 5))
 			{
-				value["status"] = Json::Value("protocol illegal");
+				value["status"]["message"] = Json::Value("topic illegal");
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
 				return to_param_string(writer.write(value));
 			}
 			else if ((str_vec[0] != "fusion" && str_vec.size() != 2))
 			{
-				value["status"] = Json::Value("protocol illegal");
+				value["status"] = Json::Value("topic illegal");
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
 				return to_param_string(writer.write(value));
 			}
 
@@ -116,20 +122,22 @@ namespace glasssix::exposing::nessus
 					guids.push_back(guid(std::string(root["romancia_instance_guid"].get<std::string_view>().value())));
 					guids.push_back(guid(std::string(root["gaius_instance_guid"].get<std::string_view>().value())));
 				}
-				catch (const std::exception&)
+				catch (const simdjson::simdjson_error& ex)
 				{
-					value["status"] = Json::Value("Lack of \"romancia_instance_guid\" or \"gaius_instance_guid\"");
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
 					return to_param_string(writer.write(value));
 				}
 
 				std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)> func;
 				try
 				{
-					func = fusion_protocol_map.at(protocol_str);
+					func = fusion_protocol_map.at(topic_str);
 				}
 				catch (const std::exception&)
 				{
-					value["status"] = Json::Value("Protocol \"" + protocol_str+ "\" not register.");
+					value["status"]["message"] = Json::Value("Topic \"" + topic_str+ "\" not registed.");
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
 					return to_param_string(writer.write(value));
 				}
 
@@ -146,17 +154,18 @@ namespace glasssix::exposing::nessus
 					std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)> func;
 					try
 					{
-						func = basic_protocol_map.at(protocol_str);
+						func = basic_protocol_map.at(topic_str);
 					}
 					catch (const std::exception&)
 					{
-						value["status"] = Json::Value("Function of the protocol not register");
+						value["status"]["message"] = Json::Value("Function of the topic not registed");
+						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
 						return to_param_string(writer.write(value));
 					}
 
 					value = func(plugin, root, data, instance);
 
-					if (value["status"] == "OK")
+					if (value["status"]["code"].asInt() == 0)
 					{
 						auto array = to_char_array(instance);
 						value["instance_guid"] = Json::Value(std::string(array.begin(), array.end()));
@@ -169,20 +178,22 @@ namespace glasssix::exposing::nessus
 					{
 						instance_guid = std::string(root["instance_guid"].get<std::string_view>().value());
 					}
-					catch (const std::exception&)
+					catch (const simdjson::simdjson_error& ex)
 					{
-						value["status"] = Json::Value("Lack of \"instance_guid\"");
+						value["status"]["message"] = Json::Value(ex.what());
+						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
 						return to_param_string(writer.write(value));
 					}
 
 					std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)> func;
 					try
 					{
-						func = basic_protocol_map.at(protocol_str);
+						func = basic_protocol_map.at(topic_str);
 					}
 					catch (const std::exception&)
 					{
-						value["status"] = Json::Value("Function of the protocol not register");
+						value["status"]["message"] = Json::Value("Function of the topic not registed");
+						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
 						return to_param_string(writer.write(value));
 					}
 
@@ -193,6 +204,139 @@ namespace glasssix::exposing::nessus
 
 			return to_param_string(writer.write(value));
 		}
+#else
+		param_string parse(const param_string& topic, const param_string& jstr_param, param_span<std::uint8_t> data)
+		{
+			Json::Value value;
+			std::string topic_str(topic.data(), topic.size());
+			std::transform(topic_str.begin(), topic_str.end(), topic_str.begin(), ::tolower);
+			std::string_view jstr_param_view(jstr_param.data(), jstr_param.size());
+			if (!ready)
+			{
+				value["status"]["message"] = Json::Value("parser hasn't been inited plugin");
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_OPERATION));
+				return to_param_string(writer.write(value));
+			}
+
+			Json::Value root;
+			try
+			{
+				if(!parser_.parse(std::string(jstr_param_view), root))
+					throw parser_exception(parser_exception::parser_exception_code::JSON_EXCEPTION, "parse json failed");
+			}
+			catch (const std::exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				return to_param_string(writer.write(value));
+			}
+
+			std::vector<std::string> str_vec = split(topic_str, ".");
+			if ((str_vec[0] == "fusion" && str_vec.size() != 5))
+			{
+				value["status"]["message"] = Json::Value("topic illegal");
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
+				return to_param_string(writer.write(value));
+			}
+			else if ((str_vec[0] != "fusion" && str_vec.size() != 2))
+			{
+				value["status"] = Json::Value("topic illegal");
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
+				return to_param_string(writer.write(value));
+			}
+
+			if (str_vec[0] == "fusion")
+			{
+				std::vector<guid> guids;
+
+				try
+				{
+					guids.push_back(guid(root["romancia_instance_guid"].asString()));
+					guids.push_back(guid(root["gaius_instance_guid"].asString()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+					return to_param_string(writer.write(value));
+				}
+
+				std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)> func;
+				try
+				{
+					func = fusion_protocol_map.at(topic_str);
+				}
+				catch (const std::exception&)
+				{
+					value["status"]["message"] = Json::Value("Topic \"" + topic_str + "\" not registed.");
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
+					return to_param_string(writer.write(value));
+				}
+
+				value = func(plugin, root, data, guids);
+			}
+			else
+			{
+				std::string instance_type = str_vec[0];
+				std::string method = str_vec[1];
+
+				if (method == "new")
+				{
+					guid instance;
+					std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)> func;
+					try
+					{
+						func = basic_protocol_map.at(topic_str);
+					}
+					catch (const std::exception&)
+					{
+						value["status"]["message"] = Json::Value("Function of the topic not registed");
+						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
+						return to_param_string(writer.write(value));
+					}
+
+					value = func(plugin, root, data, instance);
+
+					if (value["status"]["code"].asInt() == 0)
+					{
+						auto array = to_char_array(instance);
+						value["instance_guid"] = Json::Value(std::string(array.begin(), array.end()));
+					}
+				}
+				else
+				{
+					std::string instance_guid = "";
+					try
+					{
+						instance_guid = root["instance_guid"].asString();
+					}
+					catch (const Json::Exception& ex)
+					{
+						value["status"]["message"] = Json::Value(ex.what());
+						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+						return to_param_string(writer.write(value));
+					}
+
+					std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)> func;
+					try
+					{
+						func = basic_protocol_map.at(topic_str);
+					}
+					catch (const std::exception&)
+					{
+						value["status"]["message"] = Json::Value("Function of the topic not registed");
+						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
+						return to_param_string(writer.write(value));
+					}
+
+					guid instance(instance_guid);
+					value = func(plugin, root, data, instance);
+				}
+			}
+
+			return to_param_string(writer.write(value));
+		}
+#endif
 
 		param_string query_all_instance()
 		{
@@ -218,11 +362,12 @@ namespace glasssix::exposing::nessus
 			return to_param_string(writer.write(value));
 		}
 
+#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
 		param_string init_plugin(const param_string& config_file_path)
 		{
 			static std::once_flag flag;
 
-			std::string status = "{\"status\":\"Function 'init_plugin' has beed called and could be called one time\"}";
+			std::string status = "{\"status\":{\"message\":\"Function 'init_plugin' has beed called and could be called one time\",\"code\":-7}}";
 			std::call_once(flag, [&]
 				{
 					std::ifstream f_config{ std::string(config_file_path.begin(), config_file_path.end()) };
@@ -241,7 +386,7 @@ namespace glasssix::exposing::nessus
 							if (!ret)
 							{
 								ready = false;
-								status = "{\"status\":\"load module '" + std::string(lib_item.get<std::string_view>().value()) + "' failed\"}";
+								status = "{\"status\":{\"message\":\"load module '" + std::string(lib_item.get<std::string_view>().value()) + "' failed\",\"code\":-1}}";
 								return;
 							}
 						}
@@ -253,40 +398,110 @@ namespace glasssix::exposing::nessus
 						if (!plugin)
 						{
 							ready = false;
-							status = "{\"status\":\"Get a nullptr 'plugin_interface' instance\"}";
+							status = "{\"status\":{\"message\":\"Get a nullptr 'plugin_interface' instance\",\"code\":-1}}";
 							return;
 						}
 
 						ready = true;
-						status = "{\"status\":\"OK\"}";
+						status = "{\"status\":{\"message\":\"OK\",\"code\":0}}";
 					}
 					catch (const std::exception& ex)
 					{
 						ready = false;
-						status = std::string("{\"status\":\"") + ex.what() + std::string("\"}");
+						status = std::string("{\"status\":{\"message\":\"") + ex.what() + std::string("\",\"code\":-99}}");
 					}
 					catch (const abi_error& ex)
 					{
 						ready = false;
-						status = std::string("{\"status\":\"") + ex.what_to_narrow() + std::string("\"}");
+						status = std::string("{\"status\":{\"message\":\"") + ex.what_to_narrow() + std::string("\",\"code\":") + std::to_string(ex.result()) + "}}";
 					}
 				});
 
 			return to_param_string(status);
 		}
+#else
+		param_string init_plugin(const param_string& config_file_path)
+		{
+			static std::once_flag flag;
+
+			std::string status = "{\"status\":{\"message\":\"Function 'init_plugin' has beed called and could be called one time\",\"code\":-7}}";
+			std::call_once(flag, [&]
+				{
+					parser_ = Json::Reader(Json::Features::strictMode());
+					std::ifstream f_config{ std::string(config_file_path.begin(), config_file_path.end()) };
+					std::string buffer(std::istreambuf_iterator<char>{ f_config }, std::istreambuf_iterator<char>{});
+
+					try
+					{
+						Json::Reader reader_temp(Json::Features::strictMode());
+						Json::Value config;
+						if (!reader_temp.parse(buffer, config))
+							throw parser_exception(parser_exception::parser_exception_code::JSON_EXCEPTION, "parse json failed");
+
+						for (auto lib_item : config["plugin_list"])
+						{
+							bool ret = get_component_loader().add_module_by_name(to_param_string(std::string_view(lib_item.asString())));
+							if (!ret)
+							{
+								ready = false;
+								status = "{\"status\":{\"message\":\"load module '" + lib_item.asString() + "' failed\",\"code\":-1}}";
+								return;
+							}
+						}
+
+						auto manager = exposing::make_exported_interface<plugin_manager>();
+
+						manager.load_from_existing_libraries();
+						plugin = manager.lookup(u8"Glasssix Vision Service");
+						if (!plugin)
+						{
+							ready = false;
+							status = "{\"status\":{\"message\":\"Get a nullptr 'plugin_interface' instance\",\"code\":-1}}";
+							return;
+						}
+
+						ready = true;
+						status = "{\"status\":{\"message\":\"OK\",\"code\":0}}";
+					}
+					catch (const Json::Exception& ex)
+					{
+						ready = false;
+						status = std::string("{\"status\":{\"message\":\"") + ex.what() + std::string("\",\"code\":-98}}");
+					}
+					catch (const std::exception& ex)
+					{
+						ready = false;
+						status = std::string("{\"status\":{\"message\":\"") + ex.what() + std::string("\",\"code\":-99}}");
+					}
+				});
+
+			return to_param_string(status);
+		}
+#endif
 
 	private:
+#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
 		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> basic_protocol_map;
 		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> fusion_protocol_map;
 		simdjson::dom::parser parser_;
+#else
+		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)>> basic_protocol_map;
+		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> fusion_protocol_map;
+		Json::Reader parser_;
+#endif
 
 		Json::FastWriter writer;
 		static plugin_interface plugin;
 		static bool ready;
 	};
 
+#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> parser_impl::impl::basic_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> protocol_map;
+#else
+	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)>> parser_impl::impl::basic_protocol_map = [] {
+		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)>> protocol_map;
+#endif
 		protocol_map["longinus.new"] = &Longinus_new_json;
 		protocol_map["longinus.delete"] = &Longinus_delete_json;
 		protocol_map["longinus.detect"] = &Longinus_detect_json;
@@ -318,11 +533,18 @@ namespace glasssix::exposing::nessus
 		protocol_map["irisviel.update_records"] = &Irisviel_update_records_json;
 		return protocol_map;
 	}();
+
+#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> parser_impl::impl::fusion_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
+#else
+	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> parser_impl::impl::fusion_protocol_map = [] {
+		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
+#endif
 		protocol_map["fusion.romancia.alignface.gaius.forward"] = &Fusion_Romancia_alignFace_Gaius_Forward_json;
 		return protocol_map;
 	}();
+
 	plugin_interface parser_impl::impl::plugin{nullptr};
 	bool parser_impl::impl::ready = false;
 
