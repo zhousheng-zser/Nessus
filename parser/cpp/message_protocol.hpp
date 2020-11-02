@@ -13,6 +13,7 @@
 #include "../../common/include/Primitives/tensor.hpp"
 #include <string>
 #include <memory>
+#include <cstdint>
 #include <unordered_map>
 
 namespace glasssix
@@ -1205,14 +1206,27 @@ namespace glasssix
 					auto jarray_feature = root["feature"].get<simdjson::dom::array>().value();
 					for (auto i : jarray_feature)
 						feature.push_back(static_cast<float>(i.get<double>().value()));
-					int top = static_cast<int>(root["top"].get<int64_t>());
+
+					auto assuming_top = root["top"].get<std::int64_t>();
+					auto assuming_min_similarity = root["min_similarity"].get<double>();
+					bool has_top = assuming_top.error() == simdjson::SUCCESS;
+					bool has_min_similarity = assuming_min_similarity.error() == simdjson::SUCCESS;
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"feature", feature},
-							{u8"top", box(top)},
 							{u8"object_id", box(instance)}
 						});
+
+					if (has_top)
+					{
+						param.add_or_update(u8"top", box(static_cast<std::uint32_t>(assuming_top.value())));
+					}
+
+					if (has_min_similarity)
+					{
+						param.add_or_update(u8"min_similarity", box(static_cast<float>(assuming_min_similarity.value())));
+					}
 
 					auto result = plugin.execute(u8"irisviel.search", param).as<param_vector<irisviel::search_result>>();
 
