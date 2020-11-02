@@ -1214,14 +1214,27 @@ namespace glasssix
 					auto jarray_feature = root["feature"];
 					for (auto i : jarray_feature)
 						feature.push_back(i.asFloat());
-					int top = root["top"].asInt();
+
+					auto assuming_top = root.get("top", Json::nullValue);
+					auto assuming_min_similarity = root.get("min_simiarity", Json::nullValue);
+					bool has_top = assuming_top.isIntegral();
+					bool has_min_similarity = assuming_min_similarity.isNumeric();
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"feature", feature},
-							{u8"top", box(top)},
 							{u8"object_id", box(instance)}
 						});
+
+					if (has_top)
+					{
+						param.add_or_update(u8"top", box(static_cast<std::uint32_t>(assuming_top.asUInt())));
+					}
+
+					if (has_min_similarity)
+					{
+						param.add_or_update(u8"min_similarity", box(assuming_min_similarity.asFloat()));
+					}
 
 					auto result = plugin.execute(u8"irisviel.search", param).as<param_vector<irisviel::search_result>>();
 
