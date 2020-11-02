@@ -340,9 +340,28 @@ namespace glasssix::exposing::nessus
 		{
 			auto instance = get_instance<face_service>(params);
 			auto feature = params.get_value(u8"feature").as<param_vector<float>>();
-			auto top = unbox<std::int32_t>(params.get_value(u8"top"));
 
-			return instance.search(feature, top);
+			unknown_object assuming_top{ nullptr };
+			unknown_object assuming_min_similarity{ nullptr };
+			bool has_top = params.try_get_value(u8"top", assuming_top) && assuming_top;
+			bool has_min_similarity = params.try_get_value(u8"min_similarity", assuming_top) && assuming_min_similarity;
+			
+			if (has_top && has_min_similarity)
+			{
+				return instance.search(feature, unbox<float>(assuming_min_similarity), unbox<std::uint32_t>(assuming_top));
+			}
+
+			if (has_top)
+			{
+				return instance.search(feature, unbox<std::uint32_t>(assuming_top));
+			}
+
+			if (has_min_similarity)
+			{
+				return instance.search(feature, unbox<float>(assuming_min_similarity));
+			}
+
+			throw abi_invalid_argument{ "Missing required parameters: top or min_similarity." };
 		}
 
 		record irisviel_create_record_helper(const param_hash_map<param_string, unknown_object>& params)
@@ -444,17 +463,12 @@ namespace glasssix::exposing::nessus
 		std::unordered_map<param_string, std::function<unknown_object(const param_hash_map<param_string, unknown_object>&)>> functions_;
 	};
 
-	vision_service_impl::vision_service_impl() : impl_{ new impl }
+	vision_service_impl::vision_service_impl() : impl_{ std::make_unique<impl>() }
 	{
 	}
 
 	vision_service_impl::~vision_service_impl()
 	{
-		if (impl_)
-		{
-			delete impl_;
-			impl_ = nullptr;
-		}
 	}
 
 	param_string vision_service_impl::name() const

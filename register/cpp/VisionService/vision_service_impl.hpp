@@ -3,6 +3,8 @@
 #include "vision_service.hpp"
 #include "PluginRegister/plugin_interface.hpp"
 
+#include <memory>
+
 #include <abi/consumer.hpp>
 
 namespace glasssix::exposing::nessus
@@ -20,6 +22,6 @@ namespace glasssix::exposing::nessus
 		param_hash_map<guid, param_string> existing_instances() const;
 		unknown_object execute(const param_string& function_name, const param_hash_map<param_string, unknown_object>& params) const;
 	private:
-		impl* impl_;
+		std::unique_ptr<impl> impl_;
 	};
 }
