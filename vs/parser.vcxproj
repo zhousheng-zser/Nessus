@@ -15,6 +15,7 @@
     <ClInclude Include="..\parser\cpp\base64_x.hpp" />
     <ClInclude Include="..\parser\cpp\json.h" />
     <ClInclude Include="..\parser\cpp\message_protocol.hpp" />
+    <ClInclude Include="..\parser\cpp\message_protocol_jsoncpp.hpp" />
     <ClInclude Include="..\parser\cpp\parser.hpp" />
     <ClInclude Include="..\parser\cpp\parser_exception.hpp" />
     <ClInclude Include="..\parser\cpp\parser_impl.hpp" />

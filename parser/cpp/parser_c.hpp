@@ -41,7 +41,7 @@ extern "C" {
 	/// <param name="license_key">The license key provided by the service provider</param>
 	/// <returns>The result interpreted as JSON</returns>
 	/// <remarks>The return value must be disposed by calling praser_free function.</remarks>
-	PARSER_C_EXPORT char* parser_init_plugin(void* instance, const char* config_file_path, size_t len, const char* license_key);
+	PARSER_C_EXPORT char* parser_init_plugin(void* instance, const char* config_file_path, const char* license_key);
 
 	/// <summary>
 	/// Dispatches a protocol.
@@ -55,7 +55,7 @@ extern "C" {
 	/// <param name="data_len">The size of the optional binary data</param>
 	/// <returns>The result interpreted as JSON</returns>
 	/// <remarks>The return value must be disposed by calling praser_free function.</remarks>
-	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, size_t topic_len, const char* jstr, size_t jstr_len, char* data, size_t data_len);
+	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, const char* jstr, char* data, size_t data_len);
 
 	/// <summary>
 	/// Disposes a buffer.
