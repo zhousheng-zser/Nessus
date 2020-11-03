@@ -173,7 +173,7 @@ namespace glasssix::exposing::nessus
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::romancia, make_exported_interface<face_alignment>(models_directory + u8"/mask30x30", models_directory + u8"/antispoofing80x80", device));
+			return add_instance(package_names::romancia, make_exported_interface<face_alignment>(/*models_directory + u8"/mask30x30", */models_directory + u8"/antispoofing80x80", device));
 		}
 
 		unknown_object irisviel_new(const param_hash_map<param_string, unknown_object>& params)
@@ -271,7 +271,8 @@ namespace glasssix::exposing::nessus
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return box(instance.mask_detect(face, image, channels, height, width, order) ? 1 : 0);
+			//return box(instance.mask_detect(face, image, channels, height, width, order) ? 1 : 0);
+			return box(instance.mask_detect(face, image, channels, height, width, order));
 		}
 
 		unknown_object romancia_antispoofing(const param_hash_map<param_string, unknown_object>& params)
