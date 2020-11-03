@@ -345,7 +345,7 @@ namespace glasssix::exposing::nessus
 			unknown_object assuming_top{ nullptr };
 			unknown_object assuming_min_similarity{ nullptr };
 			bool has_top = params.try_get_value(u8"top", assuming_top) && assuming_top;
-			bool has_min_similarity = params.try_get_value(u8"min_similarity", assuming_top) && assuming_min_similarity;
+			bool has_min_similarity = params.try_get_value(u8"min_similarity", assuming_min_similarity) && assuming_min_similarity;
 			
 			if (has_top && has_min_similarity)
 			{
