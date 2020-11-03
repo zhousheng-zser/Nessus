@@ -627,9 +627,11 @@ namespace glasssix
 							{u8"object_id", box(instance)}
 						});
 
-					auto result = unbox<std::int32_t>(plugin.execute(u8"romancia.mask_detect", param));
+					//auto result = unbox<std::int32_t>(plugin.execute(u8"romancia.mask_detect", param));
+					auto result = unbox<double>(plugin.execute(u8"romancia.mask_detect", param));
 
-					value["has_mask"] = Json::Value(result ? true : false);
+					//value["has_mask"] = Json::Value(result ? true : false);
+					value["mask_value"] = Json::Value(result);
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
