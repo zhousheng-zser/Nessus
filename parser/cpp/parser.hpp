@@ -18,7 +18,7 @@ namespace glasssix::exposing::impl
 
 		struct type : abi_unknown_object
 		{
-			virtual std::int32_t G6_ABI_CALL parse(abi_in_t<param_string> protocol, abi_in_t<param_string> jsonstr, abi_in_t<param_span<std::uint8_t>> data, abi_out_t<param_string> result) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL parse(abi_in_t<param_string> topic, abi_in_t<param_string> str_param, abi_in_t<param_span<std::uint8_t>> data, abi_out_t<param_string> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL query_all_instance(abi_out_t<param_string> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL support_protocol(abi_out_t<param_string> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL init_plugin(abi_in_t<param_string> config_file_path, abi_out_t<param_string> result) noexcept = 0;
@@ -28,9 +28,9 @@ namespace glasssix::exposing::impl
 	template<typename Derived>
 	struct interface_vtable<Derived, nessus::parser> : interface_vtable_base<Derived, nessus::parser>
 	{
-		virtual std::int32_t G6_ABI_CALL parse(abi_in_t<param_string> protocol, abi_in_t<param_string> jsonstr, abi_in_t<param_span<std::uint8_t>> data, abi_out_t<param_string> result) noexcept override
+		virtual std::int32_t G6_ABI_CALL parse(abi_in_t<param_string> topic, abi_in_t<param_string> str_param, abi_in_t<param_span<std::uint8_t>> data, abi_out_t<param_string> result) noexcept override
 		{
-			return abi_safe_call([&] { *result = detach_abi(this->self().parse(create_from_abi<param_string>(protocol), create_from_abi<param_string>(jsonstr), create_from_abi<param_span<std::uint8_t>>(data))); });
+			return abi_safe_call([&] { *result = detach_abi(this->self().parse(create_from_abi<param_string>(topic), create_from_abi<param_string>(str_param), create_from_abi<param_span<std::uint8_t>>(data))); });
 		}
 
 		virtual std::int32_t G6_ABI_CALL query_all_instance(abi_out_t<param_string> result) noexcept override
@@ -54,10 +54,10 @@ namespace glasssix::exposing::impl
 		template<typename Derived>
 		struct type : enable_self_abi_awareness<Derived, nessus::parser>
 		{
-			param_string parse(const param_string& protocol, const param_string& jsonstr, param_span<std::uint8_t> data) const
+			param_string parse(const param_string& topic, const param_string& str_param, param_span<std::uint8_t> data) const
 			{
 				param_string result{ nullptr };
-				return (check_abi_result(this->self_abi().parse(get_abi(protocol), get_abi(jsonstr), get_abi(data), put_abi(result))), result);
+				return (check_abi_result(this->self_abi().parse(get_abi(topic), get_abi(str_param), get_abi(data), put_abi(result))), result);
 			}
 
 			param_string query_all_instance() const
