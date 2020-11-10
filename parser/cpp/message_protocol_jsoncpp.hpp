@@ -33,15 +33,32 @@ namespace glasssix
 				switch (src_format)
 				{
 				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NCHW:
+				{
 					if (width * height * 3 != src.count())
-						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "width * height * 3 != src.count()");
+						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NCHW, width * height * 3 != src.count()");
 					dst = src;
 					break;
+				}
 				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC:
-					if (width * height * 3 != src.count())
-						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "width * height * 3 != src.count()");
-					dst = src;
+				{
+					int step = src.count() / height;
+
+					if (step * height != src.count())
+						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, step * height != src.count()");
+					
+					if(step == width * 3)
+						dst = src;
+					else
+					{
+						dst = memory::tensor<std::uint8_t>(std::vector<int>{1, 3, height, width}, src.device(), src.order(), src.allocator());
+						std::uint8_t* dst_ptr = dst.mutable_cpu_data();
+						const std::uint8_t* src_ptr = src.cpu_data();
+						for (size_t i = 0; i < height; i++)
+							std::copy(src_ptr + i * step, src_ptr + i * step + width * 3, dst_ptr);
+					}
+
 					break;
+				}
 				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_NV21:
 				{
 					if (src.count() != (width * height * 3 >> 1))
@@ -53,8 +70,9 @@ namespace glasssix
 					const uint8_t* uv = src.cpu_data() + aligned_src_width * height;
 					if (libyuv::NV21ToRGB24(y, width, uv, aligned_src_width, dst.mutable_cpu_data(), width * 3, width, height))
 						throw parser_exception(parser_exception::parser_exception_code::INTERNAL_FUNCTION_FAILURE, "NV21ToRGB24 failed.");
+
+					break;
 				}
-				break;
 				default:
 					throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Unsupported image format.");
 					break;
@@ -690,13 +708,9 @@ namespace glasssix
 							{u8"object_id", box(instance)}
 						});
 
-					auto result = unbox<std::int32_t>(plugin.execute(u8"romancia.antispoofing", param));
+					auto result = unbox<bool>(plugin.execute(u8"romancia.antispoofing", param));
 
-					if (result == 1)
-						value["is_alive"] = Json::Value(true);
-					else
-						value["is_alive"] = Json::Value(false);
-
+					value["is_alive"] = Json::Value(result);
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
@@ -1754,7 +1768,7 @@ namespace glasssix
 					for (size_t i = 0; i < romancia_result.size(); i++)
 					{
 						if (romancia_result[i].size() != gaius_forward_aligned_buffer_len)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "result[i].size() != gaius_forward_aligned_buffer_len");
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "romancia_result[i].size() != gaius_forward_aligned_buffer_len");
 
 						buffer.insert(buffer.end(), begin(romancia_result[i]), end(romancia_result[i]));
 					}
@@ -1776,6 +1790,111 @@ namespace glasssix
 						Json::Value jarray_feature;
 						for (size_t j = 0; j < gaius_result[i].size(); j++)
 							jarray_feature["feature"].append(gaius_result[i][j]);
+						jobj_features.append(jarray_feature);
+					}
+
+					value["features"] = jobj_features;
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Fusion_Romancia_alignFace_Cassius_Forward_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, std::vector<guid>& guids)
+			{
+				Json::Value value;
+
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+					auto jarray_rect = root["facerectwithfaceinfo_list"];
+
+					auto faces = exposing::make_param_vector<longinus::face_info>();
+					for (auto i : jarray_rect)
+					{
+						auto face = exposing::make_exported_interface<longinus::face_info>();
+						face.set_x(i["x"].asFloat());
+						face.set_y(i["y"].asFloat());
+						face.set_height(i["height"].asFloat());
+						face.set_width(i["width"].asFloat());
+
+						auto landmark_list = i["landmark"];
+						if (landmark_list.size() != 5)
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "landmark_list.size() != 5");
+						auto landmark = exposing::make_param_vector<exposing::param_pair<float, float>>();
+						for (auto j : landmark_list)
+						{
+							auto pair = exposing::make_param_pair(j["x"].asFloat(), j["y"].asFloat());
+							landmark.push_back(pair);
+						}
+						face.set_pts(landmark);
+
+						faces.push_back(face);
+					}
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+
+					auto romancia_param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"image", box(image_span)},
+							{u8"height", box(height)},
+							{u8"width", box(width)},
+							{u8"faces", faces },
+							{u8"order", box(static_cast<int>(frame.order()))},
+							{u8"object_id", box(guids[0])}
+						});
+
+					auto romancia_result = plugin.execute(u8"romancia.alignFace", romancia_param).as<param_vector<param_vector<std::uint8_t>>>();
+
+					std::vector<std::uint8_t> buffer;
+					for (size_t i = 0; i < romancia_result.size(); i++)
+					{
+						if (romancia_result[i].size() != cassius_forward_aligned_buffer_len)
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "romancia_result[i].size() != cassius_forward_aligned_buffer_len");
+
+						buffer.insert(buffer.end(), begin(romancia_result[i]), end(romancia_result[i]));
+					}
+
+					auto cassius_param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"aligned_faces", box(param_span<std::uint8_t>{buffer.data(), buffer.size()})},
+							{u8"num", box(static_cast<int>(romancia_result.size()))},
+							{u8"order", box(0)},
+							{u8"object_id", box(guids[1])}
+						});
+
+					auto cassius_result = plugin.execute(u8"cassius.Forward", cassius_param).as<param_vector<param_vector<float>>>();
+
+					Json::Value jobj_features;
+					for (size_t i = 0; i < cassius_result.size(); i++)
+					{
+						Json::Value jarray_feature;
+						for (size_t j = 0; j < cassius_result[i].size(); j++)
+							jarray_feature["feature"].append(cassius_result[i][j]);
 						jobj_features.append(jarray_feature);
 					}
 
