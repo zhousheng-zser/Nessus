@@ -130,7 +130,8 @@ namespace glasssix
 				try
 				{
 					int device = static_cast<int>(root["device"].get<int64_t>().value());
-					float nms = static_cast<float>(root["nms"].get<double>().value());
+					//float nms = static_cast<float>(root["nms"].get<double>().value());
+					float nms = 0.4f;
 					std::string_view models_directory = root["models_directory"].get<std::string_view>().value();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
@@ -1137,7 +1138,8 @@ namespace glasssix
 
 				try
 				{
-					int single_database_capacity = static_cast<int>(root["single_database_capacity"].get<int64_t>().value());
+					//int single_database_capacity = static_cast<int>(root["single_database_capacity"].get<int64_t>().value());
+					int single_database_capacity = 1000;
 					int dimension = static_cast<int>(root["dimension"].get<int64_t>().value());
 					std::string_view working_directory = root["working_directory"].get<std::string_view>().value();
 

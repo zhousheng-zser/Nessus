@@ -128,7 +128,8 @@ namespace glasssix
 				try
 				{
 					int device = root["device"].asInt();
-					float nms = static_cast<float>(root["nms"].asDouble());
+					//float nms = static_cast<float>(root["nms"].asDouble());
+					float nms = 0.4f;
 					std::string models_directory = root["models_directory"].asString();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
@@ -1140,7 +1141,8 @@ namespace glasssix
 
 				try
 				{
-					int single_database_capacity = root["single_database_capacity"].asInt();
+					//int single_database_capacity = root["single_database_capacity"].asInt();
+					int single_database_capacity = 1000;
 					int dimension = root["dimension"].asInt();
 					std::string working_directory = root["working_directory"].asString();
 
