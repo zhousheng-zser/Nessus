@@ -1232,7 +1232,7 @@ namespace glasssix
 						feature.push_back(i.asFloat());
 
 					auto assuming_top = root.get("top", Json::nullValue);
-					auto assuming_min_similarity = root.get("min_simiarity", Json::nullValue);
+					auto assuming_min_similarity = root.get("min_similarity", Json::nullValue);
 					bool has_top = assuming_top.isIntegral();
 					bool has_min_similarity = assuming_min_similarity.isNumeric();
 
