@@ -45,6 +45,7 @@ namespace glasssix::license
 
 		if (decoded_data.empty())
 		{
+
 			return std::nullopt;
 		}
 
