@@ -3,7 +3,7 @@
 #include "vision_service.hpp"
 #include "plugin_manager.hpp"
 
-#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
+#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
 #include "message_protocol.hpp"
 #else
 #include "message_protocol_jsoncpp.hpp"
@@ -73,7 +73,7 @@ namespace glasssix::exposing::nessus
 	class parser_impl::impl
 	{
 	public:
-#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
+#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
 		param_string parse(const param_string& topic, const param_string& jstr_param, param_span<std::uint8_t> data)
 		{
 			Json::Value value;
@@ -205,12 +205,12 @@ namespace glasssix::exposing::nessus
 			return to_param_string(writer.write(value));
 		}
 #else
-		param_string parse(const param_string& topic, const param_string& jstr_param, param_span<std::uint8_t> data)
+		param_string parse(const param_string& topic, const param_string& str_param, param_span<std::uint8_t> data)
 		{
 			Json::Value value;
 			std::string topic_str(topic.data(), topic.size());
 			std::transform(topic_str.begin(), topic_str.end(), topic_str.begin(), ::tolower);
-			std::string_view jstr_param_view(jstr_param.data(), jstr_param.size());
+			std::string_view str_param_view(str_param.data(), str_param.size());
 			if (!ready)
 			{
 				value["status"]["message"] = Json::Value("parser hasn't been inited plugin");
@@ -221,7 +221,7 @@ namespace glasssix::exposing::nessus
 			Json::Value root;
 			try
 			{
-				if(!parser_.parse(std::string(jstr_param_view), root))
+				if(!parser_.parse(std::string(str_param_view), root))
 					throw parser_exception(parser_exception::parser_exception_code::JSON_EXCEPTION, "parse json failed");
 			}
 			catch (const std::exception& ex)
@@ -362,7 +362,7 @@ namespace glasssix::exposing::nessus
 			return to_param_string(writer.write(value));
 		}
 
-#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
+#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
 		param_string init_plugin(const param_string& config_file_path)
 		{
 			static std::once_flag flag;
@@ -427,7 +427,6 @@ namespace glasssix::exposing::nessus
 			std::string status = "{\"status\":{\"message\":\"Function 'init_plugin' has beed called and could be called one time\",\"code\":-7}}";
 			std::call_once(flag, [&]
 				{
-					parser_ = Json::Reader(Json::Features::strictMode());
 					std::ifstream f_config{ std::string(config_file_path.begin(), config_file_path.end()) };
 					std::string buffer(std::istreambuf_iterator<char>{ f_config }, std::istreambuf_iterator<char>{});
 
@@ -480,7 +479,7 @@ namespace glasssix::exposing::nessus
 #endif
 
 	private:
-#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
+#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
 		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> basic_protocol_map;
 		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> fusion_protocol_map;
 		simdjson::dom::parser parser_;
@@ -488,6 +487,10 @@ namespace glasssix::exposing::nessus
 		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)>> basic_protocol_map;
 		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> fusion_protocol_map;
 		Json::Reader parser_;
+	public:
+		impl() :parser_(Json::Features::strictMode()) {}
+
+	private:
 #endif
 
 		Json::FastWriter writer;
@@ -495,7 +498,7 @@ namespace glasssix::exposing::nessus
 		static bool ready;
 	};
 
-#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
+#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> parser_impl::impl::basic_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> protocol_map;
 #else
@@ -534,7 +537,7 @@ namespace glasssix::exposing::nessus
 		return protocol_map;
 	}();
 
-#if defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)
+#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> parser_impl::impl::fusion_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
 #else
@@ -560,9 +563,9 @@ namespace glasssix::exposing::nessus
 		}
 	}
 
-	param_string parser_impl::parse(const param_string& protocol, const param_string& jsonstr, param_span<std::uint8_t> data)
+	param_string parser_impl::parse(const param_string& topic, const param_string& jstr_param, param_span<std::uint8_t> data)
 	{
-		return impl_->parse(protocol, jsonstr, data);
+		return impl_->parse(topic, jstr_param, data);
 	}
 
 	param_string parser_impl::query_all_instance()

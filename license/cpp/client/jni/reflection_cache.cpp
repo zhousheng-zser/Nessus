@@ -173,7 +173,7 @@ namespace glasssix::jni
 		}
 
 		template<typename T>
-		void add_item_caches_internal(JNIEnv* env, int class_key, T(*handler)(JNIEnv*, jclass, const char*, const char*), std::initializer_list<std::tuple<int, std::string_view, std::string_view>> items)
+		void add_item_caches_internal(JNIEnv* env, int class_key, T(JNICALL *handler)(JNIEnv*, jclass, const char*, const char*), std::initializer_list<std::tuple<int, std::string_view, std::string_view>> items)
 		{
 			if (auto iter = cache_.find(make_cache_key<jclass>(class_key)); iter != cache_.end())
 			{
