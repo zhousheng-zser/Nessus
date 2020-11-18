@@ -16,6 +16,7 @@ endif()
 
 project(Nessus C CXX)
 option(WITH_JNI "Compile java native interface." OFF)
+option(USE_SIMDJSON "Compile and use simdjson to parse json. It can only work when compiling 64bit binary." OFF)
 option(CONTAINS_LICENSE_SERVER "Compile the license server." OFF)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -97,7 +98,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	add_definitions(-DFMT_SHARED)
 endif()
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if((CMAKE_SIZEOF_VOID_P EQUAL 8) AND USE_SIMDJSON)
 add_subdirectory(3rd-party/simdjson)
 endif()
 add_subdirectory(3rd-party/libyuv)

@@ -72,7 +72,7 @@ extern "C" {
 		env->DeleteLocalRef(clazz);
 	}
 
-	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jprotocol, jstring jstr, jbyteArray dataArray)
+	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jtopic, jstring jstr_param, jbyteArray dataArray)
 	{
 		if (dataArray == nullptr)
 		{
@@ -85,13 +85,13 @@ extern "C" {
 
 		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
 
-		glasssix::exposing::param_string protocol = jstring2paramstring(env, jprotocol);
-		glasssix::exposing::param_string jsonstr = jstring2paramstring(env, jstr);
+		glasssix::exposing::param_string topic = jstring2paramstring(env, jtopic);
+		glasssix::exposing::param_string str_param = jstring2paramstring(env, jstr_param);
 
 		jbyte* data_ptr = env->GetByteArrayElements(dataArray, 0);
 		glasssix::exposing::param_span data(reinterpret_cast<unsigned char*>(data_ptr), env->GetArrayLength(dataArray));
 
-		glasssix::exposing::param_string result = parser_object.parse(protocol, jsonstr, data);
+		glasssix::exposing::param_string result = parser_object.parse(topic, str_param, data);
 
 		env->ReleaseByteArrayElements(dataArray, data_ptr, 0);
 		env->DeleteLocalRef(clazz);

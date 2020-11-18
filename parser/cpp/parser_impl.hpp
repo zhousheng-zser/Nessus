@@ -17,7 +17,7 @@ namespace glasssix::exposing::nessus
 
 		parser_impl();
 		~parser_impl();
-		param_string parse(const param_string& protocol, const param_string& jsonstr, param_span<std::uint8_t> data);
+		param_string parse(const param_string& topic, const param_string& str_param, param_span<std::uint8_t> data);
 		param_string query_all_instance();
 		param_string support_protocol();
 		param_string init_plugin(const param_string& config_file_path);

@@ -285,7 +285,7 @@ namespace glasssix::exposing::nessus
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return box(instance.antispoofing(face, image, channels, height, width, order) ? 1 : 0);
+			return box(instance.antispoofing(face, image, channels, height, width, order));
 		}
 
 		void irisviel_clear(const param_hash_map<param_string, unknown_object>& params)

@@ -47,15 +47,13 @@ extern "C" {
 	/// Dispatches a protocol.
 	/// </summary>
 	/// <param name="instance">The instance of a protocol parser</param>
-	/// <param name="protocol">The protocol name</param>
-	/// <param name="protocol_len">The size of the protocol name</param>
-	/// <param name="jstr">The parameters interpreted as JSON</param>
-	/// <param name="jstr_len">The size of the parameters</param>
+	/// <param name="topic">The protocol name</param>
+	/// <param name="jstr_param">The parameters interpreted as JSON</param>
 	/// <param name="data">The optional binary data</param>
 	/// <param name="data_len">The size of the optional binary data</param>
 	/// <returns>The result interpreted as JSON</returns>
 	/// <remarks>The return value must be disposed by calling praser_free function.</remarks>
-	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, const char* jstr, char* data, size_t data_len);
+	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, const char* jstr_param, char* data, size_t data_len);
 
 	/// <summary>
 	/// Disposes a buffer.
