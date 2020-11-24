@@ -1,5 +1,5 @@
-#ifndef _MESSAGEPROTOCOL_SIMDJSON_HPP_
-#define _MESSAGEPROTOCOL_SIMDJSON_HPP_
+#ifndef _MESSAGEPROTOCOL_JSONCPP_HPP_
+#define _MESSAGEPROTOCOL_JSONCPP_HPP_
 
 #include <libyuv.h>
 #include "json.h"
@@ -226,7 +226,7 @@ namespace glasssix
 							{u8"min_size", box(min_size)},
 							{u8"threshold", box(threshold)},
 							{u8"order", box(static_cast<int>(frame.order()))},
-							{u8"do_attributing", box(do_attributing ? 1 : 0)},
+							{u8"do_attributing", box(do_attributing)},
 							{u8"object_id", box(instance)}
 						});
 
@@ -251,6 +251,8 @@ namespace glasssix
 							jobj_face["attributes"]["prob_age_index"] = Json::Int(obj.prob_age_index());
 							jobj_face["attributes"]["prob_gender_index"] = Json::Int(obj.prob_gender_index());
 						}
+						else
+							jobj_face["attributes"] = Json::Value(Json::nullValue);
 
 						Json::Value jarray_landmark;
 
@@ -323,7 +325,7 @@ namespace glasssix
 					auto result = plugin.execute(u8"longinus.trace", param).as<longinus::face_info>();
 
 					Json::Value jobj_face;
-					if (result.confidence() > 0.1)
+					if (result.confidence() > 0.1f)
 					{
 						value["trace_success"] = Json::Value(true);
 						jobj_face["x"] = Json::Int(result.x());
@@ -383,6 +385,58 @@ namespace glasssix
 				return value;
 			}
 
+			inline Json::Value Longinus_match_faces_in_last_two_frame_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
+			{
+				Json::Value value;
+				try
+				{
+					auto prev_face = make_exported_interface<longinus::face_info>();
+					prev_face.set_x(root["prev_face"]["x"].asFloat());
+					prev_face.set_y(root["prev_face"]["y"].asFloat());
+					prev_face.set_width(root["prev_face"]["width"].asFloat());
+					prev_face.set_height(root["prev_face"]["height"].asFloat());
+
+					auto current_face = make_exported_interface<longinus::face_info>();
+					current_face.set_x(root["current_face"]["x"].asFloat());
+					current_face.set_y(root["current_face"]["y"].asFloat());
+					current_face.set_width(root["current_face"]["width"].asFloat());
+					current_face.set_height(root["current_face"]["height"].asFloat());
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"prev_face", prev_face },
+							{u8"current_face", current_face },
+							{u8"object_id", box(instance)}
+						});
+					auto result = unbox<double>(plugin.execute(u8"longinus.match_faces_in_last_two_frame", param));
+
+					value["similarity"] = Json::Value(result);
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
 			inline Json::Value Romancia_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
 			{
 				Json::Value value;
@@ -560,11 +614,17 @@ namespace glasssix
 					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
-					auto face = make_exported_interface<longinus::face_info>();
-					face.set_x(root["face"]["x"].asFloat());
-					face.set_y(root["face"]["y"].asFloat());
-					face.set_width(root["face"]["width"].asFloat());
-					face.set_height(root["face"]["height"].asFloat());
+					Json::Value facerect_list = root["facerect_list"];
+					auto faces = make_param_vector<longinus::face_info>();
+					for (auto& i : facerect_list)
+					{
+						auto face = make_exported_interface<longinus::face_info>();
+						face.set_x(i["x"].asFloat());
+						face.set_y(i["y"].asFloat());
+						face.set_width(i["width"].asFloat());
+						face.set_height(i["height"].asFloat());
+						faces.push_back(face);
+					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
@@ -574,14 +634,17 @@ namespace glasssix
 							{u8"image", box(image_span)},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
-							{u8"face", face },
+							{u8"faces", faces },
 							{u8"order", box(static_cast<int>(frame.order()))},
 							{u8"object_id", box(instance)}
 						});
 
-					auto result = unbox<double>(plugin.execute(u8"romancia.blur_detect", param));
+					auto result = plugin.execute(u8"romancia.blur_detect", param).as<param_vector<double>>();
 
-					value["clarity"] = Json::Value(result);
+					Json::Value clarity = Json::Value(Json::arrayValue);
+					for (auto i : result)
+						clarity.append(i);
+					value["clarity"] = Json::Value(clarity);
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
@@ -618,23 +681,31 @@ namespace glasssix
 					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
-					auto face = make_exported_interface<longinus::face_info>();
-					face.set_x(root["face"]["x"].asFloat());
-					face.set_y(root["face"]["y"].asFloat());
-					face.set_width(root["face"]["width"].asFloat());
-					face.set_height(root["face"]["height"].asFloat());
-
-					auto landmark_list = root["face"]["landmark"];
-					if (landmark_list.size() != 5)
-						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "landmark_list.size() != 5");
-
-					auto landmark = exposing::make_param_vector<exposing::param_pair<float, float>>();
-					for (auto j : landmark_list)
+					auto jarray_rect = root["facerectwithfaceinfo_list"];
+					auto faces = exposing::make_param_vector<longinus::face_info>();
+					for (auto &i : jarray_rect)
 					{
-						auto pair = exposing::make_param_pair(j["x"].asFloat(), j["y"].asFloat());
-						landmark.push_back(pair);
+						auto face = exposing::make_exported_interface<longinus::face_info>();
+						face.set_x(i["x"].asFloat());
+						face.set_y(i["y"].asFloat());
+						face.set_height(i["height"].asFloat());
+						face.set_width(i["width"].asFloat());
+
+						auto landmark_list = i["landmark"];
+						if (landmark_list.size() != 5)
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "landmark_list.size() != 5");
+
+
+						auto landmark = exposing::make_param_vector<exposing::param_pair<float, float>>();
+						for (auto &j : landmark_list)
+						{
+							auto pair = exposing::make_param_pair(j["x"].asFloat(), j["y"].asFloat());
+							landmark.push_back(pair);
+						}
+						face.set_pts(landmark);
+
+						faces.push_back(face);
 					}
-					face.set_pts(landmark);
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
@@ -644,16 +715,17 @@ namespace glasssix
 							{u8"image", box(image_span)},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
-							{u8"face", face },
+							{u8"faces", faces },
 							{u8"order", box(static_cast<int>(frame.order()))},
 							{u8"object_id", box(instance)}
 						});
 
-					//auto result = unbox<std::int32_t>(plugin.execute(u8"romancia.mask_detect", param));
-					auto result = unbox<double>(plugin.execute(u8"romancia.mask_detect", param));
+					Json::Value mask_value = Json::Value(Json::arrayValue);
+					auto result = plugin.execute(u8"romancia.mask_detect", param).as<param_vector<double>>();
+					for (auto i : result)
+						mask_value.append(i);
 
-					//value["has_mask"] = Json::Value(result ? true : false);
-					value["mask_value"] = Json::Value(result);
+					value["mask_value"] = Json::Value(mask_value);
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
@@ -690,11 +762,18 @@ namespace glasssix
 					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
-					auto face = make_exported_interface<longinus::face_info>();
-					face.set_x(root["face"]["x"].asFloat());
-					face.set_y(root["face"]["y"].asFloat());
-					face.set_width(root["face"]["width"].asFloat());
-					face.set_height(root["face"]["height"].asFloat());
+
+					Json::Value facerect_list = root["facerect_list"];
+					auto faces = make_param_vector<longinus::face_info>();
+					for (auto& i : facerect_list)
+					{
+						auto face = make_exported_interface<longinus::face_info>();
+						face.set_x(i["x"].asFloat());
+						face.set_y(i["y"].asFloat());
+						face.set_width(i["width"].asFloat());
+						face.set_height(i["height"].asFloat());
+						faces.push_back(face);
+					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
@@ -704,14 +783,17 @@ namespace glasssix
 							{u8"image", box(image_span)},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
-							{u8"face", face },
+							{u8"faces", faces },
 							{u8"order", box(static_cast<int>(frame.order()))},
 							{u8"object_id", box(instance)}
 						});
 
-					auto result = unbox<bool>(plugin.execute(u8"romancia.antispoofing", param));
+					auto result = plugin.execute(u8"romancia.antispoofing", param).as<param_vector<bool>>();
+					Json::Value is_alive = Json::Value(Json::arrayValue);
+					for (auto i : result)
+						is_alive.append(i);
 
-					value["is_alive"] = Json::Value(result);
+					value["is_alive"] = Json::Value(is_alive);
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
@@ -1901,6 +1983,188 @@ namespace glasssix
 					}
 
 					value["features"] = jobj_features;
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Fusion_Longinus_detect_Romancia_multimethod_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, std::vector<guid>& guids)
+			{
+				Json::Value value;
+
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+					int min_size = root["min_size"].asInt();
+					float threshold = root["threshold"].asFloat();
+
+					std::vector<float> headpose_limit;
+					headpose_limit.push_back(root["condition_limit_param"]["headpose_limit"]["yaw_range"]["lower"].asDouble());
+					headpose_limit.push_back(root["condition_limit_param"]["headpose_limit"]["yaw_range"]["upper"].asDouble());
+					headpose_limit.push_back(root["condition_limit_param"]["headpose_limit"]["pitch_range"]["lower"].asDouble());
+					headpose_limit.push_back(root["condition_limit_param"]["headpose_limit"]["pitch_range"]["upper"].asDouble());
+					headpose_limit.push_back(root["condition_limit_param"]["headpose_limit"]["roll_range"]["lower"].asDouble());
+					headpose_limit.push_back(root["condition_limit_param"]["headpose_limit"]["roll_range"]["upper"].asDouble());
+
+					double blur_threshold = root["condition_limit_param"]["blur_threshold"].asDouble();
+					bool do_antispoofing = root["condition_limit_param"]["do_antispoofing"].asBool();
+					double mask_threshold = root["condition_limit_param"]["mask_threshold"].asDouble();
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+
+					auto longinus_detect_param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"image", box(image_span)},
+							{u8"height", box(height)},
+							{u8"width", box(width)},
+							{u8"min_size", box(min_size)},
+							{u8"threshold", box(threshold)},
+							{u8"order", box(static_cast<int>(frame.order()))},
+							{u8"do_attributing", box(true)},
+							{u8"object_id", box(guids[0])}
+						});
+
+					auto detect_result = plugin.execute(u8"longinus.detect", longinus_detect_param).as<param_vector<longinus::face_info>>();
+
+					Json::Value jarray_rect = Json::Value(Json::arrayValue);
+
+					for (auto obj : detect_result)
+					{
+						Json::Value jobj_face;
+						jobj_face["x"] = Json::Int(obj.x());
+						jobj_face["y"] = Json::Int(obj.y());
+						jobj_face["width"] = Json::Int(obj.width());
+						jobj_face["height"] = Json::Int(obj.height());
+						jobj_face["confidence"] = Json::Value(obj.confidence());
+						double yaw = obj.yaw();
+						double pitch = obj.pitch();
+						double roll = obj.yaw();
+						jobj_face["attributes"]["yaw"] = Json::Value(yaw);
+						jobj_face["attributes"]["pitch"] = Json::Value(pitch);
+						jobj_face["attributes"]["roll"] = Json::Value(roll);
+						jobj_face["attributes"]["prob_age_index"] = Json::Int(obj.prob_age_index());
+						jobj_face["attributes"]["prob_gender_index"] = Json::Int(obj.prob_gender_index());
+
+						Json::Value jarray_landmark;
+
+						for (const auto& pt : obj.pts())
+						{
+
+							Json::Value jobj_point;
+							jobj_point["x"] = Json::Int((int)pt.key());
+							jobj_point["y"] = Json::Int((int)pt.value());
+							jarray_landmark.append(jobj_point);
+						}
+						jobj_face["landmark"] = jarray_landmark;
+
+						if (yaw > headpose_limit[0] && yaw < headpose_limit[1] && pitch > headpose_limit[2] && pitch < headpose_limit[3] && roll > headpose_limit[4] && roll < headpose_limit[5])
+						{
+							jobj_face["condition_result"]["headpose_result"]["flag"] = Json::Value(true);
+							jobj_face["condition_result"]["headpose_result"]["value"] = Json::Value(Json::nullValue);
+
+							auto faces = make_param_vector<longinus::face_info>();
+							faces.push_back(obj);
+
+							auto param = make_param_hash_map<param_string, unknown_object>(
+								{
+									{u8"image", box(image_span)},
+									{u8"height", box(height)},
+									{u8"width", box(width)},
+									{u8"faces", faces },
+									{u8"order", box(static_cast<int>(frame.order()))},
+									{u8"object_id", box(guids[1])}
+								});
+
+							auto clarity = plugin.execute(u8"romancia.blur_detect", param).as<param_vector<double>>();
+							if (clarity[0] > blur_threshold)
+							{
+								jobj_face["condition_result"]["blur_detect_result"]["flag"] = Json::Value(true);
+								jobj_face["condition_result"]["blur_detect_result"]["value"] = Json::Value(clarity[0]);
+
+								if (do_antispoofing)
+								{
+									auto antispoofing_result = plugin.execute(u8"romancia.antispoofing", param).as<param_vector<bool>>();
+									if (antispoofing_result[0])
+									{
+										jobj_face["condition_result"]["antispoofing_result"]["flag"] = Json::Value(true);
+										jobj_face["condition_result"]["antispoofing_result"]["value"] = Json::Value(Json::nullValue);
+
+
+										auto mask_detect_result = plugin.execute(u8"romancia.mask_detect", param).as<param_vector<double>>();
+
+										if (mask_detect_result[0] > mask_threshold)
+											jobj_face["condition_result"]["mask_detect_result"]["flag"] = Json::Value(true);
+										else
+											jobj_face["condition_result"]["mask_detect_result"]["flag"] = Json::Value(false);
+										jobj_face["condition_result"]["mask_detect_result"]["value"] = Json::Value(mask_detect_result[0]);
+									}
+									else
+									{
+										jobj_face["condition_result"]["antispoofing_result"]["flag"] = Json::Value(false);
+										jobj_face["condition_result"]["antispoofing_result"]["value"] = Json::Value(Json::nullValue);
+
+										jobj_face["condition_result"]["mask_detect_result"] = Json::Value(Json::nullValue);
+									}
+								}
+								else
+								{
+									auto mask_detect_result = plugin.execute(u8"romancia.mask_detect", param).as<param_vector<double>>();
+
+									if (mask_detect_result[0] > mask_threshold)
+										jobj_face["condition_result"]["mask_detect_result"]["flag"] = Json::Value(true);
+									else
+										jobj_face["condition_result"]["mask_detect_result"]["flag"] = Json::Value(false);
+									jobj_face["condition_result"]["mask_detect_result"]["value"] = Json::Value(mask_detect_result[0]);
+								}
+							}
+							else
+							{
+								jobj_face["condition_result"]["blur_detect_result"]["flag"] = Json::Value(false);
+								jobj_face["condition_result"]["blur_detect_result"]["value"] = Json::Value(clarity[0]);
+								jobj_face["condition_result"]["antispoofing_result"] = Json::Value(Json::nullValue);
+								jobj_face["condition_result"]["mask_detect_result"] = Json::Value(Json::nullValue);
+							}
+						}
+						else
+						{
+							jobj_face["condition_result"]["headpose_result"]["flag"] = Json::Value(false);
+							jobj_face["condition_result"]["headpose_result"]["value"] = Json::Value(Json::nullValue);
+
+							jobj_face["condition_result"]["blur_detect_result"] = Json::Value(Json::nullValue);
+							jobj_face["condition_result"]["antispoofing_result"] = Json::Value(Json::nullValue);
+							jobj_face["condition_result"]["mask_detect_result"] = Json::Value(Json::nullValue);
+						}
+
+						jarray_rect.append(jobj_face);
+					}
+
+					value["facerectwithfaceinfo_list"] = jarray_rect;
+
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}

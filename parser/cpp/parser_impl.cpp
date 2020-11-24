@@ -248,11 +248,10 @@ namespace glasssix::exposing::nessus
 			if (str_vec[0] == "fusion")
 			{
 				std::vector<guid> guids;
-
 				try
 				{
-					guids.push_back(guid(root["romancia_instance_guid"].asString()));
-					guids.push_back(guid(root["gaius_instance_guid"].asString()));
+					guids.push_back(guid(root[str_vec[1] + "_instance_guid"].asString()));
+					guids.push_back(guid(root[str_vec[3] + "_instance_guid"].asString()));
 				}
 				catch (const Json::Exception& ex)
 				{
@@ -509,6 +508,7 @@ namespace glasssix::exposing::nessus
 		protocol_map["longinus.delete"] = &Longinus_delete_json;
 		protocol_map["longinus.detect"] = &Longinus_detect_json;
 		protocol_map["longinus.trace"] = &Longinus_trace_json;
+		protocol_map["longinus.match_faces_in_last_two_frame"] = &Longinus_match_faces_in_last_two_frame_json;
 		protocol_map["romancia.new"] = &Romancia_new_json;
 		protocol_map["romancia.delete"] = &Romancia_delete_json;
 		protocol_map["romancia.alignface"] = &Romancia_alignFace_json;
@@ -545,6 +545,7 @@ namespace glasssix::exposing::nessus
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
 #endif
 		protocol_map["fusion.romancia.alignface.gaius.forward"] = &Fusion_Romancia_alignFace_Gaius_Forward_json;
+		protocol_map["fusion.longinus.detect.romancia.multimethod"] = &Fusion_Longinus_detect_Romancia_multimethod_json;
 		return protocol_map;
 	}();
 
