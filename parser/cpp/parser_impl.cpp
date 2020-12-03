@@ -545,6 +545,7 @@ namespace glasssix::exposing::nessus
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
 #endif
 		protocol_map["fusion.romancia.alignface.gaius.forward"] = &Fusion_Romancia_alignFace_Gaius_Forward_json;
+		protocol_map["fusion.romancia.alignface.cassius.forward"] = &Fusion_Romancia_alignFace_Cassius_Forward_json;
 		protocol_map["fusion.longinus.detect.romancia.multimethod"] = &Fusion_Longinus_detect_Romancia_multimethod_json;
 		protocol_map["fusion.longinus.trace.romancia.multimethod"] = &Fusion_Longinus_trace_Romancia_multimethod_json;
 		return protocol_map;
