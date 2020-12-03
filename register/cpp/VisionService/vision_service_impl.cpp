@@ -45,6 +45,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view cassius_forward{ u8"cassius.Forward" };
 			static constexpr utf8_string_view longinus_detect{ u8"longinus.detect" };
 			static constexpr utf8_string_view longinus_trace{ u8"longinus.trace" };
+			static constexpr utf8_string_view longinus_match_faces_in_last_two_frame{ u8"longinus.match_faces_in_last_two_frame" };
 			static constexpr utf8_string_view romancia_align_face{ u8"romancia.alignFace" };
 			static constexpr utf8_string_view romancia_antispoofing{ u8"romancia.antispoofing" };
 			static constexpr utf8_string_view romancia_blur_detect{ u8"romancia.blur_detect" };
@@ -84,6 +85,7 @@ namespace glasssix::exposing::nessus
 			// Business
 			functions_.insert_or_assign(function_names::longinus_detect, std::bind(&impl::longinus_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_trace, std::bind(&impl::longinus_trace, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::longinus_match_faces_in_last_two_frame, std::bind(&impl::longinus_match_faces_in_last_two_frame, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_align_face, std::bind(&impl::romancia_align_face, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_antispoofing, std::bind(&impl::romancia_antispoofing, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_blur_detect, std::bind(&impl::romancia_blur_detect, this, std::placeholders::_1));
@@ -216,9 +218,9 @@ namespace glasssix::exposing::nessus
 			auto min_size = unbox<std::int32_t>(params.get_value(u8"min_size"));
 			auto threshold = unbox<float>(params.get_value(u8"threshold"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
-			std::int32_t do_attributing = unbox<std::int32_t>(params.get_value(u8"do_attributing"));
+			auto do_attributing = unbox<bool>(params.get_value(u8"do_attributing"));
 
-			return instance.detect(image, channels, height, width, min_size, threshold, order, do_attributing ? true : false);
+			return instance.detect(image, channels, height, width, min_size, threshold, order, do_attributing);
 		}
 
 		unknown_object longinus_trace(const param_hash_map<param_string, unknown_object>& params)
@@ -233,6 +235,15 @@ namespace glasssix::exposing::nessus
 			auto result = instance.single_trace(face, image, channels, height, width, order);
 
 			return result;
+		}
+
+		unknown_object longinus_match_faces_in_last_two_frame(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<retina_net>(params);
+			auto prev_face = params.get_value(u8"prev_face").as<face_info>();
+			auto current_face = params.get_value(u8"current_face").as<face_info>();
+
+			return box(instance.match_faces_in_last_two_frame(prev_face, current_face));
 		}
 
 		unknown_object romancia_align_face(const param_hash_map<param_string, unknown_object>& params)
@@ -252,40 +263,39 @@ namespace glasssix::exposing::nessus
 		{
 			constexpr std::int32_t channels = 3;
 			auto instance = get_instance<face_alignment>(params);
-			auto face = params.get_value(u8"face").as<face_info>();
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return box(instance.blur_detect(face, image, channels, height, width, order));
+			return instance.blur_detect(faces, image, channels, height, width, order);
 		}
 
 		unknown_object romancia_mask_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
 			auto instance = get_instance<face_alignment>(params);
-			auto face = params.get_value(u8"face").as<face_info>();
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			//return box(instance.mask_detect(face, image, channels, height, width, order) ? 1 : 0);
-			return box(instance.mask_detect(face, image, channels, height, width, order));
+			return instance.mask_detect(faces, image, channels, height, width, order);
 		}
 
 		unknown_object romancia_antispoofing(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
 			auto instance = get_instance<face_alignment>(params);
-			auto face = params.get_value(u8"face").as<face_info>();
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return box(instance.antispoofing(face, image, channels, height, width, order));
+			return instance.antispoofing(faces, image, channels, height, width, order);
 		}
 
 		void irisviel_clear(const param_hash_map<param_string, unknown_object>& params)
