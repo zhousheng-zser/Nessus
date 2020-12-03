@@ -68,7 +68,7 @@ namespace glasssix
 					if (src.count() != (width * height * 3 >> 1))
 						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "convert_to_bgr: src.count() != (width * height * 3 >> 1)");
 
-					dst = memory::tensor<std::uint8_t>(std::vector<int>{1, height, width, 3}, -1, memory::NHWC, & memory::pool_allocator_default<std::uint8_t>::get());
+					dst = memory::tensor<std::uint8_t>(std::vector<int>{1, height, width, 3}, -1, memory::NHWC/*, & memory::pool_allocator_default<std::uint8_t>::get()*/);
 					int aligned_src_width = (width + 1) & ~1;
 					const uint8_t* y = src.cpu_data();
 					const uint8_t* uv = src.cpu_data() + aligned_src_width * height;
@@ -110,12 +110,12 @@ namespace glasssix
 				{
 					int current_image_str_len = TB64DECLEN(src.size());
 
-					temp = memory::tensor<std::uint8_t>(current_image_str_len, -1, order, &memory::pool_allocator_default<std::uint8_t>::get());
+					temp = memory::tensor<std::uint8_t>(current_image_str_len, -1, order/*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
 					tb64xdec(reinterpret_cast<const std::uint8_t*>(src.data()), src.size(), temp.mutable_cpu_data());
 				}
 				else
 				{
-					temp = memory::tensor<std::uint8_t>(src.size(), -1, order, &memory::pool_allocator_default<std::uint8_t>::get());
+					temp = memory::tensor<std::uint8_t>(src.size(), -1, order/*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
 					std::copy(src.begin(), src.end(), temp.mutable_cpu_data());
 				}
 
@@ -571,7 +571,7 @@ namespace glasssix
 					auto result = plugin.execute(u8"romancia.alignFace", param).as<param_vector<param_vector<std::uint8_t>>>();
 
 					value["aligned_images"] = Json::Value(Json::arrayValue);
-					memory::tensor<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, -1, memory::NCHW, &memory::pool_allocator_default<std::uint8_t>::get());
+					memory::tensor<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, -1, memory::NCHW/*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
 					std::uint8_t* ptr = temp.mutable_cpu_data();
 					for (size_t i = 0; i < result.size(); i++)
 					{
@@ -919,7 +919,7 @@ namespace glasssix
 					auto aligned_face_array = root["aligned_images"];
 					std::vector<uint8_t> aligned_faces_vec;
 					int num = 0;
-					memory::tensor<std::uint8_t> temp(gaius_forward_aligned_buffer_len, -1, memory::NCHW, &memory::pool_allocator_default<std::uint8_t>::get());
+					memory::tensor<std::uint8_t> temp(gaius_forward_aligned_buffer_len, -1, memory::NCHW/*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
 					std::uint8_t* ptr = temp.mutable_cpu_data();
 					for (auto i : aligned_face_array)
 					{
@@ -997,7 +997,7 @@ namespace glasssix
 					auto aligned_face_array = root["aligned_images"];
 					std::vector<uint8_t> aligned_faces_vec;
 					int num = 0;
-					memory::tensor<std::uint8_t> temp(gaius_forward_aligned_buffer_len, -1, memory::NCHW, &memory::pool_allocator_default<std::uint8_t>::get());
+					memory::tensor<std::uint8_t> temp(gaius_forward_aligned_buffer_len, -1, memory::NCHW/*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
 					std::uint8_t* ptr = temp.mutable_cpu_data();
 					for (auto i : aligned_face_array)
 					{
@@ -1158,7 +1158,7 @@ namespace glasssix
 					auto aligned_face_array = root["aligned_images"];
 					std::vector<uint8_t> aligned_faces_vec;
 					int num = 0;
-					memory::tensor<std::uint8_t> temp(cassius_forward_aligned_buffer_len, -1, memory::NCHW, &memory::pool_allocator_default<std::uint8_t>::get());
+					memory::tensor<std::uint8_t> temp(cassius_forward_aligned_buffer_len, -1, memory::NCHW/*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
 					std::uint8_t* ptr = temp.mutable_cpu_data();
 					for (auto i : aligned_face_array)
 					{
