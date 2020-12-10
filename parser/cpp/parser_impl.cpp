@@ -339,7 +339,7 @@ namespace glasssix::exposing::nessus
 					guid instance(instance_guid);
 					value = func(plugin, root, data, instance);
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(ANDROID)
 					if (method == "delete")
 						::malloc_trim(0);
 #endif
