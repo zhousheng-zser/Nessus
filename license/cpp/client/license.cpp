@@ -23,14 +23,15 @@
 #endif
 
 #include <mutex>
+#include <atomic>
 #include <chrono>
 #include <memory>
 #include <string>
 #include <thread>
 #include <vector>
 #include <cstdint>
-#include <cstdlib>
 #include <optional>
+#include <exception>
 #include <functional>
 #include <string_view>
 
@@ -40,7 +41,7 @@
 #include <delegate.hpp>
 #include <filesystem.hpp>
 #include <nlohmann/json.hpp>
-#include <abi/platform_encoding.hpp>
+#include <abi/param_string.hpp>
 
 namespace glasssix::license
 {
@@ -316,28 +317,53 @@ namespace glasssix::license
 		};
 
 		interruptable_timer watchdog_timer;
-		std::unique_ptr<license> global_license_;
+		std::unique_ptr<license> global_license;
+		std::shared_ptr<std::exception_ptr> last_exception;
 		std::shared_ptr<std::thread> watchdog_initialization_thread;
 		delegate<void, std::string_view, std::int64_t> deadline_callback;
+		const exposing::abi_not_initialized initial_exception{ u8"The license has not been initialized correctly. Please initialize the SDK before any invocations." };
 	}
 
 	namespace
 	{
 		/// <summary>
+		/// Clears the last exception and marks it as a success.
+		/// </summary>
+		void clear_last_exception()
+		{
+			std::atomic_store_explicit(&last_exception, std::make_shared<std::exception_ptr>(), std::memory_order_release);
+		}
+
+		/// <summary>
+		/// Assigns the last exception.
+		/// </summary>
+		/// <typeparam name="T">The exception type</typeparam>
+		/// <param name="ex">The exception</param>
+		template<typename T>
+		void set_last_exception(T&& ex) try
+		{
+			throw std::forward<T>(ex);
+		}
+		catch (...)
+		{
+			return std::atomic_store_explicit(&last_exception, std::make_shared<std::exception_ptr>(std::current_exception()), std::memory_order_release);
+		}
+
+		/// <summary>
 		/// Initializes the watchdog timer.
 		/// </summary>
 		void init_watchdog_timer()
 		{
+			set_last_exception(initial_exception);
 			watchdog_initialization_thread.reset(new std::thread
 				{
 					[]
 					{
 						watchdog_timer.start(watchdog_period, watchdog_deferred_time, []
 							{
-								if (!global_license_)
+								if (!global_license)
 								{
-									LOG_ND(ERROR) << "The license has not been initialized correctly and the program will exit immediately.";
-									std::quick_exit(0);
+									return set_last_exception(initial_exception);
 								}
 
 								evaluate_license([](void* context, bool valid, const char* message, std::int64_t remaining_seconds)
@@ -348,11 +374,12 @@ namespace glasssix::license
 											deadline_callback(message, remaining_seconds);
 										}
 
-										if (!valid)
+										if (valid)
 										{
-											LOG_ND(ERROR) << fmt::format(FMT_STRING("License evaluation failure: {}"), message);
-											std::quick_exit(0);
+											return clear_last_exception();
 										}
+
+										set_last_exception(exposing::abi_failure{ exposing::format(FMT_STRING(u8"Failed in license evaluation. {}"), message) });
 									});
 
 								request_license_async([](void* context, bool success, const char* message)
@@ -393,12 +420,12 @@ EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key)
 				{
 					// In case of expensive initialzation on Android, we defer the first tick of the watchdog to wait for the initialization to accomplish.
 					watchdog_initialization_thread.reset();
-					global_license_ = std::make_unique<glasssix::license::license>(license_key);
+					global_license = std::make_unique<glasssix::license::license>(license_key);
+					clear_last_exception();
 				}
 				catch (const std::exception& ex)
 				{
-					LOG_ND(ERROR) << fmt::format(FMT_STRING("Failed to initialize the license system: {}"), ex.what());
-					std::quick_exit(0);
+					set_last_exception(exposing::abi_not_initialized{ exposing::format(FMT_STRING(u8"Failed to initialize the license system. {}"), ex.what()) });
 				}
 			});
 	}
@@ -406,7 +433,7 @@ EXPORT_NESSUS_LICENSE void init_license_system(const char* license_key)
 
 EXPORT_NESSUS_LICENSE void evaluate_license(evaluate_license_callback_type callback, void* context)
 {
-	if (!global_license_ || callback == nullptr)
+	if (!global_license || callback == nullptr)
 	{
 		return;
 	}
@@ -415,7 +442,7 @@ EXPORT_NESSUS_LICENSE void evaluate_license(evaluate_license_callback_type callb
 	{
 		watchdog_initialization_thread.reset();
 
-		std::int64_t remaining_seconds = global_license_->evaluate().count();
+		std::int64_t remaining_seconds = global_license->evaluate().count();
 		std::int64_t seconds = remaining_seconds % 60;
 		std::int64_t minutes = remaining_seconds / 60 % 60;
 		std::int64_t hours = remaining_seconds / 3600 % 24;
@@ -436,13 +463,13 @@ EXPORT_NESSUS_LICENSE void request_license_async(request_license_async_callback_
 		std::shared_ptr<delegate_token> token;
 	};
 
-	if (global_license_)
+	if (global_license)
 	{
 		watchdog_initialization_thread.reset();
 
 		auto wrapper = std::make_shared<token_wrapper>();
-		wrapper->token = global_license_->on_authorization.add_listener_auto_removal([=, wrapper = wrapper](bool success, std::string_view message) mutable { wrapper->token.reset(); callback(context, success, message.data()); });
-		global_license_->request_new();
+		wrapper->token = global_license->on_authorization.add_listener_auto_removal([=, wrapper = wrapper](bool success, std::string_view message) mutable { wrapper->token.reset(); callback(context, success, message.data()); });
+		global_license->request_new();
 	}
 }
 
@@ -453,4 +480,17 @@ EXPORT_NESSUS_LICENSE void set_license_deadline_callback(license_deadline_callba
 		watchdog_initialization_thread.reset();
 		deadline_callback += [=](std::string_view message, std::int64_t remaining_seconds) { callback(context, message.data(), remaining_seconds); };
 	}
+}
+
+EXPORT_NESSUS_LICENSE std::int32_t get_last_license_error_code() noexcept
+{
+	auto ex = std::atomic_load_explicit(&last_exception, std::memory_order::memory_order_acquire);
+
+	return glasssix::exposing::abi_safe_call([&]
+		{
+			if (ex && *ex)
+			{
+				std::rethrow_exception(*ex);
+			}
+		});
 }

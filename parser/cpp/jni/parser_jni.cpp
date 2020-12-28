@@ -10,6 +10,9 @@
 #include <jni.h>
 #include <os_context.hpp>
 
+using namespace glasssix;
+using namespace glasssix::license;
+
 static inline std::string jstring2string(JNIEnv* env, jstring jstr)
 {
 	if (jstr == nullptr)
@@ -79,6 +82,17 @@ extern "C" {
 			dataArray = env->NewByteArray(4);
 		}
 
+		try
+		{
+			check_last_license_error();
+		}
+		catch (const exposing::abi_error& ex)
+		{
+			std::unique_ptr<_jclass, std::function<void(jclass)>> class_exception{ env->FindClass("java/lang/Exception"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
+
+			env->ThrowNew(class_exception.get(), ex.what_to_narrow().c_str());
+		}
+
 		jclass clazz = env->GetObjectClass(thiz);
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
 		jlong p = env->GetLongField(thiz, fid_mObject);
@@ -101,7 +115,19 @@ extern "C" {
 
 	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_initPlugin(JNIEnv* env, jobject thiz, jstring jstr, jstring license_key)
 	{
+		std::unique_ptr<_jclass, std::function<void(jclass)>> class_exception{ env->FindClass("java/lang/Exception"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
+
 		init_license_system(jstring2string(env, license_key).c_str());
+
+		try
+		{
+			check_last_license_error();
+		}
+		catch (const exposing::abi_error& ex)
+		{
+			env->ThrowNew(class_exception.get(), ex.what_to_narrow().c_str());
+		}
+
 		jclass clazz = env->GetObjectClass(thiz);
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
 		jlong p = env->GetLongField(thiz, fid_mObject);

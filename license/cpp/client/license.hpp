@@ -1,5 +1,7 @@
 #pragma once
 
+#include <abi/exceptions.hpp>
+
 #ifdef _WIN32
 #ifdef EXPORT_NESSUS_LICENSE
 #undef EXPORT_NESSUS_LICENSE
@@ -41,8 +43,21 @@ extern "C" EXPORT_NESSUS_LICENSE void request_license_async(request_license_asyn
 /// <summary>
 /// Sets a license deadline callback.
 /// </summary>
-/// <param name="callback"></param>
-/// <param name="context"></param>
-/// <returns></returns>
+/// <param name="callback">The callback</param>
+/// <param name="context">The user-defined context</param>
 /// <remarks>The deadline callback triggers every five minutes when the remaining time is less than five days</remarks>
 extern "C" EXPORT_NESSUS_LICENSE void set_license_deadline_callback(license_deadline_callback_type callback, void* context = nullptr);
+
+/// <summary>
+/// Sets a license deadline callback.
+/// </summary>
+/// <returns>The error code</returns>
+extern "C" EXPORT_NESSUS_LICENSE std::int32_t get_last_license_error_code() noexcept;
+
+namespace glasssix::license
+{
+	inline void check_last_license_error()
+	{
+		exposing::check_abi_result(get_last_license_error_code());
+	}
+}
