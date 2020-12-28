@@ -7,9 +7,11 @@
 #else
 #define PARSER_C_EXPORT __declspec(dllimport)
 #endif
-#else
+#elif defined(__GNUC__)
+#ifdef PARSER_C_EXPORT
 #undef PARSER_C_EXPORT
 #define PARSER_C_EXPORT __attribute__((visibility("default")))
+#endif
 #endif
 
 #ifdef __cplusplus

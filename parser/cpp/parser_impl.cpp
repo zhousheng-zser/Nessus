@@ -19,6 +19,10 @@
 #include <fstream>
 #include <algorithm>
 
+#ifdef __GNUC__
+#include <malloc.h>
+#endif
+
 namespace glasssix::exposing::nessus
 {
 	namespace
@@ -199,6 +203,10 @@ namespace glasssix::exposing::nessus
 
 					guid instance(instance_guid);
 					value = func(plugin, root, data, instance);
+#ifdef __GNUC__
+					if (method == "delete")
+						::malloc_trim(0);
+#endif
 				}
 			}
 
@@ -330,6 +338,11 @@ namespace glasssix::exposing::nessus
 
 					guid instance(instance_guid);
 					value = func(plugin, root, data, instance);
+
+#if defined(__GNUC__) && !defined(ANDROID)
+					if (method == "delete")
+						::malloc_trim(0);
+#endif
 				}
 			}
 

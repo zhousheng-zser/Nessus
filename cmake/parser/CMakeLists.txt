@@ -12,8 +12,9 @@ if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	target_compile_definitions(${module_name} PRIVATE -DPARSER_C_EXPORT -DJSON_DLL_BUILD -DNOMINMAX -DNOGDI)
+	target_compile_definitions(${module_name} PRIVATE -DNOMINMAX -DNOGDI)
 endif()
+target_compile_definitions(${module_name} PRIVATE -DPARSER_C_EXPORT -DJSON_DLL_BUILD)
 
 target_include_directories(${module_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd-party/cpp/libyuv/include 
 			${CMAKE_CURRENT_SOURCE_DIR}/../../register/cpp/PluginRegister 
@@ -30,8 +31,8 @@ target_link_libraries(${module_name} yuv plugin_register license_client ${COMMON
 add_dependencies(${module_name} yuv plugin_register license_client)
 
 if((CMAKE_SIZEOF_VOID_P EQUAL 8) AND USE_SIMDJSON)
-target_compile_definitions(${module_name} PRIVATE -DUSE_SIMDJSON)
-target_include_directories(${module_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd-party/cpp/simdjson/singleheader)
-target_link_libraries(${module_name} simdjson)
-add_dependencies(${module_name} simdjson)
+	target_compile_definitions(${module_name} PRIVATE -DUSE_SIMDJSON)
+	target_include_directories(${module_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../3rd-party/cpp/simdjson/singleheader)
+	target_link_libraries(${module_name} simdjson)
+	add_dependencies(${module_name} simdjson)
 endif()

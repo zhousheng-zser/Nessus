@@ -99,7 +99,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 if((CMAKE_SIZEOF_VOID_P EQUAL 8) AND USE_SIMDJSON)
-add_subdirectory(3rd-party/simdjson)
+	add_subdirectory(3rd-party/simdjson)
 endif()
 add_subdirectory(3rd-party/libyuv)
 add_subdirectory(3rd-party/openssl)
