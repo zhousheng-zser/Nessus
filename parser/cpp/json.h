@@ -151,6 +151,8 @@ license you like.
 #if defined(_MSC_VER)
 #define JSON_API __declspec(dllexport)
 #define JSONCPP_DISABLE_DLL_INTERFACE_WARNING
+#elif defined(__GNUC__)
+#define JSON_API __attribute__((visibility("default")))
 #endif // if defined(_MSC_VER)
 #elif defined(JSON_DLL)
 #if defined(_MSC_VER)
