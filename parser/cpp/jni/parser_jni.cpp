@@ -90,7 +90,7 @@ extern "C" {
 		{
 			std::unique_ptr<_jclass, std::function<void(jclass)>> class_exception{ env->FindClass("java/lang/Exception"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
 
-			env->ThrowNew(class_exception.get(), ex.what_to_narrow().c_str());
+			return (env->ThrowNew(class_exception.get(), ex.what_to_narrow().c_str()), nullptr);
 		}
 
 		jclass clazz = env->GetObjectClass(thiz);
@@ -125,7 +125,7 @@ extern "C" {
 		}
 		catch (const exposing::abi_error& ex)
 		{
-			env->ThrowNew(class_exception.get(), ex.what_to_narrow().c_str());
+			return (env->ThrowNew(class_exception.get(), ex.what_to_narrow().c_str()), nullptr);
 		}
 
 		jclass clazz = env->GetObjectClass(thiz);
