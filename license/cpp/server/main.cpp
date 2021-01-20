@@ -23,7 +23,7 @@ namespace exposing = glasssix::exposing;
 namespace
 {
 	constexpr std::uint16_t listen_port = 16623;
-	constexpr std::time_t permissible_error = 5;
+	constexpr std::time_t permissible_error = 600;
 
 	authorization_response_message create_response_message(const authorization_request_message& message, const license_record& record)
 	{
