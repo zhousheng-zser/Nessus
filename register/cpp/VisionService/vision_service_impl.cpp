@@ -148,17 +148,20 @@ namespace glasssix::exposing::nessus
 		unknown_object cassius_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(models_directory + u8"/unicorn.racy", device));
+			return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(models_directory + (use_int8 ? u8"/unicorn_int8.racy" : u8"/unicorn.racy"), device, use_int8 ? true : false));
 		}
 
 		unknown_object gaius_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::gaius, make_exported_interface<gaius::feature_extractor>(models_directory + u8"/mobile_unicorn.racy", models_directory + u8"/mobile_unicorn_mask.racy", device));
+			return add_instance(package_names::gaius, make_exported_interface<gaius::feature_extractor>(models_directory + (use_int8 ? u8"/mobile_unicorn_int8.racy" : u8"/mobile_unicorn.racy"), 
+				models_directory + (use_int8 ? u8"/mobile_unicorn_mask_int8.racy" : u8"/mobile_unicorn_mask.racy"), device, use_int8 ? true : false));
 		}
 
 		unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)

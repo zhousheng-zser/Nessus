@@ -831,10 +831,12 @@ namespace glasssix
 				try
 				{
 					int device = root["device"].asInt();
+					bool use_int8 = root["use_int8"].asBool();
 					std::string models_directory = root["models_directory"].asString();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"device", box(device)},
+							{u8"use_int8", box(use_int8 ? 1 : 0)},
 							{u8"models_directory", box(std::string_view(models_directory))}
 						});
 
@@ -1073,10 +1075,12 @@ namespace glasssix
 				try
 				{
 					int device = root["device"].asInt();
+					bool use_int8 = root["use_int8"].asBool();
 					std::string models_directory = root["models_directory"].asString();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"device", box(device)},
+							{u8"use_int8", box(use_int8 ? 1 : 0)},
 							{u8"models_directory", box(std::string_view(models_directory))}
 						});
 
