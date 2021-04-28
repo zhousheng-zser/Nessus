@@ -1172,7 +1172,7 @@ namespace glasssix
 
 						size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
 						if (aligned_face_decode_len != cassius_forward_aligned_buffer_len)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != gaius_forward_aligned_buffer_len");
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != cassius_forward_aligned_buffer_len");
 
 						aligned_faces_vec.insert(aligned_faces_vec.end(), ptr, ptr + cassius_forward_aligned_buffer_len);
 						num++;
@@ -1198,6 +1198,319 @@ namespace glasssix
 					}
 
 					value["features"] = jobj_features;
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Selene_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
+			{
+				Json::Value value;
+				try
+				{
+					int device = root["device"].asInt();
+					bool use_int8 = root["use_int8"].asBool();
+					std::string models_directory = root["models_directory"].asString();
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"device", box(device)},
+							{u8"use_int8", box(use_int8 ? 1 : 0)},
+							{u8"models_directory", box(std::string_view(models_directory))}
+						});
+
+					instance = unbox<guid>(plugin.execute(u8"selene.new", param));
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+			inline Json::Value Selene_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
+			{
+				Json::Value value;
+				try
+				{
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"object_id", box(instance)}
+						});
+
+					plugin.execute(u8"selene.delete", param);
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			constexpr int selene_forward_aligned_buffer_len = 3 * 128 * 128;
+			inline Json::Value Selene_Forward_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
+			{
+				Json::Value value;
+
+				try
+				{
+					int format = root["format"].asInt();
+					bool is_id_image = root["is_id_image"].asBool();
+					if (format < 0 || format > 1)
+						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: format < 0 || format > 1");
+
+					auto aligned_face_array = root["aligned_images"];
+					std::vector<uint8_t> aligned_faces_vec;
+					int num = 0;
+					memory::tensor<std::uint8_t> temp(selene_forward_aligned_buffer_len, -1, memory::NCHW/*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
+					std::uint8_t* ptr = temp.mutable_cpu_data();
+					for (auto i : aligned_face_array)
+					{
+						std::string aligned_face_base64_str = i.asString();
+						if (aligned_face_base64_str.size() != TB64ENCLEN(selene_forward_aligned_buffer_len))
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(selene_forward_aligned_buffer_len)");
+
+						size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
+						if (aligned_face_decode_len != selene_forward_aligned_buffer_len)
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != selene_forward_aligned_buffer_len");
+
+						aligned_faces_vec.insert(aligned_faces_vec.end(), ptr, ptr + selene_forward_aligned_buffer_len);
+						num++;
+					}
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
+							{u8"num", box(num)},
+							{u8"order", box(format)},
+							{u8"is_id_image", box(is_id_image ? 1 : 0)},
+							{u8"object_id", box(instance)}
+						});
+
+					auto result = plugin.execute(u8"selene.Forward", param).as<param_vector<param_vector<float>>>();
+
+					Json::Value jobj_features = Json::Value(Json::arrayValue);
+					for (size_t i = 0; i < result.size(); i++)
+					{
+						Json::Value jarray_feature;
+						for (size_t j = 0; j < result[i].size(); j++)
+							jarray_feature["feature"].append(result[i][j]);
+						jobj_features.append(jarray_feature);
+					}
+
+					value["features"] = jobj_features;
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Damocles_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
+			{
+				Json::Value value;
+				try
+				{
+					int device = root["device"].asInt();
+					bool use_int8 = root["use_int8"].asBool();
+					std::string models_directory = root["models_directory"].asString();
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"device", box(device)},
+							{u8"use_int8", box(use_int8 ? 1 : 0)},
+							{u8"models_directory", box(std::string_view(models_directory))}
+						});
+
+					instance = unbox<guid>(plugin.execute(u8"damocles.new", param));
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+			inline Json::Value Damocles_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
+			{
+				Json::Value value;
+				try
+				{
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"object_id", box(instance)}
+						});
+
+					plugin.execute(u8"damocles.delete", param);
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+				return value;
+			}
+
+			inline Json::Value Damocles_spoofing_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
+			{
+				Json::Value value;
+
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+
+					Json::Value facerect_list = root["facerect_list"];
+					auto faces = make_param_vector<longinus::face_info>();
+					for (auto& i : facerect_list)
+					{
+						auto face = make_exported_interface<longinus::face_info>();
+						face.set_x(i["x"].asFloat());
+						face.set_y(i["y"].asFloat());
+						face.set_width(i["width"].asFloat());
+						face.set_height(i["height"].asFloat());
+						faces.push_back(face);
+					}
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"image", box(image_span)},
+							{u8"height", box(height)},
+							{u8"width", box(width)},
+							{u8"faces", faces },
+							{u8"order", box(static_cast<int>(frame.order()))},
+							{u8"object_id", box(instance)}
+						});
+
+					auto result = plugin.execute(u8"damocles.spoofing_detect", param).as<param_vector<param_vector<float>>>();
+					Json::Value jobj_results = Json::Value(Json::arrayValue);
+					for (size_t i = 0; i < result.size(); i++)
+					{
+						Json::Value jarray_prob;
+						for (size_t j = 0; j < result[i].size(); j++)
+							jarray_prob["prob"].append(result[i][j]);
+						jobj_results.append(jarray_prob);
+					}
+
+					value["result"] = Json::Value(jobj_results);
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}

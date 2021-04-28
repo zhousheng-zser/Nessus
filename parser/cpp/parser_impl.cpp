@@ -535,6 +535,12 @@ namespace glasssix::exposing::nessus
 		protocol_map["cassius.new"] = &Cassius_new_json;
 		protocol_map["cassius.delete"] = &Cassius_delete_json;
 		protocol_map["cassius.forward"] = &Cassius_Forward_json;
+		protocol_map["selene.new"] = &Selene_new_json;
+		protocol_map["selene.delete"] = &Selene_delete_json;
+		protocol_map["selene.forward"] = &Selene_Forward_json;
+		protocol_map["damocles.new"] = &Damocles_new_json;
+		protocol_map["damocles.delete"] = &Damocles_delete_json;
+		protocol_map["damocles.spoofing_detect"] = &Damocles_spoofing_detect_json;
 		protocol_map["irisviel.new"] = &Irisviel_new_json;
 		protocol_map["irisviel.delete"] = &Irisviel_delete_json;
 		protocol_map["irisviel.search"] = &Irisviel_search_json;

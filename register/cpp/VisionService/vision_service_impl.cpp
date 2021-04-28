@@ -9,12 +9,16 @@
 #include <romancia/face_alignment.hpp>
 #include <gaius/feature_extractor.hpp>
 #include <cassius/feature_extractor.hpp>
+#include <damocles/anti_spoofing.hpp>
+#include <selene/feature_extractor.hpp>
 
 using namespace glasssix::gaius;
 using namespace glasssix::cassius;
 using namespace glasssix::romancia;
 using namespace glasssix::irisviel;
 using namespace glasssix::longinus;
+using namespace glasssix::damocles;
+using namespace glasssix::selene;
 
 namespace glasssix::exposing::nessus
 {
@@ -27,6 +31,8 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view longinus{ u8"longinus" };
 			static constexpr utf8_string_view romancia{ u8"romancia" };
 			static constexpr utf8_string_view irisviel{ u8"irisviel" };
+			static constexpr utf8_string_view damocles{ u8"damocles" };
+			static constexpr utf8_string_view selene{ u8"selene" };
 		};
 
 		struct function_names final
@@ -34,17 +40,23 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view gaius_new{ u8"gaius.new" };
 			static constexpr utf8_string_view cassius_new{ u8"cassius.new" };
 			static constexpr utf8_string_view longinus_new{ u8"longinus.new" };
+			static constexpr utf8_string_view damocles_new{ u8"damocles.new" };
 			static constexpr utf8_string_view romancia_new{ u8"romancia.new" };
 			static constexpr utf8_string_view irisviel_new{ u8"irisviel.new" };
+			static constexpr utf8_string_view selene_new{ u8"selene.new" };
 			static constexpr utf8_string_view gaius_delete{ u8"gaius.delete" };
 			static constexpr utf8_string_view cassius_delete{ u8"cassius.delete" };
 			static constexpr utf8_string_view longinus_delete{ u8"longinus.delete" };
+			static constexpr utf8_string_view damocles_delete{ u8"damocles.delete" };
 			static constexpr utf8_string_view romancia_delete{ u8"romancia.delete" };
 			static constexpr utf8_string_view irisviel_delete{ u8"irisviel.delete" };
+			static constexpr utf8_string_view selene_delete{ u8"selene.delete" };
 			static constexpr utf8_string_view gaius_forward{ u8"gaius.Forward" };
 			static constexpr utf8_string_view cassius_forward{ u8"cassius.Forward" };
+			static constexpr utf8_string_view selene_forward{ u8"selene.Forward" };
 			static constexpr utf8_string_view longinus_detect{ u8"longinus.detect" };
 			static constexpr utf8_string_view longinus_trace{ u8"longinus.trace" };
+			static constexpr utf8_string_view damocles_spoofing_detect{ u8"damocles.spoofing_detect" };
 			static constexpr utf8_string_view longinus_match_faces_in_last_two_frame{ u8"longinus.match_faces_in_last_two_frame" };
 			static constexpr utf8_string_view romancia_align_face{ u8"romancia.alignFace" };
 			static constexpr utf8_string_view romancia_antispoofing{ u8"romancia.antispoofing" };
@@ -72,17 +84,22 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::gaius_new, std::bind(&impl::gaius_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::cassius_new, std::bind(&impl::cassius_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_new, std::bind(&impl::longinus_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::damocles_new, std::bind(&impl::damocles_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_new, std::bind(&impl::romancia_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::irisviel_new, std::bind(&impl::irisviel_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::selene_new, std::bind(&impl::selene_new, this, std::placeholders::_1));
 
 			// Delete
 			functions_.insert_or_assign(function_names::gaius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::cassius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::irisviel_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::longinus_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::damocles_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::romancia_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::selene_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
+			functions_.insert_or_assign(function_names::damocles_spoofing_detect, std::bind(&impl::damocles_spoofing_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_detect, std::bind(&impl::longinus_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_trace, std::bind(&impl::longinus_trace, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_match_faces_in_last_two_frame, std::bind(&impl::longinus_match_faces_in_last_two_frame, this, std::placeholders::_1));
@@ -92,6 +109,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::romancia_mask_detect, std::bind(&impl::romancia_mask_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gaius_forward, std::bind(&impl::gaius_extract_feature, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::cassius_forward, std::bind(&impl::cassius_extract_feature, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::selene_forward, std::bind(&impl::selene_extract_feature, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::irisviel_clear, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_clear, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::irisviel_remove_all, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_all, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::irisviel_load_databases, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_load_databases, this, std::placeholders::_1)));
@@ -164,6 +182,16 @@ namespace glasssix::exposing::nessus
 				models_directory + (use_int8 ? u8"/mobile_unicorn_mask_int8.racy" : u8"/mobile_unicorn_mask.racy"), device, use_int8 ? true : false));
 		}
 
+		unknown_object selene_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+
+			return add_instance(package_names::selene, make_exported_interface<selene::feature_extractor>(models_directory + (use_int8 ? u8"/unicorn_light_general_int8.racy" : u8"/unicorn_light_general.racy"),
+				models_directory + (use_int8 ? u8"/unicorn_light_identity_int8.racy" : u8"/unicorn_light_identity.racy"), device, use_int8 ? true : false));
+		}
+
 		unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
@@ -171,6 +199,15 @@ namespace glasssix::exposing::nessus
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
 			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/longinus.racy", models_directory + u8"/banshee.racy", nms, device));
+		}
+
+		unknown_object damocles_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+
+			return add_instance(package_names::damocles, make_exported_interface<damocles::anti_spoofing>(models_directory + (use_int8 ? u8"/FASMV2_int8.racy" : u8"/FASMV2.racy"), device, use_int8 ? true : false));
 		}
 
 		unknown_object romancia_new(const param_hash_map<param_string, unknown_object>& params)
@@ -211,6 +248,17 @@ namespace glasssix::exposing::nessus
 			return instance.get(aligned_faces, num, order, has_mask?true:false);
 		}
 
+		unknown_object selene_extract_feature(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<selene::feature_extractor>(params);
+			auto aligned_faces = unbox<param_span<std::uint8_t>>(params.get_value(u8"aligned_faces"));
+			auto num = unbox<std::int32_t>(params.get_value(u8"num"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			auto is_id_image = unbox<std::int32_t>(params.get_value(u8"is_id_image"));
+
+			return instance.get(aligned_faces, num, order, is_id_image ? true : false);
+		}
+
 		unknown_object longinus_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
@@ -224,6 +272,19 @@ namespace glasssix::exposing::nessus
 			auto do_attributing = unbox<bool>(params.get_value(u8"do_attributing"));
 
 			return instance.detect(image, channels, height, width, min_size, threshold, order, do_attributing);
+		}
+
+		unknown_object damocles_spoofing_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<anti_spoofing>(params);
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+			return instance.spoofing_detect(faces, image, channels, height, width, order);
 		}
 
 		unknown_object longinus_trace(const param_hash_map<param_string, unknown_object>& params)
