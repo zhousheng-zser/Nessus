@@ -1510,7 +1510,7 @@ namespace glasssix
 						jobj_results.append(jarray_prob);
 					}
 
-					value["result"] = Json::Value(jobj_results);
+					value["spoofing_result"] = Json::Value(jobj_results);
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
