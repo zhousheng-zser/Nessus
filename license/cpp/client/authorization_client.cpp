@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <algorithm>
 #include <functional>
-#include <condition_variable>
 
 #define NOGDI
 
@@ -45,6 +44,8 @@ namespace glasssix::license
 				{
 					worker_thread_.join();
 				}
+
+				std::exit(EXIT_SUCCESS);
 			}
 
 			operator asio::io_context& () noexcept
@@ -66,6 +67,7 @@ namespace glasssix::license
 			asio::executor_work_guard<asio::io_context::executor_type> work_guard_;
 			std::thread worker_thread_;
 		};
+
 	}
 
 	class authorization_client::impl
@@ -77,11 +79,11 @@ namespace glasssix::license
 		delegate<void, const std::error_code&> on_async_error;
 		delegate<void, const authorization_response_message&> on_authorization;
 
-		impl() : 
+		impl() :
 			dispatcher_
-			{
-				{ message_type::authorization, std::bind(&impl::raise_authorization, this, std::placeholders::_1, std::placeholders::_2) }
-			}
+		{
+			{ message_type::authorization, std::bind(&impl::raise_authorization, this, std::placeholders::_1, std::placeholders::_2) }
+		}
 		{
 			client_.init_asio(&io_context_.get());
 			client_.clear_error_channels(websocketpp::log::elevel::all);
@@ -91,23 +93,13 @@ namespace glasssix::license
 				{
 					{
 						std::scoped_lock lock{ mutex_ };
+
 						connection_ = handle;
 					}
 
 					on_connect();
 				});
 
-			client_.set_close_handler([this](const websocketpp::connection_hdl& handle)
-				{
-					{
-						std::scoped_lock lock{ mutex_ };
-
-						connection_.reset();
-					}
-
-					condition_close_.notify_all();
-				});
-			
 			client_.set_fail_handler([this](const websocketpp::connection_hdl& handle)
 				{
 					if (auto connection = client_.get_con_from_hdl(handle))
@@ -115,11 +107,14 @@ namespace glasssix::license
 						on_async_error(connection->get_ec());
 					}
 				});
+
+			client_.start_perpetual();
 		}
 
 		~impl()
 		{
 			close();
+			client_.stop_perpetual();
 		}
 
 		void connect(std::string_view uri)
@@ -140,7 +135,7 @@ namespace glasssix::license
 		void close()
 		{
 			std::error_code code;
-			std::unique_lock lock{ mutex_ };
+			std::scoped_lock lock{ mutex_ };
 
 			if (connection_.expired())
 			{
@@ -149,9 +144,8 @@ namespace glasssix::license
 			else
 			{
 				client_.close(connection_, websocketpp::close::status::going_away, "Shutdown", code);
+				connection_.reset();
 			}
-
-			condition_close_.wait(lock, [this] { return connection_.expired(); });
 		}
 
 		void request_authorization(const authorization_request_message& message)
@@ -194,7 +188,6 @@ namespace glasssix::license
 		protocol_dispatcher dispatcher_;
 		single_threaded_io_context io_context_;
 		websocketpp::connection_hdl connection_;
-		std::condition_variable condition_close_;
 	};
 
 	authorization_client::authorization_client() : impl_{ std::make_unique<impl>() }
