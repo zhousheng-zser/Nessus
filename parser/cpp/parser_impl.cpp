@@ -554,6 +554,9 @@ namespace glasssix::exposing::nessus
 		protocol_map["irisviel.add_records"] = &Irisviel_add_records_json;
 		protocol_map["irisviel.update_record"] = &Irisviel_update_record_json;
 		protocol_map["irisviel.update_records"] = &Irisviel_update_records_json;
+        protocol_map["gungnir.new"] = &Gungnir_new_json;
+		protocol_map["gungnir.delete"] = &Gungnir_delete_json;
+		protocol_map["gungnir.detect"] = &Gungnir_detect_json;
 		return protocol_map;
 	}();
 
