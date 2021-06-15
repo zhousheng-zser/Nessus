@@ -525,6 +525,7 @@ namespace glasssix::exposing::nessus
 		protocol_map["romancia.new"] = &Romancia_new_json;
 		protocol_map["romancia.delete"] = &Romancia_delete_json;
 		protocol_map["romancia.alignface"] = &Romancia_alignFace_json;
+		protocol_map["romancia.alignface256"] = &Romancia_alignFace_256_json;
 		protocol_map["romancia.blur_detect"] = &Romancia_blur_detect_json;
 		protocol_map["romancia.antispoofing"] = &Romancia_antispoofing_json;
 		protocol_map["romancia.mask_detect"] = &Romancia_mask_detect_json;
@@ -565,6 +566,7 @@ namespace glasssix::exposing::nessus
 #endif
 		protocol_map["fusion.romancia.alignface.gaius.forward"] = &Fusion_Romancia_alignFace_Gaius_Forward_json;
 		protocol_map["fusion.romancia.alignface.cassius.forward"] = &Fusion_Romancia_alignFace_Cassius_Forward_json;
+		protocol_map["fusion.romancia.alignface256.selene.forward"] = &Fusion_Romancia_alignFace256_Selene_Forward_json;
 		protocol_map["fusion.longinus.detect.romancia.multimethod"] = &Fusion_Longinus_detect_Romancia_multimethod_json;
 		protocol_map["fusion.longinus.trace.romancia.multimethod"] = &Fusion_Longinus_trace_Romancia_multimethod_json;
 		return protocol_map;

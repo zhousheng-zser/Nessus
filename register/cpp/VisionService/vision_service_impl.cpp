@@ -59,6 +59,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view damocles_spoofing_detect{ u8"damocles.spoofing_detect" };
 			static constexpr utf8_string_view longinus_match_faces_in_last_two_frame{ u8"longinus.match_faces_in_last_two_frame" };
 			static constexpr utf8_string_view romancia_align_face{ u8"romancia.alignFace" };
+			static constexpr utf8_string_view romancia_align_face_256{ u8"romancia.alignFace256" };
 			static constexpr utf8_string_view romancia_antispoofing{ u8"romancia.antispoofing" };
 			static constexpr utf8_string_view romancia_blur_detect{ u8"romancia.blur_detect" };
 			static constexpr utf8_string_view romancia_mask_detect{ u8"romancia.mask_detect" };
@@ -104,6 +105,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::longinus_trace, std::bind(&impl::longinus_trace, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_match_faces_in_last_two_frame, std::bind(&impl::longinus_match_faces_in_last_two_frame, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_align_face, std::bind(&impl::romancia_align_face, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::romancia_align_face_256, std::bind(&impl::romancia_align_face_256, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_antispoofing, std::bind(&impl::romancia_antispoofing, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_blur_detect, std::bind(&impl::romancia_blur_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_mask_detect, std::bind(&impl::romancia_mask_detect, this, std::placeholders::_1));
@@ -320,7 +322,20 @@ namespace glasssix::exposing::nessus
 			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return instance.get(image, channels, height, width, faces, order);
+			return instance.align(image, channels, height, width, faces, order);
+		}
+
+		unknown_object romancia_align_face_256(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<face_alignment>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+			return instance.align256(image, channels, height, width, faces, order);
 		}
 
 		unknown_object romancia_blur_detect(const param_hash_map<param_string, unknown_object>& params)
