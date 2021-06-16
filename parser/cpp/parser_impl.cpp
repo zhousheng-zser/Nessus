@@ -531,14 +531,17 @@ namespace glasssix::exposing::nessus
 		protocol_map["romancia.mask_detect"] = &Romancia_mask_detect_json;
 		protocol_map["gaius.new"] = &Gaius_new_json;
 		protocol_map["gaius.delete"] = &Gaius_delete_json;
-		protocol_map["gaius.forward"] = &Gaius_Forward_json;
-		protocol_map["gaius.make_mask_forward"] = &Gaius_make_mask_Forward_json;
+		protocol_map["gaius.forward"] = &Gaius_forward_json;
+		protocol_map["gaius.make_mask_forward"] = &Gaius_make_mask_forward_json;
 		protocol_map["cassius.new"] = &Cassius_new_json;
 		protocol_map["cassius.delete"] = &Cassius_delete_json;
-		protocol_map["cassius.forward"] = &Cassius_Forward_json;
+		protocol_map["cassius.forward"] = &Cassius_forward_json;
 		protocol_map["selene.new"] = &Selene_new_json;
 		protocol_map["selene.delete"] = &Selene_delete_json;
-		protocol_map["selene.forward"] = &Selene_Forward_json;
+		protocol_map["selene.forward_universal"] = &Selene_forward_universal_json;
+		protocol_map["selene.forward_id"] = &Selene_forward_id_json;
+		protocol_map["selene.forward_universal_mask"] = &Selene_forward_universal_mask_json;
+		protocol_map["selene.make_universal_mask_forward"] = &Selene_make_universal_mask_forward_json;
 		protocol_map["damocles.new"] = &Damocles_new_json;
 		protocol_map["damocles.delete"] = &Damocles_delete_json;
 		protocol_map["damocles.spoofing_detect"] = &Damocles_spoofing_detect_json;
@@ -567,9 +570,11 @@ namespace glasssix::exposing::nessus
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> parser_impl::impl::fusion_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
 #endif
-		protocol_map["fusion.romancia.alignface.gaius.forward"] = &Fusion_Romancia_alignFace_Gaius_Forward_json;
-		protocol_map["fusion.romancia.alignface.cassius.forward"] = &Fusion_Romancia_alignFace_Cassius_Forward_json;
-		protocol_map["fusion.romancia.alignface256.selene.forward"] = &Fusion_Romancia_alignFace256_Selene_Forward_json;
+		protocol_map["fusion.romancia.alignface.gaius.forward"] = &Fusion_Romancia_alignFace_Gaius_forward_json;
+		protocol_map["fusion.romancia.alignface.cassius.forward"] = &Fusion_Romancia_alignFace_Cassius_forward_json;
+		protocol_map["fusion.romancia.alignface256.selene.forward_universal"] = &Fusion_Romancia_alignFace256_Selene_forward_universal_json;
+		protocol_map["fusion.romancia.alignface256.selene.forward_id"] = &Fusion_Romancia_alignFace256_Selene_forward_id_json;
+		protocol_map["fusion.romancia.alignface256.selene.forward_universal_mask"] = &Fusion_Romancia_alignFace256_Selene_forward_universal_mask_json;
 		protocol_map["fusion.longinus.detect.romancia.multimethod"] = &Fusion_Longinus_detect_Romancia_multimethod_json;
 		protocol_map["fusion.longinus.trace.romancia.multimethod"] = &Fusion_Longinus_trace_Romancia_multimethod_json;
 		return protocol_map;
