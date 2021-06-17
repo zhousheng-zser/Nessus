@@ -60,7 +60,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view cassius_forward{ u8"cassius.forward" };
 			static constexpr utf8_string_view selene_forward_universal{ u8"selene.forward_universal" };
 			static constexpr utf8_string_view selene_forward_id{ u8"selene.forward_id" };
-			static constexpr utf8_string_view selene_forward_universal_mask{ u8"selene.forward_universal_universal_mask" };
+			static constexpr utf8_string_view selene_forward_universal_mask{ u8"selene.forward_universal_mask" };
 			static constexpr utf8_string_view longinus_detect{ u8"longinus.detect" };
 			static constexpr utf8_string_view longinus_trace{ u8"longinus.trace" };
 			static constexpr utf8_string_view damocles_spoofing_detect{ u8"damocles.spoofing_detect" };
