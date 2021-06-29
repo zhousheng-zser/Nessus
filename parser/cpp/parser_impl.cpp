@@ -538,10 +538,8 @@ namespace glasssix::exposing::nessus
 		protocol_map["cassius.forward"] = &Cassius_forward_json;
 		protocol_map["selene.new"] = &Selene_new_json;
 		protocol_map["selene.delete"] = &Selene_delete_json;
-		protocol_map["selene.forward_universal"] = &Selene_forward_universal_json;
-		protocol_map["selene.forward_id"] = &Selene_forward_id_json;
-		protocol_map["selene.forward_universal_mask"] = &Selene_forward_universal_mask_json;
-		protocol_map["selene.make_universal_mask_forward"] = &Selene_make_universal_mask_forward_json;
+		protocol_map["selene.forward"] = &Selene_forward_json;
+		protocol_map["selene.make_mask_forward"] = &Selene_make_mask_forward_json;
 		protocol_map["damocles.new"] = &Damocles_new_json;
 		protocol_map["damocles.delete"] = &Damocles_delete_json;
 		protocol_map["damocles.spoofing_detect"] = &Damocles_spoofing_detect_json;
@@ -572,9 +570,7 @@ namespace glasssix::exposing::nessus
 #endif
 		protocol_map["fusion.romancia.alignface.gaius.forward"] = &Fusion_Romancia_alignFace_Gaius_forward_json;
 		protocol_map["fusion.romancia.alignface.cassius.forward"] = &Fusion_Romancia_alignFace_Cassius_forward_json;
-		protocol_map["fusion.romancia.alignface256.selene.forward_universal"] = &Fusion_Romancia_alignFace256_Selene_forward_universal_json;
-		protocol_map["fusion.romancia.alignface256.selene.forward_id"] = &Fusion_Romancia_alignFace256_Selene_forward_id_json;
-		protocol_map["fusion.romancia.alignface256.selene.forward_universal_mask"] = &Fusion_Romancia_alignFace256_Selene_forward_universal_mask_json;
+		protocol_map["fusion.romancia.alignface256.selene.forward"] = &Fusion_Romancia_alignFace256_Selene_forward_json;
 		protocol_map["fusion.longinus.detect.romancia.multimethod"] = &Fusion_Longinus_detect_Romancia_multimethod_json;
 		protocol_map["fusion.longinus.trace.romancia.multimethod"] = &Fusion_Longinus_trace_Romancia_multimethod_json;
 		return protocol_map;
