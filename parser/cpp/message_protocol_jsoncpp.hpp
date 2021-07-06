@@ -669,7 +669,7 @@ namespace glasssix
 
                     auto result = plugin.execute(u8"mjollner.detect", param).as<param_vector<mjollner::box_info>>();
                     Json::Value jarray_boxes = Json::Value(Json::arrayValue);
-                    for (auto &box : result)
+                    for (auto box : result)
                     {
                         Json::Value jobj_box;
                         Json::Value jarray_points = Json::Value(Json::arrayValue);
