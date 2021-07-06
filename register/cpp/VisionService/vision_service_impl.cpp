@@ -60,15 +60,17 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view irisviel_delete{ u8"irisviel.delete" };
 			static constexpr utf8_string_view selene_delete{ u8"selene.delete" };
             static constexpr utf8_string_view gungnir_delete{ u8"gungnir.delete" };
-            static constexpr utf8_string_view mjollner_delete{ u8"mjollner.delete" };
-			static constexpr utf8_string_view gaius_forward{ u8"gaius.Forward" };
-			static constexpr utf8_string_view cassius_forward{ u8"cassius.Forward" };
-			static constexpr utf8_string_view selene_forward{ u8"selene.Forward" };
+      static constexpr utf8_string_view mjollner_delete{ u8"mjollner.delete" };
+			static constexpr utf8_string_view gaius_forward{ u8"gaius.forward" };
+			static constexpr utf8_string_view cassius_forward{ u8"cassius.forward" };
+			static constexpr utf8_string_view selene_forward{ u8"selene.forward" };
+			static constexpr utf8_string_view selene_get_model_type{ u8"selene.get_model_type" };
 			static constexpr utf8_string_view longinus_detect{ u8"longinus.detect" };
 			static constexpr utf8_string_view longinus_trace{ u8"longinus.trace" };
 			static constexpr utf8_string_view damocles_spoofing_detect{ u8"damocles.spoofing_detect" };
 			static constexpr utf8_string_view longinus_match_faces_in_last_two_frame{ u8"longinus.match_faces_in_last_two_frame" };
 			static constexpr utf8_string_view romancia_align_face{ u8"romancia.alignFace" };
+			static constexpr utf8_string_view romancia_align_face_256{ u8"romancia.alignFace256" };
 			static constexpr utf8_string_view romancia_antispoofing{ u8"romancia.antispoofing" };
 			static constexpr utf8_string_view romancia_blur_detect{ u8"romancia.blur_detect" };
 			static constexpr utf8_string_view romancia_mask_detect{ u8"romancia.mask_detect" };
@@ -122,12 +124,14 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::longinus_trace, std::bind(&impl::longinus_trace, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_match_faces_in_last_two_frame, std::bind(&impl::longinus_match_faces_in_last_two_frame, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_align_face, std::bind(&impl::romancia_align_face, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::romancia_align_face_256, std::bind(&impl::romancia_align_face_256, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_antispoofing, std::bind(&impl::romancia_antispoofing, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_blur_detect, std::bind(&impl::romancia_blur_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_mask_detect, std::bind(&impl::romancia_mask_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gaius_forward, std::bind(&impl::gaius_extract_feature, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::cassius_forward, std::bind(&impl::cassius_extract_feature, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::selene_forward, std::bind(&impl::selene_extract_feature, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::selene_get_model_type, std::bind(&impl::selene_get_model_type, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::irisviel_clear, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_clear, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::irisviel_remove_all, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_all, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::irisviel_load_databases, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_load_databases, this, std::placeholders::_1)));
@@ -202,12 +206,29 @@ namespace glasssix::exposing::nessus
 
 		unknown_object selene_new(const param_hash_map<param_string, unknown_object>& params)
 		{
+			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::selene, make_exported_interface<selene::feature_extractor>(models_directory + (use_int8 ? u8"/unicorn_light_general_int8.racy" : u8"/unicorn_light_general.racy"),
-				models_directory + (use_int8 ? u8"/unicorn_light_identity_int8.racy" : u8"/unicorn_light_identity.racy"), device, use_int8 ? true : false));
+			param_string model_name = u8"";
+			switch (model_type)
+			{
+			case 0:
+				model_name = u8"unicorn_light_universal";
+				break;
+			case 1:
+				model_name = u8"unicorn_light_id";
+				break;
+			case 2:
+				model_name = u8"unicorn_light_universal_mask";
+				break;
+			default:
+				throw abi_invalid_argument("Invalid model_type value. ");
+				break;
+			}
+
+			return add_instance(package_names::selene, make_exported_interface<selene::feature_extractor>(models_directory + u8"/" + model_name + (use_int8 ?  + u8"_int8.racy" : u8".racy"), model_type, device, use_int8 ? true : false));
 		}
 
 		unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
@@ -289,9 +310,15 @@ namespace glasssix::exposing::nessus
 			auto aligned_faces = unbox<param_span<std::uint8_t>>(params.get_value(u8"aligned_faces"));
 			auto num = unbox<std::int32_t>(params.get_value(u8"num"));
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
-			auto is_id_image = unbox<std::int32_t>(params.get_value(u8"is_id_image"));
 
-			return instance.get(aligned_faces, num, order, is_id_image ? true : false);
+			return instance.get(aligned_faces, num, order);
+		}
+
+		unknown_object selene_get_model_type(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<selene::feature_extractor>(params);
+
+			return box(instance.get_model_type());
 		}
 
 		unknown_object longinus_detect(const param_hash_map<param_string, unknown_object>& params)
@@ -355,7 +382,20 @@ namespace glasssix::exposing::nessus
 			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
 			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-			return instance.get(image, channels, height, width, faces, order);
+			return instance.align(image, channels, height, width, faces, order);
+		}
+
+		unknown_object romancia_align_face_256(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<face_alignment>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+			return instance.align256(image, channels, height, width, faces, order);
 		}
 
 		unknown_object romancia_blur_detect(const param_hash_map<param_string, unknown_object>& params)
