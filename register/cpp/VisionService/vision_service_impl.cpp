@@ -12,6 +12,7 @@
 #include <damocles/anti_spoofing.hpp>
 #include <selene/feature_extractor.hpp>
 #include <gungnir/yolo_net.hpp>
+#include <mjollner/ocr_net.hpp>
 
 using namespace glasssix::gaius;
 using namespace glasssix::cassius;
@@ -21,6 +22,7 @@ using namespace glasssix::longinus;
 using namespace glasssix::damocles;
 using namespace glasssix::selene;
 using namespace glasssix::gungnir;
+using namespace glasssix::mjollner;
 
 namespace glasssix::exposing::nessus
 {
@@ -36,6 +38,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view damocles{ u8"damocles" };
 			static constexpr utf8_string_view selene{ u8"selene" };
             static constexpr utf8_string_view gungnir{ u8"gungnir" };
+            static constexpr utf8_string_view mjollner{ u8"mjollner" };
 		};
 
 		struct function_names final
@@ -48,6 +51,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view irisviel_new{ u8"irisviel.new" };
 			static constexpr utf8_string_view selene_new{ u8"selene.new" };
             static constexpr utf8_string_view gungnir_new{ u8"gungnir.new" };
+            static constexpr utf8_string_view mjollner_new{ u8"mjollner.new" };
 			static constexpr utf8_string_view gaius_delete{ u8"gaius.delete" };
 			static constexpr utf8_string_view cassius_delete{ u8"cassius.delete" };
 			static constexpr utf8_string_view longinus_delete{ u8"longinus.delete" };
@@ -56,6 +60,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view irisviel_delete{ u8"irisviel.delete" };
 			static constexpr utf8_string_view selene_delete{ u8"selene.delete" };
             static constexpr utf8_string_view gungnir_delete{ u8"gungnir.delete" };
+      static constexpr utf8_string_view mjollner_delete{ u8"mjollner.delete" };
 			static constexpr utf8_string_view gaius_forward{ u8"gaius.forward" };
 			static constexpr utf8_string_view cassius_forward{ u8"cassius.forward" };
 			static constexpr utf8_string_view selene_forward{ u8"selene.forward" };
@@ -80,6 +85,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view irisviel_remove_records{ u8"irisviel.remove_records" };
 			static constexpr utf8_string_view irisviel_search{ u8"irisviel.search" };
             static constexpr utf8_string_view gungnir_detect{ u8"gungnir.detect" };
+            static constexpr utf8_string_view mjollner_detect{ u8"mjollner.detect" };
 		};
 	}
 
@@ -97,6 +103,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::irisviel_new, std::bind(&impl::irisviel_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::selene_new, std::bind(&impl::selene_new, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::gungnir_new, std::bind(&impl::gungnir_new, this, std::placeholders::_1));
+            functions_.insert_or_assign(function_names::mjollner_new, std::bind(&impl::mjollner_new, this, std::placeholders::_1));
 
 			// Delete
 			functions_.insert_or_assign(function_names::gaius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -107,11 +114,13 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::romancia_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::selene_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
             functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+            functions_.insert_or_assign(function_names::mjollner_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
 			functions_.insert_or_assign(function_names::damocles_spoofing_detect, std::bind(&impl::damocles_spoofing_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_detect, std::bind(&impl::longinus_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::gungnir_detect, std::bind(&impl::gungnir_detect, this, std::placeholders::_1));
+            functions_.insert_or_assign(function_names::mjollner_detect, std::bind(&impl::mjollner_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_trace, std::bind(&impl::longinus_trace, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_match_faces_in_last_two_frame, std::bind(&impl::longinus_match_faces_in_last_two_frame, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_align_face, std::bind(&impl::romancia_align_face, this, std::placeholders::_1));
@@ -265,6 +274,15 @@ namespace glasssix::exposing::nessus
             return add_instance(package_names::gungnir, make_exported_interface<yolo_net>(models_directory + u8"/gungnir.racy", device));
         }
 
+        unknown_object mjollner_new(const param_hash_map<param_string, unknown_object>& params)
+        {
+            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+            auto alphabet_path = unbox<param_string>(params.get_value(u8"alphabet_path"));
+
+            return add_instance(package_names::mjollner, make_exported_interface<ocr_net>(models_directory + u8"/det_db_resnet18.racy", models_directory + u8"/rec_crnn_resnet34.racy", alphabet_path, device));
+        }
+
 		unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto instance = get_instance<cassius::feature_extractor>(params);
@@ -410,6 +428,18 @@ namespace glasssix::exposing::nessus
         {
             constexpr std::int32_t channels = 3;
             auto instance = get_instance<yolo_net>(params);
+            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+            return instance.detect(image, channels, height, width, order);
+        }
+
+        unknown_object mjollner_detect(const param_hash_map<param_string, unknown_object>& params)
+        {
+            constexpr std::int32_t channels = 3;
+            auto instance = get_instance<ocr_net>(params);
             auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
             auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));

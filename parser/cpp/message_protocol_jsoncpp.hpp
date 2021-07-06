@@ -7,6 +7,7 @@
 #include "plugin_interface.hpp"
 #include "parser_exception.hpp"
 #include "../../common/include/gungnir/hat_info.hpp"
+#include "../../common/include/mjollner/box_info.hpp"
 #include "../../common/include/longinus/face_info.hpp"
 #include "../../common/include/irisviel/search_result.hpp"
 #include "../../common/include/irisviel/record.hpp"
@@ -544,6 +545,152 @@ namespace glasssix
                     }
 
                     value["hatrectwithhatinfo_list"] = jarray_rect;
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Mjollner_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            {
+                Json::Value value;
+                try
+                {
+                    int device = root["device"].asInt();
+                    std::string models_directory = root["models_directory"].asString();
+                    std::string alphabet_path = root["alphabet_path"].asString();
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"device", box(device)},
+                         {u8"models_directory", box(std::string_view(models_directory))},
+                         {u8"alphabet_path", box(std::string_view(alphabet_path))}});
+                    instance = unbox<guid>(plugin.execute(u8"mjollner.new", param));
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Mjollner_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            {
+                Json::Value value;
+                try
+                {
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"object_id", box(instance)}});
+
+                    plugin.execute(u8"mjollner.delete", param);
+
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+                return value;
+            }
+
+            inline Json::Value Mjollner_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            {
+                Json::Value value;
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
+
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"image", box(image_span)},
+                         {u8"height", box(height)},
+                         {u8"width", box(width)},
+                         {u8"order", box(static_cast<int>(frame.order()))},
+                         {u8"object_id", box(instance)}});
+
+                    auto result = plugin.execute(u8"mjollner.detect", param).as<param_vector<mjollner::box_info>>();
+                    Json::Value jarray_boxes = Json::Value(Json::arrayValue);
+                    for (auto &box : result)
+                    {
+                        Json::Value jobj_box;
+                        Json::Value jarray_points = Json::Value(Json::arrayValue);
+                        auto location = box.location();
+                        for (size_t i = 0; i < 4; i++)
+                        {
+                            Json::Value point;
+                            point["x"] = Json::Value(location[i * 2]);
+                            point["y"] = Json::Value(location[i * 2 + 1]);
+
+                            jarray_points.append(point);
+                        }
+                        jobj_box["location"] = jarray_points;
+                        jobj_box["strinfo"] = Json::Value(exposing::to_narrow_string(box.strinfo()));
+
+                        jarray_boxes.append(jobj_box);
+                    }
+
+                    value["strinfo_list"] = jarray_boxes;
+
+                    // value["strinfo_list"] = "hello world";
                     value["status"]["message"] = Json::Value("OK");
                     value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
                 }
