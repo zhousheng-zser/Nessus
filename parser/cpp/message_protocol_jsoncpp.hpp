@@ -45,9 +45,15 @@ namespace glasssix
                 }
                 case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC:
                 {
-                    int step = ((width * 3 + 3) >> 2) << 2;
-                    if (src.count() != step * height)
-                        throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, src.count() != (((width * 3 + 3) >> 2) << 2) * height");
+                    int step = 0;
+                    if (src.count() != width * height * 3)
+                    {
+                        step = ((width * 3 + 3) >> 2) << 2;
+                        if (src.count() != step * height)
+                            throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, src.count() != width * height * 3 || src.count() != (((width * 3 + 3) >> 2) << 2) * height");
+                    }
+                    else
+                        step = width * 3;
 
                     if (step == width * 3)
                         dst = src;
