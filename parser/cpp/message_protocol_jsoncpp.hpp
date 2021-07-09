@@ -8,6 +8,8 @@
 #include "parser_exception.hpp"
 #include "../../common/include/gungnir/hat_info.hpp"
 #include "../../common/include/mjollner/box_info.hpp"
+#include "../../common/include/valklyrs/result_info.hpp"
+#include "../../common/include/valklyrs/vp_info.hpp"
 #include "../../common/include/longinus/face_info.hpp"
 #include "../../common/include/irisviel/search_result.hpp"
 #include "../../common/include/irisviel/record.hpp"
@@ -43,10 +45,9 @@ namespace glasssix
                 }
                 case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC:
                 {
-                    int step = src.count() / height;
-
-                    if (step * height != src.count())
-                        throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, step * height != src.count()");
+                    int step = ((width * 3 + 3) >> 2) << 2;
+                    if (src.count() != step * height)
+                        throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, src.count() != (((width * 3 + 3) >> 2) << 2) * height");
 
                     if (step == width * 3)
                         dst = src;
@@ -718,6 +719,183 @@ namespace glasssix
                 return value;
             }
 
+            inline Json::Value Valklyrs_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            {
+                Json::Value value;
+                try
+                {
+                    int device = root["device"].asInt();
+                    std::string models_directory = root["models_directory"].asString();
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"device", box(device)},
+                         {u8"models_directory", box(std::string_view(models_directory))}});
+                    instance = unbox<guid>(plugin.execute(u8"valklyrs.new", param));
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Valklyrs_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            {
+                Json::Value value;
+                try
+                {
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"object_id", box(instance)}});
+
+                    plugin.execute(u8"valklyrs.delete", param);
+
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+                return value;
+            }
+
+            inline Json::Value Valklyrs_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            {
+                Json::Value value;
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
+
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"image", box(image_span)},
+                         {u8"height", box(height)},
+                         {u8"width", box(width)},
+                         {u8"order", box(static_cast<int>(frame.order()))},
+                         {u8"object_id", box(instance)}});
+
+                    auto result = plugin.execute(u8"valklyrs.detect", param).as<param_vector<valklyrs::result_info>>();
+
+                    Json::Value jbox;
+                    Json::Value jvehicle_list = Json::Value(Json::arrayValue);
+                    Json::Value jperson_list = Json::Value(Json::arrayValue);
+
+                    auto vehicle_list = result[0].vehicle_list();
+                    auto person_list = result[0].person_list();
+                    for (auto &&vp_info : vehicle_list)
+                    {
+                        Json::Value vp_obj;
+                        Json::Value coordinate_obj;
+                        Json::Value attribute_obj;
+                        auto coordinates = vp_info.coordinates();
+                        auto attributes = vp_info.attributes();
+                        coordinate_obj["x"] = Json::Int(coordinates[0]);
+                        coordinate_obj["y"] = Json::Int(coordinates[1]);
+                        coordinate_obj["width"] = Json::Int(coordinates[2]);
+                        coordinate_obj["height"] = Json::Int(coordinates[3]);
+                        attribute_obj["color"] = Json::Value(exposing::to_narrow_string(attributes[0]));
+                        attribute_obj["orientation"] = Json::Value(exposing::to_narrow_string(attributes[1]));
+                        attribute_obj["car_type"] = Json::Value(exposing::to_narrow_string(attributes[2]));
+                        vp_obj["coordinates"] = coordinate_obj;
+                        vp_obj["attributes"] = attribute_obj;
+                        jvehicle_list.append(vp_obj);
+                    }
+
+                    for (auto &&vp_info : person_list)
+                    {
+                        Json::Value vp_obj;
+                        Json::Value coordinate_obj;
+                        Json::Value attribute_obj;
+                        auto coordinates = vp_info.coordinates();
+                        auto attributes = vp_info.attributes();
+                        coordinate_obj["x"] = Json::Int(coordinates[0]);
+                        coordinate_obj["y"] = Json::Int(coordinates[1]);
+                        coordinate_obj["width"] = Json::Int(coordinates[2]);
+                        coordinate_obj["height"] = Json::Int(coordinates[3]);
+                        attribute_obj["gender"] = Json::Value(exposing::to_narrow_string(attributes[0]));
+                        attribute_obj["age"] = Json::Value(exposing::to_narrow_string(attributes[1]));
+                        attribute_obj["ori"] = Json::Value(exposing::to_narrow_string(attributes[2]));
+                        attribute_obj["hat"] = Json::Value(exposing::to_narrow_string(attributes[3]));
+                        attribute_obj["glass"] = Json::Value(exposing::to_narrow_string(attributes[4]));
+                        attribute_obj["handbag"] = Json::Value(exposing::to_narrow_string(attributes[5]));
+                        attribute_obj["shoulderbag"] = Json::Value(exposing::to_narrow_string(attributes[6]));
+                        attribute_obj["backpack"] = Json::Value(exposing::to_narrow_string(attributes[7]));
+                        attribute_obj["sleeve"] = Json::Value(exposing::to_narrow_string(attributes[8]));
+                        attribute_obj["texture"] = Json::Value(exposing::to_narrow_string(attributes[9]));
+                        attribute_obj["lower_type"] = Json::Value(exposing::to_narrow_string(attributes[10]));
+                        vp_obj["coordinates"] = coordinate_obj;
+                        vp_obj["attributes"] = attribute_obj;
+                        jperson_list.append(vp_obj);
+                    }
+
+                    jbox["vehicle_list"] = jvehicle_list;
+                    jbox["person_list"] = jperson_list;
+                    value["results"] = jbox;
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
             inline Json::Value Romancia_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
             {
                 Json::Value value;
@@ -879,98 +1057,95 @@ namespace glasssix
                 return value;
             }
 
-			inline Json::Value Romancia_alignFace_256_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
-			{
-				Json::Value value;
+            inline Json::Value Romancia_alignFace_256_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            {
+                Json::Value value;
 
-				try
-				{
-					int format = root["format"].asInt();
-					int height = root["height"].asInt();
-					int width = root["width"].asInt();
-					auto jarray_rect = root["facerectwithfaceinfo_list"];
-					auto faces = exposing::make_param_vector<longinus::face_info>();
-					for (auto i : jarray_rect)
-					{
-						auto face = exposing::make_exported_interface<longinus::face_info>();
-						face.set_x(i["x"].asFloat());
-						face.set_y(i["y"].asFloat());
-						face.set_height(i["height"].asFloat());
-						face.set_width(i["width"].asFloat());
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+                    auto jarray_rect = root["facerectwithfaceinfo_list"];
+                    auto faces = exposing::make_param_vector<longinus::face_info>();
+                    for (auto i : jarray_rect)
+                    {
+                        auto face = exposing::make_exported_interface<longinus::face_info>();
+                        face.set_x(i["x"].asFloat());
+                        face.set_y(i["y"].asFloat());
+                        face.set_height(i["height"].asFloat());
+                        face.set_width(i["width"].asFloat());
 
-						auto landmark_list = i["landmark"];
-						if (landmark_list.size() != 5)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "landmark_list.size() != 5");
+                        auto landmark_list = i["landmark"];
+                        if (landmark_list.size() != 5)
+                            throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "landmark_list.size() != 5");
 
+                        auto landmark = exposing::make_param_vector<exposing::param_pair<float, float>>();
+                        for (auto j : landmark_list)
+                        {
+                            auto pair = exposing::make_param_pair(j["x"].asFloat(), j["y"].asFloat());
+                            landmark.push_back(pair);
+                        }
+                        face.set_pts(landmark);
 
-						auto landmark = exposing::make_param_vector<exposing::param_pair<float, float>>();
-						for (auto j : landmark_list)
-						{
-							auto pair = exposing::make_param_pair(j["x"].asFloat(), j["y"].asFloat());
-							landmark.push_back(pair);
-						}
-						face.set_pts(landmark);
+                        faces.push_back(face);
+                    }
 
-						faces.push_back(face);
-					}
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
 
-					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"image", box(image_span)},
+                         {u8"height", box(height)},
+                         {u8"width", box(width)},
+                         {u8"faces", faces},
+                         {u8"order", box(static_cast<int>(frame.order()))},
+                         {u8"object_id", box(instance)}});
 
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{
-							{u8"image", box(image_span)},
-							{u8"height", box(height)},
-							{u8"width", box(width)},
-							{u8"faces", faces },
-							{u8"order", box(static_cast<int>(frame.order()))},
-							{u8"object_id", box(instance)}
-						});
+                    auto result = plugin.execute(u8"romancia.alignFace256", param).as<param_vector<param_vector<std::uint8_t>>>();
 
-					auto result = plugin.execute(u8"romancia.alignFace256", param).as<param_vector<param_vector<std::uint8_t>>>();
+                    value["aligned_images"] = Json::Value(Json::arrayValue);
+                    memory::tensor<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
+                    std::uint8_t *ptr = temp.mutable_cpu_data();
+                    for (size_t i = 0; i < result.size(); i++)
+                    {
+                        std::vector<std::uint8_t> buffer(begin(result[i]), end(result[i]));
 
-					value["aligned_images"] = Json::Value(Json::arrayValue);
-					memory::tensor<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, -1, memory::NCHW/*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-					std::uint8_t* ptr = temp.mutable_cpu_data();
-					for (size_t i = 0; i < result.size(); i++)
-					{
-						std::vector<std::uint8_t> buffer(begin(result[i]), end(result[i]));
+                        tb64xenc(buffer.data(), buffer.size(), ptr);
 
-						tb64xenc(buffer.data(), buffer.size(), ptr);
+                        value["aligned_images"].append(Json::Value(reinterpret_cast<char *>(ptr), reinterpret_cast<char *>(ptr) + romancia_align_aligned_base64_buffer_len));
+                    }
+                    value["format"] = Json::Value(0);
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
 
-						value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + romancia_align_aligned_base64_buffer_len));
-					}
-					value["format"] = Json::Value(0);
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-				}
-				catch (const parser_exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
-				}
-				catch (const Json::Exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-				}
-				catch (const std::exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
-				}
-				catch (const abi_error& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what_to_narrow());
-					value["status"]["code"] = Json::Int(ex.result());
-				}
+                return value;
+            }
 
-				return value;
-			}
-
-			inline Json::Value Romancia_blur_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
-			{
-				Json::Value value;
+            inline Json::Value Romancia_blur_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            {
+                Json::Value value;
 
                 try
                 {
@@ -1716,11 +1891,11 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Selene_make_mask_forward_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance)
+            inline Json::Value Selene_make_mask_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
             {
                 Json::Value value;
 
-                std::uint8_t mask[64 * 128] = { 0 };
+                std::uint8_t mask[64 * 128] = {0};
                 try
                 {
                     int format = root["format"].asInt();
@@ -1731,14 +1906,14 @@ namespace glasssix
                     std::vector<uint8_t> aligned_faces_vec;
                     int num = 0;
                     memory::tensor<std::uint8_t> temp(selene_forward_aligned_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-                    std::uint8_t* ptr = temp.mutable_cpu_data();
+                    std::uint8_t *ptr = temp.mutable_cpu_data();
                     for (auto i : aligned_face_array)
                     {
                         std::string aligned_face_base64_str = i.asString();
                         if (aligned_face_base64_str.size() != TB64ENCLEN(selene_forward_aligned_buffer_len))
                             throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len)");
 
-                        size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
+                        size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t *>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
                         if (aligned_face_decode_len != selene_forward_aligned_buffer_len)
                             throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != gaius_forward_aligned_buffer_len");
 
@@ -1762,10 +1937,10 @@ namespace glasssix
                     }
 
                     auto param = make_param_hash_map<param_string, unknown_object>(
-                        { {u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
+                        {{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
                          {u8"num", box(num)},
                          {u8"order", box(format)},
-                         {u8"object_id", box(instance)} });
+                         {u8"object_id", box(instance)}});
 
                     std::int32_t model_type = unbox<std::int32_t>(plugin.execute(u8"selene.get_model_type", param));
                     if (model_type != 2)
@@ -1786,22 +1961,22 @@ namespace glasssix
                     value["status"]["message"] = Json::Value("OK");
                     value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
                 }
-                catch (const parser_exception& ex)
+                catch (const parser_exception &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
                 }
-                catch (const Json::Exception& ex)
+                catch (const Json::Exception &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
                 }
-                catch (const std::exception& ex)
+                catch (const std::exception &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
                 }
-                catch (const abi_error& ex)
+                catch (const abi_error &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what_to_narrow());
                     value["status"]["code"] = Json::Int(ex.result());
@@ -2613,114 +2788,110 @@ namespace glasssix
                 return value;
             }
 
-			inline Json::Value Fusion_Romancia_alignFace256_Selene_forward_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, std::vector<guid>& guids)
-			{
-				Json::Value value;
+            inline Json::Value Fusion_Romancia_alignFace256_Selene_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids)
+            {
+                Json::Value value;
 
-				try
-				{
-					int format = root["format"].asInt();
-					int height = root["height"].asInt();
-					int width = root["width"].asInt();
-					auto jarray_rect = root["facerectwithfaceinfo_list"];
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+                    auto jarray_rect = root["facerectwithfaceinfo_list"];
 
-					auto faces = exposing::make_param_vector<longinus::face_info>();
-					for (auto i : jarray_rect)
-					{
-						auto face = exposing::make_exported_interface<longinus::face_info>();
-						face.set_x(i["x"].asFloat());
-						face.set_y(i["y"].asFloat());
-						face.set_height(i["height"].asFloat());
-						face.set_width(i["width"].asFloat());
+                    auto faces = exposing::make_param_vector<longinus::face_info>();
+                    for (auto i : jarray_rect)
+                    {
+                        auto face = exposing::make_exported_interface<longinus::face_info>();
+                        face.set_x(i["x"].asFloat());
+                        face.set_y(i["y"].asFloat());
+                        face.set_height(i["height"].asFloat());
+                        face.set_width(i["width"].asFloat());
 
-						auto landmark_list = i["landmark"];
-						if (landmark_list.size() != 5)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "landmark_list.size() != 5");
-						auto landmark = exposing::make_param_vector<exposing::param_pair<float, float>>();
-						for (auto j : landmark_list)
-						{
-							auto pair = exposing::make_param_pair(j["x"].asFloat(), j["y"].asFloat());
-							landmark.push_back(pair);
-						}
-						face.set_pts(landmark);
+                        auto landmark_list = i["landmark"];
+                        if (landmark_list.size() != 5)
+                            throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "landmark_list.size() != 5");
+                        auto landmark = exposing::make_param_vector<exposing::param_pair<float, float>>();
+                        for (auto j : landmark_list)
+                        {
+                            auto pair = exposing::make_param_pair(j["x"].asFloat(), j["y"].asFloat());
+                            landmark.push_back(pair);
+                        }
+                        face.set_pts(landmark);
 
-						faces.push_back(face);
-					}
+                        faces.push_back(face);
+                    }
 
-					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
 
-					auto romancia_param = make_param_hash_map<param_string, unknown_object>(
-						{
-							{u8"image", box(image_span)},
-							{u8"height", box(height)},
-							{u8"width", box(width)},
-							{u8"faces", faces },
-							{u8"order", box(static_cast<int>(frame.order()))},
-							{u8"object_id", box(guids[0])}
-						});
+                    auto romancia_param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"image", box(image_span)},
+                         {u8"height", box(height)},
+                         {u8"width", box(width)},
+                         {u8"faces", faces},
+                         {u8"order", box(static_cast<int>(frame.order()))},
+                         {u8"object_id", box(guids[0])}});
 
-					auto romancia_result = plugin.execute(u8"romancia.alignFace256", romancia_param).as<param_vector<param_vector<std::uint8_t>>>();
+                    auto romancia_result = plugin.execute(u8"romancia.alignFace256", romancia_param).as<param_vector<param_vector<std::uint8_t>>>();
 
-					std::vector<std::uint8_t> buffer;
-					for (size_t i = 0; i < romancia_result.size(); i++)
-					{
-						if (romancia_result[i].size() != selene_forward_aligned_buffer_len)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "romancia_result[i].size() != selene_forward_aligned_buffer_len");
-						
-						buffer.insert(buffer.end(), begin(romancia_result[i]), end(romancia_result[i]));
-					}
+                    std::vector<std::uint8_t> buffer;
+                    for (size_t i = 0; i < romancia_result.size(); i++)
+                    {
+                        if (romancia_result[i].size() != selene_forward_aligned_buffer_len)
+                            throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "romancia_result[i].size() != selene_forward_aligned_buffer_len");
 
-					auto selene_param = make_param_hash_map<param_string, unknown_object>(
-						{
-							{u8"aligned_faces", box(param_span<std::uint8_t>{buffer.data(), buffer.size()})},
-							{u8"num", box(static_cast<int>(romancia_result.size()))},
-							{u8"order", box(0)},
-							{u8"object_id", box(guids[1])}
-						});
+                        buffer.insert(buffer.end(), begin(romancia_result[i]), end(romancia_result[i]));
+                    }
 
-					auto selene_result = plugin.execute(u8"selene.forward", selene_param).as<param_vector<param_vector<float>>>();
+                    auto selene_param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"aligned_faces", box(param_span<std::uint8_t>{buffer.data(), buffer.size()})},
+                         {u8"num", box(static_cast<int>(romancia_result.size()))},
+                         {u8"order", box(0)},
+                         {u8"object_id", box(guids[1])}});
 
-					Json::Value jobj_features;
-					for (size_t i = 0; i < selene_result.size(); i++)
-					{
-						Json::Value jarray_feature;
-						for (size_t j = 0; j < selene_result[i].size(); j++)
-							jarray_feature["feature"].append(selene_result[i][j]);
-						jobj_features.append(jarray_feature);
-					}
+                    auto selene_result = plugin.execute(u8"selene.forward", selene_param).as<param_vector<param_vector<float>>>();
 
-					value["features"] = jobj_features;
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-				}
-				catch (const parser_exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
-				}
-				catch (const Json::Exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-				}
-				catch (const std::exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
-				}
-				catch (const abi_error& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what_to_narrow());
-					value["status"]["code"] = Json::Int(ex.result());
-				}
+                    Json::Value jobj_features;
+                    for (size_t i = 0; i < selene_result.size(); i++)
+                    {
+                        Json::Value jarray_feature;
+                        for (size_t j = 0; j < selene_result[i].size(); j++)
+                            jarray_feature["feature"].append(selene_result[i][j]);
+                        jobj_features.append(jarray_feature);
+                    }
 
-				return value;
-			}
-            
-			inline Json::Value Fusion_Romancia_alignFace_Cassius_forward_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, std::vector<guid>& guids)
-			{
-				Json::Value value;
+                    value["features"] = jobj_features;
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Fusion_Romancia_alignFace_Cassius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids)
+            {
+                Json::Value value;
 
                 try
                 {
