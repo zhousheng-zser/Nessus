@@ -473,6 +473,62 @@ EXPORT_NESSUS_LICENSE void request_license_async(request_license_async_callback_
 	}
 }
 
+EXPORT_NESSUS_LICENSE void evaluate_license_or_rejuvenate(evaluate_license_callback_type callback, void* context)
+{
+	struct fat_context
+	{
+		evaluate_license_callback_type callback;
+		bool success;
+		void* context;
+		std::mutex mutex;
+		std::condition_variable cond_sync;
+	};
+
+	if (!callback)
+	{
+		return;
+	}
+
+	fat_context inner_context{ callback };
+	auto evaluate = [&]
+	{
+		evaluate_license([](void* context, bool success, const char* message, std::int64_t remaining_seconds)
+			{
+				auto&& inner_context = *static_cast<fat_context*>(context);
+
+				if (success)
+				{
+					inner_context.success = success;
+					inner_context.callback(inner_context.context, success, message, remaining_seconds);
+				}
+			}, &inner_context);
+	};
+
+	if (evaluate(); inner_context.success)
+	{
+		return;
+	}
+
+	// Synchroinizes manually.
+	request_license_async([](void* context, bool success, const char* message)
+		{
+			auto&& inner_context = *static_cast<fat_context*>(context);
+			{
+				std::scoped_lock lock{ inner_context.mutex };
+
+				inner_context.cond_sync.notify_all();
+			}
+		}, &inner_context);
+
+	{
+		std::unique_lock lock{ inner_context.mutex };
+
+		inner_context.cond_sync.wait(lock);
+	}
+
+	evaluate();
+}
+
 EXPORT_NESSUS_LICENSE void set_license_deadline_callback(license_deadline_callback_type callback, void* context)
 {
 	if (callback)

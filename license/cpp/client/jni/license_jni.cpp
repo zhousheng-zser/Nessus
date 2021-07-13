@@ -59,13 +59,34 @@ extern "C"
 	{
 		if (callback)
 		{
-			evaluate_license([](void* context, bool valid, const char* message, std::int64_t remaining_seconds)
+			evaluate_license([](void* context, bool success, const char* message, std::int64_t remaining_seconds)
 				{
 					if (auto env = reflection_cache::instance().get_thread_env())
 					{
 						global_ref callback{ static_cast<jobject>(context), true };
 
-						env->CallVoidMethod(callback.get(), internal_caches.method_evaluate_license_callback_run, static_cast<jboolean>(valid ? JNI_TRUE : JNI_FALSE), env->NewStringUTF(message), remaining_seconds);
+						env->CallVoidMethod(callback.get(), internal_caches.method_evaluate_license_callback_run, static_cast<jboolean>(success ? JNI_TRUE : JNI_FALSE), env->NewStringUTF(message), remaining_seconds);
+					}
+				}, env->NewGlobalRef(callback));
+		}
+	}
+
+	/*
+	 * Class:     com_glasssix_license_License
+	 * Method:    evaluateOrRejuvenate
+	 * Signature: (Lcom/glasssix/license/EvaluateLicenseCallback;)V
+	 */
+	JNIEXPORT void JNICALL Java_com_glasssix_license_License_evaluateOrRejuvenate(JNIEnv* env, jclass clazz, jobject callback)
+	{
+		if (callback)
+		{
+			evaluate_license_or_rejuvenate([](void* context, bool success, const char* message, std::int64_t remaining_seconds)
+				{
+					if (auto env = reflection_cache::instance().get_thread_env())
+					{
+						global_ref callback{ static_cast<jobject>(context), true };
+
+						env->CallVoidMethod(callback.get(), internal_caches.method_evaluate_license_callback_run, static_cast<jboolean>(success ? JNI_TRUE : JNI_FALSE), env->NewStringUTF(message), remaining_seconds);
 					}
 				}, env->NewGlobalRef(callback));
 		}
