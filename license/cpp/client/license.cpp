@@ -478,8 +478,9 @@ EXPORT_NESSUS_LICENSE void evaluate_license_or_rejuvenate(evaluate_license_callb
 	struct fat_context
 	{
 		evaluate_license_callback_type callback;
-		bool success;
 		void* context;
+		bool success;
+		bool invoke_when_failed;
 		std::mutex mutex;
 		std::condition_variable cond_sync;
 	};
@@ -489,16 +490,17 @@ EXPORT_NESSUS_LICENSE void evaluate_license_or_rejuvenate(evaluate_license_callb
 		return;
 	}
 
-	fat_context inner_context{ callback };
+	fat_context inner_context{ callback, context };
 	auto evaluate = [&]
 	{
 		evaluate_license([](void* context, bool success, const char* message, std::int64_t remaining_seconds)
 			{
 				auto&& inner_context = *static_cast<fat_context*>(context);
+				
+				inner_context.success = success;
 
-				if (success)
+				if (success || inner_context.invoke_when_failed)
 				{
-					inner_context.success = success;
 					inner_context.callback(inner_context.context, success, message, remaining_seconds);
 				}
 			}, &inner_context);
@@ -526,6 +528,7 @@ EXPORT_NESSUS_LICENSE void evaluate_license_or_rejuvenate(evaluate_license_callb
 		inner_context.cond_sync.wait(lock);
 	}
 
+	inner_context.invoke_when_failed = true;
 	evaluate();
 }
 
