@@ -22,6 +22,7 @@
 #include "smbios.hpp"
 #endif
 
+#include <cmath>
 #include <mutex>
 #include <atomic>
 #include <chrono>
@@ -34,6 +35,7 @@
 #include <exception>
 #include <functional>
 #include <string_view>
+#include <condition_variable>
 
 #include <logger.hpp>
 #include <abi/sha3.hpp>
@@ -244,6 +246,18 @@ namespace glasssix::license
 						glaucus_.load(*machine_id_, message.user_portrait, message.server_timestamp);
 						glaucus_.set_client_data_timestamp(message.server_timestamp);
 						glaucus_.save(portrait_path_.string());
+
+						// Validates the license info.
+						auto info = license_info::from_buffer(glaucus_.countermarch(message.license));
+
+						if (!info)
+						{
+							throw license_error{ "Invalid new license information." };
+						}
+
+						// Updates the journal timestamps.
+						info->last_running_time = get_local_timestamp();
+						info->expiration_time = info->last_running_time;
 
 						if (!io::write_all_bytes(license_path_.string(), message.license))
 						{

@@ -1,6 +1,7 @@
 #include "license_info.hpp"
 #include "time_utils.hpp"
 
+#include <cstdio>
 #include <utility>
 #include <algorithm>
 
