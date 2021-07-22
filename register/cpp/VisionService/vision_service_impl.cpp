@@ -198,10 +198,11 @@ namespace glasssix::exposing::nessus
         unknown_object cassius_new(const param_hash_map<param_string, unknown_object> &params)
         {
             auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+            auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
             auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
             auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
-
-            return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(models_directory + (use_int8 ? u8"/unicorn_int8.racy" : u8"/unicorn.racy"), device, use_int8 ? true : false));
+            auto racy_path = model_type ? models_directory + (use_int8 ? u8"/unicorn_res101_int8.racy" : u8"/unicorn_res101.racy") : models_directory + (use_int8 ? u8"/unicorn_int8.racy" : u8"/unicorn.racy");
+            return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(model_type, racy_path, device, use_int8 ? true : false));
         }
 
         unknown_object gaius_new(const param_hash_map<param_string, unknown_object> &params)
@@ -247,7 +248,7 @@ namespace glasssix::exposing::nessus
             auto nms = unbox<float>(params.get_value(u8"nms"));
             auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/longinus.racy", models_directory + u8"/banshee.racy", nms, device));
+            return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/longinus.racy", models_directory + u8"/pfld_land71_simp.racy", nms, device));
         }
 
         unknown_object damocles_new(const param_hash_map<param_string, unknown_object> &params)

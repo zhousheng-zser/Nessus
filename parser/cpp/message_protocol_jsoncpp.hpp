@@ -255,8 +255,8 @@ namespace glasssix
                             jobj_face["attributes"]["yaw"] = Json::Value(obj.yaw());
                             jobj_face["attributes"]["pitch"] = Json::Value(obj.pitch());
                             jobj_face["attributes"]["roll"] = Json::Value(obj.roll());
-                            jobj_face["attributes"]["prob_age_index"] = Json::Int(obj.prob_age_index());
-                            jobj_face["attributes"]["prob_gender_index"] = Json::Int(obj.prob_gender_index());
+                            jobj_face["attributes"]["glass_index"] = Json::Int(obj.glass_index());
+                            jobj_face["attributes"]["mask_index"] = Json::Int(obj.mask_index());
                         }
                         else
                             jobj_face["attributes"] = Json::Value(Json::nullValue);
@@ -339,8 +339,8 @@ namespace glasssix
                         jobj_face["height"] = Json::Int(result.height());
                         jobj_face["confidence"] = Json::Value(result.confidence());
 
-                        jobj_face["attributes"]["prob_age_index"] = Json::Int(result.prob_age_index());
-                        jobj_face["attributes"]["prob_gender_index"] = Json::Int(result.prob_gender_index());
+                        jobj_face["attributes"]["glass_index"] = Json::Int(result.glass_index());
+                        jobj_face["attributes"]["mask_index"] = Json::Int(result.mask_index());
                         jobj_face["attributes"]["yaw"] = Json::Value(result.yaw());
                         jobj_face["attributes"]["pitch"] = Json::Value(result.pitch());
                         jobj_face["attributes"]["roll"] = Json::Value(result.roll());
@@ -1599,10 +1599,12 @@ namespace glasssix
                 try
                 {
                     int device = root["device"].asInt();
+                    int model_type = root["model_type"].asInt();
                     bool use_int8 = root["use_int8"].asBool();
                     std::string models_directory = root["models_directory"].asString();
                     auto param = make_param_hash_map<param_string, unknown_object>(
                         {{u8"device", box(device)},
+                         {u8"model_type", box(model_type)},
                          {u8"use_int8", box(use_int8 ? 1 : 0)},
                          {u8"models_directory", box(std::string_view(models_directory))}});
 
@@ -3051,8 +3053,8 @@ namespace glasssix
                         jobj_face["attributes"]["yaw"] = Json::Value(yaw);
                         jobj_face["attributes"]["pitch"] = Json::Value(pitch);
                         jobj_face["attributes"]["roll"] = Json::Value(roll);
-                        jobj_face["attributes"]["prob_age_index"] = Json::Int(obj.prob_age_index());
-                        jobj_face["attributes"]["prob_gender_index"] = Json::Int(obj.prob_gender_index());
+                        jobj_face["attributes"]["glass_index"] = Json::Int(obj.glass_index());
+                        jobj_face["attributes"]["mask_index"] = Json::Int(obj.mask_index());
 
                         Json::Value jarray_landmark;
 
@@ -3227,8 +3229,8 @@ namespace glasssix
                         jobj_face["attributes"]["yaw"] = Json::Value(yaw);
                         jobj_face["attributes"]["pitch"] = Json::Value(pitch);
                         jobj_face["attributes"]["roll"] = Json::Value(roll);
-                        jobj_face["attributes"]["prob_age_index"] = Json::Int(result.prob_age_index());
-                        jobj_face["attributes"]["prob_gender_index"] = Json::Int(result.prob_gender_index());
+                        jobj_face["attributes"]["glass_index"] = Json::Int(result.glass_index());
+                        jobj_face["attributes"]["mask_index"] = Json::Int(result.mask_index());
 
                         Json::Value jarray_landmark;
 
