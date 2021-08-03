@@ -254,12 +254,12 @@ namespace glasssix::license
 						{
 							throw license_error{ "Invalid new license information." };
 						}
-
+						
 						// Updates the journal timestamps.
 						info->last_running_time = get_local_timestamp();
-						info->expiration_time = info->last_running_time;
+						info->authorization_time = info->last_running_time;
 
-						if (!io::write_all_bytes(license_path_.string(), message.license))
+						if (!io::write_all_bytes(license_path_.string(), glaucus_.forward(info->to_buffer())))
 						{
 							throw license_error{ "Failed to create a license file." };
 						}
