@@ -289,9 +289,8 @@ namespace glasssix::exposing::nessus
         {
             auto device = unbox<std::int32_t>(params.get_value(u8"device"));
             auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
-            auto alphabet_path = unbox<param_string>(params.get_value(u8"alphabet_path"));
 
-            return add_instance(package_names::mjollner, make_exported_interface<ocr_net>(models_directory + u8"/det_db_resnet18.racy", models_directory + u8"/rec_crnn_resnet34.racy", alphabet_path, device));
+            return add_instance(package_names::mjollner, make_exported_interface<ocr_net>(models_directory + u8"/det_db_resnet18.racy", models_directory + u8"/rec_crnn_resnet34.racy", models_directory + u8"/ppocr_keys_v1.txt", device));
         }
 
         unknown_object valklyrs_new(const param_hash_map<param_string, unknown_object> &params)

@@ -586,11 +586,9 @@ namespace glasssix
                 {
                     int device = root["device"].asInt();
                     std::string models_directory = root["models_directory"].asString();
-                    std::string alphabet_path = root["alphabet_path"].asString();
                     auto param = make_param_hash_map<param_string, unknown_object>(
                         {{u8"device", box(device)},
-                         {u8"models_directory", box(std::string_view(models_directory))},
-                         {u8"alphabet_path", box(std::string_view(alphabet_path))}});
+                         {u8"models_directory", box(std::string_view(models_directory))}});
                     instance = unbox<guid>(plugin.execute(u8"mjollner.new", param));
                     value["status"]["message"] = Json::Value("OK");
                     value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
