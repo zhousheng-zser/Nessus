@@ -43,18 +43,6 @@ namespace glasssix::license
 	{
 		auto now_timestamp = get_local_timestamp();
 
-		if (std::ofstream stream{ "/storage/emulated/0/djxyz.txt" }; stream)
-		{
-			stream << "now_timestamp: " << now_timestamp << "\n";
-			stream << "last_running_time" << last_running_time << "\n";
-			stream << "authorization_time: " << authorization_time << "\n";
-			stream << "expiration_time: " << expiration_time << "\n";
-			stream << "now_timestamp: " << now_timestamp << "\n";
-			stream << "timestamp: " << timestamp << "\n";
-
-			stream.flush();
-		}
-
 		return this->machine_id.size() == machine_id.size() &&
 			std::equal(this->machine_id.begin(), this->machine_id.end(), machine_id.begin()) &&
 			last_running_time < expiration_time&&
