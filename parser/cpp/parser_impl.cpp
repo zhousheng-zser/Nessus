@@ -524,8 +524,8 @@ namespace glasssix::exposing::nessus
 		protocol_map["longinus.match_faces_in_last_two_frame"] = &Longinus_match_faces_in_last_two_frame_json;
 		protocol_map["romancia.new"] = &Romancia_new_json;
 		protocol_map["romancia.delete"] = &Romancia_delete_json;
+		protocol_map["romancia.alignface128"] = &Romancia_alignFace_128_json;
 		protocol_map["romancia.alignface"] = &Romancia_alignFace_json;
-		protocol_map["romancia.alignface256"] = &Romancia_alignFace_256_json;
 		protocol_map["romancia.blur_detect"] = &Romancia_blur_detect_json;
 		protocol_map["romancia.antispoofing"] = &Romancia_antispoofing_json;
 		protocol_map["romancia.mask_detect"] = &Romancia_mask_detect_json;
@@ -574,11 +574,9 @@ namespace glasssix::exposing::nessus
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> parser_impl::impl::fusion_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
 #endif
-		protocol_map["fusion.romancia.alignface.gaius.forward"] = &Fusion_Romancia_alignFace_Gaius_forward_json;
+		protocol_map["fusion.romancia.alignface128.gaius.forward"] = &Fusion_Romancia_alignFace128_Gaius_forward_json;
 		protocol_map["fusion.romancia.alignface.cassius.forward"] = &Fusion_Romancia_alignFace_Cassius_forward_json;
-		protocol_map["fusion.romancia.alignface256.selene.forward"] = &Fusion_Romancia_alignFace256_Selene_forward_json;
-		protocol_map["fusion.longinus.detect.romancia.multimethod"] = &Fusion_Longinus_detect_Romancia_multimethod_json;
-		protocol_map["fusion.longinus.trace.romancia.multimethod"] = &Fusion_Longinus_trace_Romancia_multimethod_json;
+		protocol_map["fusion.romancia.alignface.selene.forward"] = &Fusion_Romancia_alignFace_Selene_forward_json;
 		return protocol_map;
 	}();
 
