@@ -27,6 +27,15 @@ extern "C"
 	JNIEXPORT void JNICALL Java_com_glasssix_license_License_initSystem(JNIEnv* env, jclass clazz, jstring license_key)
 	{
 		init_license_system(to_string(license_key).c_str());
+
+		try
+		{
+			check_last_license_error();
+		}
+		catch (const std::exception& ex)
+		{
+			env->ThrowNew(internal_caches.class_exception.get(), ex.what());
+		}
 	}
 
 	/*

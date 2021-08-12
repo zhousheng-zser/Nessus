@@ -8,6 +8,7 @@ namespace glasssix::jni
 	{
 		global_ref_ex<jclass> class_file;
 		global_ref_ex<jclass> class_context;
+		global_ref_ex<jclass> class_exception;
 		global_ref_ex<jclass> class_activity_thread;
 		global_ref_ex<jclass> class_settings_secure;
 		global_ref_ex<jclass> class_license_deadline_callback;
