@@ -466,8 +466,12 @@ namespace glasssix::exposing::nessus
             auto height = unbox<std::int32_t>(params.get_value(u8"height"));
             auto width = unbox<std::int32_t>(params.get_value(u8"width"));
             auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+            auto x = unbox<std::int32_t>(params.get_value(u8"x"));
+            auto y = unbox<std::int32_t>(params.get_value(u8"y"));
+            auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+            auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 
-            return instance.detect(image, channels, height, width, order);
+            return instance.detect(image, channels, height, width, order, x, y, roi_width, roi_height);
         }
 
         unknown_object valklyrs_detect(const param_hash_map<param_string, unknown_object> &params)

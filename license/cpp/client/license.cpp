@@ -494,6 +494,7 @@ EXPORT_NESSUS_LICENSE void evaluate_license_or_rejuvenate(evaluate_license_callb
 		evaluate_license_callback_type callback;
 		void* context;
 		bool success;
+		std::string message;
 		bool invoke_when_failed;
 		std::mutex mutex;
 		std::condition_variable cond_sync;
@@ -530,6 +531,17 @@ EXPORT_NESSUS_LICENSE void evaluate_license_or_rejuvenate(evaluate_license_callb
 		{
 			auto&& inner_context = *static_cast<fat_context*>(context);
 			{
+				inner_context.success = success;
+
+				if (success)
+				{
+					inner_context.invoke_when_failed = true;
+				}
+				else
+				{
+					inner_context.message = message;
+				}
+
 				std::scoped_lock lock{ inner_context.mutex };
 
 				inner_context.cond_sync.notify_all();
@@ -542,7 +554,11 @@ EXPORT_NESSUS_LICENSE void evaluate_license_or_rejuvenate(evaluate_license_callb
 		inner_context.cond_sync.wait(lock);
 	}
 
-	inner_context.invoke_when_failed = true;
+	if (!inner_context.success)
+	{
+		inner_context.callback(inner_context.context, inner_context.success, inner_context.message.c_str(), 0);
+	}
+
 	evaluate();
 }
 

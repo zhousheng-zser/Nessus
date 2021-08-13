@@ -27,6 +27,18 @@ extern "C" {
 	PARSER_C_EXPORT char* parser_init_plugin(void* instance, const char* config_file_path, const char* license_key)
 	{
 		init_license_system(license_key);
+		
+		try
+		{
+			glasssix::license::check_last_license_error();
+		}
+		catch (const std::exception& ex)
+		{
+			auto inner = std::string ("{\"status\":{\"message\":\"") + ex.what() + "\",\"code\":-99}}";
+			auto what = glasssix::memory::heap_alloc_elements<char>(inner.size() + 1);
+
+			return (inner.copy(what, inner.size()), what);
+		}
 
 		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
 

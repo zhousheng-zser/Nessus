@@ -689,15 +689,28 @@ namespace glasssix
                     int height = root["height"].asInt();
                     int width = root["width"].asInt();
 
+                    Json::Value roi = root.get("roi", Json::Value());
+                    bool flag = roi.empty();
+                    int x = flag ? 0 : roi["x"].asInt();
+                    int y = flag ? 0 : roi["y"].asInt();
+                    int roi_width = flag ? width : roi["width"].asInt();
+                    int roi_height = flag ? height : roi["height"].asInt();
+                    
                     auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
                     param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
 
                     auto param = make_param_hash_map<param_string, unknown_object>(
-                        {{u8"image", box(image_span)},
-                         {u8"height", box(height)},
-                         {u8"width", box(width)},
-                         {u8"order", box(static_cast<int>(frame.order()))},
-                         {u8"object_id", box(instance)}});
+                        {
+                            {u8"image", box(image_span)},
+                            {u8"height", box(height)},
+                            {u8"width", box(width)},
+                            {u8"order", box(static_cast<int>(frame.order()))},
+                            {u8"object_id", box(instance)},
+                            {u8"x", box(x)},
+                            {u8"y", box(y)},
+                            {u8"roi_width", box(roi_width)},
+                            {u8"roi_height", box(roi_height)},
+                        });
 
                     auto result = plugin.execute(u8"mjollner.detect", param).as<param_vector<mjollner::box_info>>();
                     Json::Value jarray_boxes = Json::Value(Json::arrayValue);

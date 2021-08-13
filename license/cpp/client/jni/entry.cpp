@@ -13,6 +13,7 @@ namespace
 	{
 		file,
 		context,
+		exception,
 		activity_thread,
 		settings_secure,
 		license_deadline_callback,
@@ -55,6 +56,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
 	reflection_cache::instance().add_class_cache(arg_enum_v<class_key::settings_secure>, "android/provider/Settings$Secure");
 #endif
 
+	reflection_cache::instance().add_class_cache(arg_enum_v<class_key::exception>, "java/lang/Exception");
 	reflection_cache::instance().add_class_cache(arg_enum_v<class_key::license_deadline_callback>, "com/glasssix/license/LicenseDeadlineCallback");
 	reflection_cache::instance().add_class_cache(arg_enum_v<class_key::evaluate_license_callback>, "com/glasssix/license/EvaluateLicenseCallback");
 	reflection_cache::instance().add_class_cache(arg_enum_v<class_key::request_license_async_callback>, "com/glasssix/license/RequestLicenseAsyncCallback");
@@ -108,6 +110,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
 	internal_caches.class_activity_thread = reflection_cache::instance().get_class_cache(arg_enum_v<class_key::activity_thread>);
 	internal_caches.class_settings_secure = reflection_cache::instance().get_class_cache(arg_enum_v<class_key::settings_secure>);
 #endif
+	internal_caches.class_exception = reflection_cache::instance().get_class_cache(arg_enum_v<class_key::exception>);
 	internal_caches.class_license_deadline_callback = reflection_cache::instance().get_class_cache(arg_enum_v<class_key::license_deadline_callback>);
 	internal_caches.class_evaluate_license_callback = reflection_cache::instance().get_class_cache(arg_enum_v<class_key::evaluate_license_callback>);
 	internal_caches.class_request_license_async_callback = reflection_cache::instance().get_class_cache(arg_enum_v<class_key::request_license_async_callback>);
