@@ -213,7 +213,7 @@ namespace glasssix::exposing::nessus
 			return to_param_string(writer.write(value));
 		}
 #else
-		param_string parse(const param_string& topic, const param_string& str_param, param_span<std::uint8_t> data)
+		param_string parse(const param_string& topic, const param_string& str_param, param_span<std::uint8_t> data, param_span<std::uint8_t> external)
 		{
 			Json::Value value;
 			std::string topic_str(topic.data(), topic.size());
@@ -268,7 +268,7 @@ namespace glasssix::exposing::nessus
 					return to_param_string(writer.write(value));
 				}
 
-				std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)> func;
+				std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&, param_span<std::uint8_t>&)> func;
 				try
 				{
 					func = fusion_protocol_map.at(topic_str);
@@ -280,7 +280,7 @@ namespace glasssix::exposing::nessus
 					return to_param_string(writer.write(value));
 				}
 
-				value = func(plugin, root, data, guids);
+				value = func(plugin, root, data, guids, external);
 			}
 			else
 			{
@@ -290,7 +290,7 @@ namespace glasssix::exposing::nessus
 				if (method == "new")
 				{
 					guid instance;
-					std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)> func;
+					std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)> func;
 					try
 					{
 						func = basic_protocol_map.at(topic_str);
@@ -302,7 +302,7 @@ namespace glasssix::exposing::nessus
 						return to_param_string(writer.write(value));
 					}
 
-					value = func(plugin, root, data, instance);
+					value = func(plugin, root, data, instance, external);
 
 					if (value["status"]["code"].asInt() == 0)
 					{
@@ -324,7 +324,7 @@ namespace glasssix::exposing::nessus
 						return to_param_string(writer.write(value));
 					}
 
-					std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)> func;
+					std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)> func;
 					try
 					{
 						func = basic_protocol_map.at(topic_str);
@@ -337,7 +337,7 @@ namespace glasssix::exposing::nessus
 					}
 
 					guid instance(instance_guid);
-					value = func(plugin, root, data, instance);
+					value = func(plugin, root, data, instance, external);
 
 #if defined(__GNUC__) && !defined(ANDROID)
 					if (method == "delete")
@@ -496,8 +496,8 @@ namespace glasssix::exposing::nessus
 		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> fusion_protocol_map;
 		simdjson::dom::parser parser_;
 #else
-		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)>> basic_protocol_map;
-		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> fusion_protocol_map;
+		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> basic_protocol_map;
+		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&, param_span<std::uint8_t>&)>> fusion_protocol_map;
 		Json::Reader parser_;
 	public:
 		impl() :parser_(Json::Features::strictMode()) {}
@@ -514,14 +514,14 @@ namespace glasssix::exposing::nessus
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> parser_impl::impl::basic_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> protocol_map;
 #else
-	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)>> parser_impl::impl::basic_protocol_map = [] {
-		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&)>> protocol_map;
+	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> parser_impl::impl::basic_protocol_map = [] {
+		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> protocol_map;
 #endif
 		protocol_map["longinus.new"] = &Longinus_new_json;
 		protocol_map["longinus.delete"] = &Longinus_delete_json;
 		protocol_map["longinus.detect"] = &Longinus_detect_json;
 		protocol_map["longinus.trace"] = &Longinus_trace_json;
-		protocol_map["longinus.match_faces_in_last_two_frame"] = &Longinus_match_faces_in_last_two_frame_json;
+		protocol_map["longinus.center_scale_alignFace"] = &Longinus_center_scale_alignFace_json;
 		protocol_map["romancia.new"] = &Romancia_new_json;
 		protocol_map["romancia.delete"] = &Romancia_delete_json;
 		protocol_map["romancia.alignface128"] = &Romancia_alignFace_128_json;
@@ -571,8 +571,8 @@ namespace glasssix::exposing::nessus
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> parser_impl::impl::fusion_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
 #else
-	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> parser_impl::impl::fusion_protocol_map = [] {
-		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
+	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&, param_span<std::uint8_t>&)>> parser_impl::impl::fusion_protocol_map = [] {
+		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&, param_span<std::uint8_t>&)>> protocol_map;
 #endif
 		protocol_map["fusion.romancia.alignface128.gaius.forward"] = &Fusion_Romancia_alignFace128_Gaius_forward_json;
 		protocol_map["fusion.romancia.alignface.cassius.forward"] = &Fusion_Romancia_alignFace_Cassius_forward_json;
@@ -595,9 +595,9 @@ namespace glasssix::exposing::nessus
 		}
 	}
 
-	param_string parser_impl::parse(const param_string& topic, const param_string& jstr_param, param_span<std::uint8_t> data)
+	param_string parser_impl::parse(const param_string& topic, const param_string& jstr_param, param_span<std::uint8_t> data, param_span<std::uint8_t> external)
 	{
-		return impl_->parse(topic, jstr_param, data);
+		return impl_->parse(topic, jstr_param, data, external);
 	}
 
 	param_string parser_impl::query_all_instance()

@@ -53,9 +53,11 @@ extern "C" {
 	/// <param name="jstr_param">The parameters interpreted as JSON</param>
 	/// <param name="data">The optional binary data</param>
 	/// <param name="data_len">The size of the optional binary data</param>
+	/// <param name="external">The optional binary external</param>
+	/// <param name="external_size">The size of the optional binary data</param>
 	/// <returns>The result interpreted as JSON</returns>
 	/// <remarks>The return value must be disposed by calling praser_free function.</remarks>
-	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, const char* jstr_param, char* data, size_t data_len);
+	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, const char* jstr_param, char* data, size_t data_len, void* external = nullptr, size_t external_size = 0);
 
 	/// <summary>
 	/// Disposes a buffer.

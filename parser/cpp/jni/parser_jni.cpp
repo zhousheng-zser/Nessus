@@ -75,13 +75,8 @@ extern "C" {
 		env->DeleteLocalRef(clazz);
 	}
 
-	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jtopic, jstring jstr_param, jbyteArray dataArray)
+	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jtopic, jstring jstr_param, jbyteArray dataArray, jbyteArray externalArray)
 	{
-		if (dataArray == nullptr)
-		{
-			dataArray = env->NewByteArray(4);
-		}
-
 		try
 		{
 			check_last_license_error();
@@ -102,12 +97,28 @@ extern "C" {
 		glasssix::exposing::param_string topic = jstring2paramstring(env, jtopic);
 		glasssix::exposing::param_string str_param = jstring2paramstring(env, jstr_param);
 
-		jbyte* data_ptr = env->GetByteArrayElements(dataArray, 0);
-		glasssix::exposing::param_span data(reinterpret_cast<unsigned char*>(data_ptr), env->GetArrayLength(dataArray));
+		glasssix::exposing::param_span<std::uint8_t> data(nullptr, 0);
+		jbyte* data_ptr = nullptr;
+		if (dataArray != nullptr)
+		{
+			data_ptr = env->GetByteArrayElements(dataArray, 0);
+			data = glasssix::exposing::param_span<std::uint8_t>(reinterpret_cast<std::uint8_t*>(data_ptr), env->GetArrayLength(dataArray));
+		}
 
-		glasssix::exposing::param_string result = parser_object.parse(topic, str_param, data);
+		glasssix::exposing::param_span<std::uint8_t> external(nullptr, 0);
+		jbyte* external_ptr = nullptr;
+		if (externalArray != nullptr)
+		{
+			external_ptr = env->GetByteArrayElements(externalArray, 0);
+			external = glasssix::exposing::param_span<std::uint8_t>(reinterpret_cast<std::uint8_t*>(external_ptr), env->GetArrayLength(externalArray));
+		}
 
-		env->ReleaseByteArrayElements(dataArray, data_ptr, 0);
+		glasssix::exposing::param_string result = parser_object.parse(topic, str_param, data, external);
+
+		if(external_ptr)
+			env->ReleaseByteArrayElements(externalArray, external_ptr, 0);
+		if(data_ptr)
+			env->ReleaseByteArrayElements(dataArray, data_ptr, 0);
 		env->DeleteLocalRef(clazz);
 
 		return char2Jstring(env, result.data(), result.size());
