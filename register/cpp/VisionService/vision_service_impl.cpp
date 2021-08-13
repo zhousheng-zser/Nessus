@@ -72,8 +72,8 @@ namespace glasssix::exposing::nessus
             static constexpr utf8_string_view selene_get_model_type{u8"selene.get_model_type"};
             static constexpr utf8_string_view longinus_detect{u8"longinus.detect"};
             static constexpr utf8_string_view longinus_trace{u8"longinus.trace"};
+            static constexpr utf8_string_view longinus_center_scale_align_face{u8"longinus.center_scale_alignFace"};
             static constexpr utf8_string_view damocles_spoofing_detect{u8"damocles.spoofing_detect"};
-            static constexpr utf8_string_view longinus_match_faces_in_last_two_frame{u8"longinus.match_faces_in_last_two_frame"};
             static constexpr utf8_string_view romancia_align_face_128{u8"romancia.alignFace128"};
             static constexpr utf8_string_view romancia_align_face{u8"romancia.alignFace"};
             static constexpr utf8_string_view romancia_antispoofing{u8"romancia.antispoofing"};
@@ -131,7 +131,7 @@ namespace glasssix::exposing::nessus
             functions_.insert_or_assign(function_names::mjollner_detect, std::bind(&impl::mjollner_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::valklyrs_detect, std::bind(&impl::valklyrs_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::longinus_trace, std::bind(&impl::longinus_trace, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::longinus_match_faces_in_last_two_frame, std::bind(&impl::longinus_match_faces_in_last_two_frame, this, std::placeholders::_1));
+            functions_.insert_or_assign(function_names::longinus_center_scale_align_face, std::bind(&impl::longinus_center_scale_align_face, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::romancia_align_face_128, std::bind(&impl::romancia_align_face_128, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::romancia_align_face, std::bind(&impl::romancia_align_face, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::romancia_antispoofing, std::bind(&impl::romancia_antispoofing, this, std::placeholders::_1));
@@ -381,13 +381,17 @@ namespace glasssix::exposing::nessus
             return result;
         }
 
-        unknown_object longinus_match_faces_in_last_two_frame(const param_hash_map<param_string, unknown_object> &params)
+        unknown_object longinus_center_scale_align_face(const param_hash_map<param_string, unknown_object>& params)
         {
+            constexpr std::int32_t channels = 3;
             auto instance = get_instance<retina_net>(params);
-            auto prev_face = params.get_value(u8"prev_face").as<face_info>();
-            auto current_face = params.get_value(u8"current_face").as<face_info>();
+            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+            auto scale = unbox<float>(params.get_value(u8"scale"));
+            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-            return box(instance.match_faces_in_last_two_frame(prev_face, current_face));
+            return instance.center_scale_align(image, channels, height, width, scale, order);
         }
 
         unknown_object romancia_align_face_128(const param_hash_map<param_string, unknown_object> &params)

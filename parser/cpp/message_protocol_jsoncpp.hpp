@@ -135,7 +135,7 @@ namespace glasssix
                 return dst;
             }
 
-            inline Json::Value Longinus_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Longinus_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -176,7 +176,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Longinus_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Longinus_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -212,7 +212,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Longinus_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Longinus_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -303,7 +303,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Longinus_trace_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Longinus_trace_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -390,49 +390,76 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Longinus_match_faces_in_last_two_frame_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            constexpr int longinus_align_aligned_base64_buffer_len = TB64ENCLEN(3 * 128 * 128);
+            inline Json::Value Longinus_center_scale_alignFace_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
+
                 try
                 {
-                    auto prev_face = make_exported_interface<longinus::face_info>();
-                    prev_face.set_x(root["prev_face"]["x"].asFloat());
-                    prev_face.set_y(root["prev_face"]["y"].asFloat());
-                    prev_face.set_width(root["prev_face"]["width"].asFloat());
-                    prev_face.set_height(root["prev_face"]["height"].asFloat());
+                    bool save2extrenal = false;
+                    if (external.size() >= root["image_infos"].size() * 128 * 128 * 3)
+                        save2extrenal = true;
 
-                    auto current_face = make_exported_interface<longinus::face_info>();
-                    current_face.set_x(root["current_face"]["x"].asFloat());
-                    current_face.set_y(root["current_face"]["y"].asFloat());
-                    current_face.set_width(root["current_face"]["width"].asFloat());
-                    current_face.set_height(root["current_face"]["height"].asFloat());
+                    value["aligned_images"] = Json::Value(Json::arrayValue);
 
-                    auto param = make_param_hash_map<param_string, unknown_object>(
-                        {{u8"prev_face", prev_face},
-                         {u8"current_face", current_face},
-                         {u8"object_id", box(instance)}});
-                    auto result = unbox<double>(plugin.execute(u8"longinus.match_faces_in_last_two_frame", param));
+                    int read_byte_size = 0;
+                    for (size_t i = 0; i < root["image_info"].size(); i++)
+                    {
+                        int format = root["image_infos"][Json::Int(i)]["format"].asInt();
+                        int height = root["image_infos"][Json::Int(i)]["height"].asInt();
+                        int width = root["image_infos"][Json::Int(i)]["width"].asInt();
+                        float scale = root["image_infos"][Json::Int(i)]["scale"].asFloat();
+                        int image_byte_size = root["image_infos"][Json::Int(i)]["image_byte_size"].asInt();
 
-                    value["similarity"] = Json::Value(result);
+                        param_span<std::uint8_t> data_i(data.data() + read_byte_size, image_byte_size);
+                        read_byte_size += image_byte_size;
+                        auto frame = decode_and_convert(data_i, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                        param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+
+                        auto param = make_param_hash_map<param_string, unknown_object>(
+                            { {u8"image", box(image_span)},
+                             {u8"height", box(height)},
+                             {u8"width", box(width)},
+                             {u8"scale", box(scale)},
+                             {u8"order", box(static_cast<int>(frame.order()))},
+                             {u8"object_id", box(instance)} });
+
+                        auto result = plugin.execute(u8"longinus.center_scale_alignFace", param).as<param_vector<param_vector<std::uint8_t>>>();
+                        if(save2extrenal)
+                            std::copy(begin(result[0]), end(result[0]), external.begin() + i * 128 * 128 * 3);
+                        else
+                        {
+                            memory::tensor<std::uint8_t> temp(longinus_align_aligned_base64_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
+                            std::uint8_t* ptr = temp.mutable_cpu_data();
+                            std::vector<std::uint8_t> buffer(begin(result[0]), end(result[0]));
+
+                            tb64xenc(buffer.data(), buffer.size(), ptr);
+
+                            value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + longinus_align_aligned_base64_buffer_len));
+                        }
+                    }
+                    
+                    value["format"] = Json::Value(0);
                     value["status"]["message"] = Json::Value("OK");
                     value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
                 }
-                catch (const parser_exception &ex)
+                catch (const parser_exception& ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
                 }
-                catch (const Json::Exception &ex)
+                catch (const Json::Exception& ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
                 }
-                catch (const std::exception &ex)
+                catch (const std::exception& ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
                 }
-                catch (const abi_error &ex)
+                catch (const abi_error& ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what_to_narrow());
                     value["status"]["code"] = Json::Int(ex.result());
@@ -441,7 +468,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Gungnir_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Gungnir_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -479,7 +506,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Gungnir_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Gungnir_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -515,7 +542,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Gungnir_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Gungnir_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -579,7 +606,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Mjollner_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Mjollner_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -617,7 +644,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Mjollner_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Mjollner_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -653,7 +680,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Mjollner_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Mjollner_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -723,7 +750,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Valklyrs_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Valklyrs_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -761,7 +788,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Valklyrs_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Valklyrs_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -797,7 +824,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Valklyrs_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Valklyrs_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -900,7 +927,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Romancia_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -938,7 +965,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Romancia_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Romancia_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -975,7 +1002,7 @@ namespace glasssix
             }
 
             constexpr int romancia_align_aligned_base64_buffer_len = TB64ENCLEN(3 * 128 * 128);
-            inline Json::Value Romancia_alignFace_128_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Romancia_alignFace_128_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -1061,7 +1088,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_alignFace_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Romancia_alignFace_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -1147,7 +1174,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_blur_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Romancia_blur_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -1212,7 +1239,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_mask_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Romancia_mask_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -1290,7 +1317,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_antispoofing_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Romancia_antispoofing_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -1356,7 +1383,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Gaius_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Gaius_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -1396,7 +1423,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Gaius_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Gaius_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -1434,7 +1461,7 @@ namespace glasssix
             }
 
             constexpr int gaius_forward_aligned_buffer_len = 3 * 128 * 128;
-            inline Json::Value Gaius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Gaius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -1510,7 +1537,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Gaius_make_mask_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Gaius_make_mask_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -1591,7 +1618,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Cassius_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Cassius_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -1633,7 +1660,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Cassius_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Cassius_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -1670,7 +1697,7 @@ namespace glasssix
             }
 
             constexpr int cassius_forward_aligned_buffer_len = 3 * 128 * 128;
-            inline Json::Value Cassius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Cassius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -1679,40 +1706,65 @@ namespace glasssix
                     if (format < 0 || format > 1)
                         throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: format < 0 || format > 1");
 
-                    auto aligned_face_array = root["aligned_images"];
-                    std::vector<uint8_t> aligned_faces_vec;
                     int num = 0;
-                    memory::tensor<std::uint8_t> temp(cassius_forward_aligned_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-                    std::uint8_t *ptr = temp.mutable_cpu_data();
-                    for (auto i : aligned_face_array)
+                    exposing::param_hash_map<param_string, unknown_object> param;
+                    if (data.size() && (data.size() % cassius_forward_aligned_buffer_len == 0))
                     {
-                        std::string aligned_face_base64_str = i.asString();
-                        if (aligned_face_base64_str.size() != TB64ENCLEN(cassius_forward_aligned_buffer_len))
-                            throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(cassius_forward_aligned_buffer_len)");
-
-                        size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t *>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
-                        if (aligned_face_decode_len != cassius_forward_aligned_buffer_len)
-                            throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != cassius_forward_aligned_buffer_len");
-
-                        aligned_faces_vec.insert(aligned_faces_vec.end(), ptr, ptr + cassius_forward_aligned_buffer_len);
-                        num++;
+                        num = data.size() / cassius_forward_aligned_buffer_len;
+                        param = make_param_hash_map<param_string, unknown_object>(
+                            { {u8"aligned_faces", box(data)},
+                             {u8"num", box(num)},
+                             {u8"order", box(format)},
+                             {u8"object_id", box(instance)} });
                     }
+                    else
+                    {
+                        auto aligned_face_array = root["aligned_images"];
+                        std::vector<uint8_t> aligned_faces_vec;
+                        memory::tensor<std::uint8_t> temp(cassius_forward_aligned_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
+                        std::uint8_t* ptr = temp.mutable_cpu_data();
+                        for (auto i : aligned_face_array)
+                        {
+                            std::string aligned_face_base64_str = i.asString();
+                            if (aligned_face_base64_str.size() != TB64ENCLEN(cassius_forward_aligned_buffer_len))
+                                throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(cassius_forward_aligned_buffer_len)");
 
-                    auto param = make_param_hash_map<param_string, unknown_object>(
-                        {{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
-                         {u8"num", box(num)},
-                         {u8"order", box(format)},
-                         {u8"object_id", box(instance)}});
+                            size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
+                            if (aligned_face_decode_len != cassius_forward_aligned_buffer_len)
+                                throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != cassius_forward_aligned_buffer_len");
+
+                            aligned_faces_vec.insert(aligned_faces_vec.end(), ptr, ptr + cassius_forward_aligned_buffer_len);
+                            num++;
+                        }
+
+                        param = make_param_hash_map<param_string, unknown_object>(
+                            { {u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
+                             {u8"num", box(num)},
+                             {u8"order", box(format)},
+                             {u8"object_id", box(instance)} });
+                    }
 
                     auto result = plugin.execute(u8"cassius.forward", param).as<param_vector<param_vector<float>>>();
 
+                    bool save2external = false;
+                    if (external.size() >= num * 512 * sizeof(float))
+                        save2external = true;
+
                     Json::Value jobj_features = Json::Value(Json::arrayValue);
-                    for (size_t i = 0; i < result.size(); i++)
+                    if (save2external)
                     {
-                        Json::Value jarray_feature;
-                        for (size_t j = 0; j < result[i].size(); j++)
-                            jarray_feature["feature"].append(result[i][j]);
-                        jobj_features.append(jarray_feature);
+                        for (size_t i = 0; i < result.size(); i++)
+                            std::copy(begin(result[i]), end(result[i]), reinterpret_cast<float*>(external.begin()) + i * 512);
+                    }
+                    else
+                    {
+                        for (size_t i = 0; i < result.size(); i++)
+                        {
+                            Json::Value jarray_feature;
+                            for (size_t j = 0; j < result[i].size(); j++)
+                                jarray_feature["feature"].append(result[i][j]);
+                            jobj_features.append(jarray_feature);
+                        }
                     }
 
                     value["features"] = jobj_features;
@@ -1743,7 +1795,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Selene_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Selene_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -1785,7 +1837,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Selene_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Selene_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -1823,7 +1875,7 @@ namespace glasssix
             }
 
             constexpr int selene_forward_aligned_buffer_len = 3 * 128 * 128;
-            inline Json::Value Selene_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Selene_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -1897,7 +1949,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Selene_make_mask_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Selene_make_mask_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -1991,7 +2043,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Damocles_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Damocles_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -2031,7 +2083,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Damocles_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Damocles_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -2067,7 +2119,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Damocles_spoofing_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Damocles_spoofing_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -2138,7 +2190,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Irisviel_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -2182,7 +2234,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -2217,7 +2269,7 @@ namespace glasssix
                 }
                 return value;
             }
-            inline Json::Value Irisviel_search_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_search_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -2294,7 +2346,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_clear_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_clear_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -2327,7 +2379,7 @@ namespace glasssix
                 }
                 return value;
             }
-            inline Json::Value Irisviel_remove_all_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_remove_all_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -2361,7 +2413,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_load_databases_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_load_databases_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
                 try
@@ -2395,7 +2447,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_remove_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_remove_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -2437,7 +2489,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_remove_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_remove_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -2476,7 +2528,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_add_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_add_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -2524,7 +2576,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_add_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_add_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -2583,7 +2635,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_update_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_update_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -2631,7 +2683,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_update_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance)
+            inline Json::Value Irisviel_update_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -2691,7 +2743,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Fusion_Romancia_alignFace128_Gaius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids)
+            inline Json::Value Fusion_Romancia_alignFace128_Gaius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -2794,7 +2846,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Fusion_Romancia_alignFace_Selene_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids)
+            inline Json::Value Fusion_Romancia_alignFace_Selene_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
@@ -2895,7 +2947,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Fusion_Romancia_alignFace_Cassius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids)
+            inline Json::Value Fusion_Romancia_alignFace_Cassius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
 
