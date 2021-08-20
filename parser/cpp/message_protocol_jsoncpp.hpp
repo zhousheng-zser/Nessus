@@ -404,7 +404,7 @@ namespace glasssix
                     value["aligned_images"] = Json::Value(Json::arrayValue);
 
                     int read_byte_size = 0;
-                    for (size_t i = 0; i < root["image_info"].size(); i++)
+                    for (size_t i = 0; i < root["image_infos"].size(); i++)
                     {
                         int format = root["image_infos"][Json::Int(i)]["format"].asInt();
                         int height = root["image_infos"][Json::Int(i)]["height"].asInt();
@@ -426,12 +426,14 @@ namespace glasssix
                              {u8"object_id", box(instance)} });
 
                         auto result = plugin.execute(u8"longinus.center_scale_alignFace", param).as<param_vector<param_vector<std::uint8_t>>>();
-                        if(save2extrenal)
+                        if (save2extrenal)
+                        {
                             std::copy(begin(result[0]), end(result[0]), external.begin() + i * 128 * 128 * 3);
+                        }
                         else
                         {
-                            memory::tensor<std::uint8_t> temp(longinus_align_aligned_base64_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-                            std::uint8_t* ptr = temp.mutable_cpu_data();
+                            std::vector<std::uint8_t> temp(longinus_align_aligned_base64_buffer_len, 0);
+                            std::uint8_t* ptr = temp.data();
                             std::vector<std::uint8_t> buffer(begin(result[0]), end(result[0]));
 
                             tb64xenc(buffer.data(), buffer.size(), ptr);
@@ -1063,8 +1065,8 @@ namespace glasssix
                     auto result = plugin.execute(u8"romancia.alignFace128", param).as<param_vector<param_vector<std::uint8_t>>>();
 
                     value["aligned_images"] = Json::Value(Json::arrayValue);
-                    memory::tensor<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-                    std::uint8_t *ptr = temp.mutable_cpu_data();
+                    std::vector<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, 0);
+                    std::uint8_t *ptr = temp.data();
                     for (size_t i = 0; i < result.size(); i++)
                     {
                         std::vector<std::uint8_t> buffer(begin(result[i]), end(result[i]));
@@ -1149,8 +1151,8 @@ namespace glasssix
                     auto result = plugin.execute(u8"romancia.alignFace", param).as<param_vector<param_vector<std::uint8_t>>>();
 
                     value["aligned_images"] = Json::Value(Json::arrayValue);
-                    memory::tensor<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-                    std::uint8_t *ptr = temp.mutable_cpu_data();
+                    std::vector<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, 0);
+                    std::uint8_t *ptr = temp.data();
                     for (size_t i = 0; i < result.size(); i++)
                     {
                         std::vector<std::uint8_t> buffer(begin(result[i]), end(result[i]));
@@ -1488,8 +1490,8 @@ namespace glasssix
                     auto aligned_face_array = root["aligned_images"];
                     std::vector<uint8_t> aligned_faces_vec;
                     int num = 0;
-                    memory::tensor<std::uint8_t> temp(gaius_forward_aligned_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-                    std::uint8_t *ptr = temp.mutable_cpu_data();
+                    std::vector<std::uint8_t> temp(gaius_forward_aligned_buffer_len, 0);
+                    std::uint8_t *ptr = temp.data();
                     for (auto i : aligned_face_array)
                     {
                         std::string aligned_face_base64_str = i.asString();
@@ -1564,8 +1566,8 @@ namespace glasssix
                     auto aligned_face_array = root["aligned_images"];
                     std::vector<uint8_t> aligned_faces_vec;
                     int num = 0;
-                    memory::tensor<std::uint8_t> temp(gaius_forward_aligned_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-                    std::uint8_t *ptr = temp.mutable_cpu_data();
+                    std::vector<std::uint8_t> temp(gaius_forward_aligned_buffer_len, 0);
+                    std::uint8_t *ptr = temp.data();
                     for (auto i : aligned_face_array)
                     {
                         std::string aligned_face_base64_str = i.asString();
@@ -1576,12 +1578,22 @@ namespace glasssix
                         if (aligned_face_decode_len != gaius_forward_aligned_buffer_len)
                             throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != gaius_forward_aligned_buffer_len");
 
-                        for (size_t j = 0; j < 3; j++)
+                        if (format == 0)
                         {
-                            std::copy(mask, mask + 64 * 64, ptr + j * 128 * 128 + 64 * 128);
+                            for (size_t j = 0; j < 3; j++)
+                            {
+                                std::copy(mask, mask + 64 * 128, ptr + j * 128 * 128 + 64 * 128);
+                            }
+                        }
+                        else
+                        {
+                            for (size_t j = 0; j < 3; j++)
+                            {
+                                std::copy(mask, mask + 64 * 128, ptr + 3 * 64 * 128 + j * 64 * 128);
+                            }
                         }
 
-                        aligned_faces_vec.insert(aligned_faces_vec.end(), ptr, ptr + gaius_forward_aligned_buffer_len);
+                        aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
                         num++;
                     }
 
@@ -1721,6 +1733,7 @@ namespace glasssix
 
                     int num = 0;
                     exposing::param_hash_map<param_string, unknown_object> param;
+                    param_vector<param_vector<float>> result;
                     if (data.size() && (data.size() % cassius_forward_aligned_buffer_len == 0))
                     {
                         num = data.size() / cassius_forward_aligned_buffer_len;
@@ -1729,13 +1742,15 @@ namespace glasssix
                              {u8"num", box(num)},
                              {u8"order", box(format)},
                              {u8"object_id", box(instance)} });
+
+                        result = plugin.execute(u8"cassius.forward", param).as<param_vector<param_vector<float>>>();
                     }
                     else
                     {
                         auto aligned_face_array = root["aligned_images"];
                         std::vector<uint8_t> aligned_faces_vec;
-                        memory::tensor<std::uint8_t> temp(cassius_forward_aligned_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-                        std::uint8_t* ptr = temp.mutable_cpu_data();
+                        std::vector<uint8_t> temp(cassius_forward_aligned_buffer_len, 0);
+                        std::uint8_t* ptr = temp.data();
                         for (auto i : aligned_face_array)
                         {
                             std::string aligned_face_base64_str = i.asString();
@@ -1746,18 +1761,17 @@ namespace glasssix
                             if (aligned_face_decode_len != cassius_forward_aligned_buffer_len)
                                 throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != cassius_forward_aligned_buffer_len");
 
-                            aligned_faces_vec.insert(aligned_faces_vec.end(), ptr, ptr + cassius_forward_aligned_buffer_len);
+                            aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
                             num++;
                         }
-
+                        
                         param = make_param_hash_map<param_string, unknown_object>(
-                            { {u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
+                            { {u8"aligned_faces", box(exposing::param_span<std::uint8_t>{ aligned_faces_vec.data(), aligned_faces_vec.size() })},
                              {u8"num", box(num)},
                              {u8"order", box(format)},
                              {u8"object_id", box(instance)} });
+                        result = plugin.execute(u8"cassius.forward", param).as<param_vector<param_vector<float>>>();
                     }
-
-                    auto result = plugin.execute(u8"cassius.forward", param).as<param_vector<param_vector<float>>>();
 
                     bool save2external = false;
                     if (external.size() >= num * 512 * sizeof(float))
@@ -1850,6 +1864,48 @@ namespace glasssix
 
                 return value;
             }
+            inline Json::Value Selene_new_test_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+            {
+                Json::Value value;
+                try
+                {
+                    int model_type = root["model_type"].asInt();
+                    int device = root["device"].asInt();
+                    bool use_int8 = root["use_int8"].asBool();
+                    std::string model_path = root["model_path"].asString();
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        { {u8"model_type", box(model_type)},
+                          {u8"device", box(device)},
+                          {u8"use_int8", box(use_int8 ? 1 : 0)},
+                          {u8"model_path", box(std::string_view(model_path))} });
+
+                    instance = unbox<guid>(plugin.execute(u8"selene.new.test", param));
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
             inline Json::Value Selene_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
@@ -1901,8 +1957,8 @@ namespace glasssix
                     auto aligned_face_array = root["aligned_images"];
                     std::vector<uint8_t> aligned_faces_vec;
                     int num = 0;
-                    memory::tensor<std::uint8_t> temp(selene_forward_aligned_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-                    std::uint8_t *ptr = temp.mutable_cpu_data();
+                   std::vector<std::uint8_t> temp(selene_forward_aligned_buffer_len, 0);
+                    std::uint8_t *ptr = temp.data();
                     for (auto i : aligned_face_array)
                     {
                         std::string aligned_face_base64_str = i.asString();
@@ -1913,7 +1969,7 @@ namespace glasssix
                         if (aligned_face_decode_len != selene_forward_aligned_buffer_len)
                             throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != selene_forward_aligned_buffer_len");
 
-                        aligned_faces_vec.insert(aligned_faces_vec.end(), ptr, ptr + selene_forward_aligned_buffer_len);
+                        aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
                         num++;
                     }
 
@@ -1976,8 +2032,8 @@ namespace glasssix
                     auto aligned_face_array = root["aligned_images"];
                     std::vector<uint8_t> aligned_faces_vec;
                     int num = 0;
-                    memory::tensor<std::uint8_t> temp(selene_forward_aligned_buffer_len, -1, memory::NCHW /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-                    std::uint8_t *ptr = temp.mutable_cpu_data();
+                    std::vector<std::uint8_t> temp(selene_forward_aligned_buffer_len, 0);
+                    std::uint8_t *ptr = temp.data();
                     for (auto i : aligned_face_array)
                     {
                         std::string aligned_face_base64_str = i.asString();
@@ -2003,7 +2059,7 @@ namespace glasssix
                             }
                         }
 
-                        aligned_faces_vec.insert(aligned_faces_vec.end(), ptr, ptr + selene_forward_aligned_buffer_len);
+                        aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
                         num++;
                     }
 

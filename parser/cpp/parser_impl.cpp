@@ -240,13 +240,19 @@ namespace glasssix::exposing::nessus
 			}
 
 			std::vector<std::string> str_vec = split(topic_str, ".");
-			if ((str_vec[0] == "fusion" && str_vec.size() != 5))
+			if (str_vec[0] == "fusion" && str_vec.size() != 5)
 			{
 				value["status"]["message"] = Json::Value("topic illegal");
 				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
 				return to_param_string(writer.write(value));
 			}
-			else if ((str_vec[0] != "fusion" && str_vec.size() != 2))
+			else if (str_vec[0] == "new" && (str_vec.size() != 2 && str_vec.size() != 3))
+			{
+				value["status"] = Json::Value("topic illegal");
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
+				return to_param_string(writer.write(value));
+			}
+			else if (str_vec.size() != 2)
 			{
 				value["status"] = Json::Value("topic illegal");
 				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
@@ -521,7 +527,7 @@ namespace glasssix::exposing::nessus
 		protocol_map["longinus.delete"] = &Longinus_delete_json;
 		protocol_map["longinus.detect"] = &Longinus_detect_json;
 		protocol_map["longinus.trace"] = &Longinus_trace_json;
-		protocol_map["longinus.center_scale_alignFace"] = &Longinus_center_scale_alignFace_json;
+		protocol_map["longinus.center_scale_alignface"] = &Longinus_center_scale_alignFace_json;
 		protocol_map["romancia.new"] = &Romancia_new_json;
 		protocol_map["romancia.delete"] = &Romancia_delete_json;
 		protocol_map["romancia.alignface128"] = &Romancia_alignFace_128_json;
@@ -537,6 +543,7 @@ namespace glasssix::exposing::nessus
 		protocol_map["cassius.delete"] = &Cassius_delete_json;
 		protocol_map["cassius.forward"] = &Cassius_forward_json;
 		protocol_map["selene.new"] = &Selene_new_json;
+		protocol_map["selene.new.test"] = &Selene_new_test_json;
 		protocol_map["selene.delete"] = &Selene_delete_json;
 		protocol_map["selene.forward"] = &Selene_forward_json;
 		protocol_map["selene.make_mask_forward"] = &Selene_make_mask_forward_json;
