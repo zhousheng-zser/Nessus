@@ -14,6 +14,7 @@
 #include <gungnir/yolo_net.hpp>
 #include <mjollner/ocr_net.hpp>
 #include <valklyrs/yolov5s_net.hpp>
+#include <heimdall/material_code.hpp>
 
 using namespace glasssix::gaius;
 using namespace glasssix::cassius;
@@ -25,6 +26,7 @@ using namespace glasssix::selene;
 using namespace glasssix::gungnir;
 using namespace glasssix::mjollner;
 using namespace glasssix::valklyrs;
+using namespace glasssix::heimdall;
 
 namespace glasssix::exposing::nessus
 {
@@ -42,6 +44,7 @@ namespace glasssix::exposing::nessus
             static constexpr utf8_string_view gungnir{u8"gungnir"};
             static constexpr utf8_string_view mjollner{u8"mjollner"};
             static constexpr utf8_string_view valklyrs{u8"valklyrs"};
+            static constexpr utf8_string_view heimdall{u8"heimdall"};
         };
 
         struct function_names final
@@ -56,6 +59,7 @@ namespace glasssix::exposing::nessus
             static constexpr utf8_string_view gungnir_new{u8"gungnir.new"};
             static constexpr utf8_string_view mjollner_new{u8"mjollner.new"};
             static constexpr utf8_string_view valklyrs_new{u8"valklyrs.new"};
+            static constexpr utf8_string_view heimdall_new{u8"heimdall.new"};
             static constexpr utf8_string_view gaius_delete{u8"gaius.delete"};
             static constexpr utf8_string_view cassius_delete{u8"cassius.delete"};
             static constexpr utf8_string_view longinus_delete{u8"longinus.delete"};
@@ -66,6 +70,7 @@ namespace glasssix::exposing::nessus
             static constexpr utf8_string_view gungnir_delete{u8"gungnir.delete"};
             static constexpr utf8_string_view mjollner_delete{u8"mjollner.delete"};
             static constexpr utf8_string_view valklyrs_delete{u8"valklyrs.delete"};
+            static constexpr utf8_string_view heimdall_delete{u8"heimdall.delete"};
             static constexpr utf8_string_view gaius_forward{u8"gaius.forward"};
             static constexpr utf8_string_view cassius_forward{u8"cassius.forward"};
             static constexpr utf8_string_view selene_forward{u8"selene.forward"};
@@ -92,6 +97,7 @@ namespace glasssix::exposing::nessus
             static constexpr utf8_string_view gungnir_detect{u8"gungnir.detect"};
             static constexpr utf8_string_view mjollner_detect{u8"mjollner.detect"};
             static constexpr utf8_string_view valklyrs_detect{u8"valklyrs.detect"};
+            static constexpr utf8_string_view heimdall_detect{u8"heimdall.detect"};
         };
     }
 
@@ -111,6 +117,7 @@ namespace glasssix::exposing::nessus
             functions_.insert_or_assign(function_names::gungnir_new, std::bind(&impl::gungnir_new, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::mjollner_new, std::bind(&impl::mjollner_new, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::valklyrs_new, std::bind(&impl::valklyrs_new, this, std::placeholders::_1));
+            functions_.insert_or_assign(function_names::heimdall_new, std::bind(&impl::heimdall_new, this, std::placeholders::_1));
 
             // Delete
             functions_.insert_or_assign(function_names::gaius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -123,6 +130,7 @@ namespace glasssix::exposing::nessus
             functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
             functions_.insert_or_assign(function_names::mjollner_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
             functions_.insert_or_assign(function_names::valklyrs_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+            functions_.insert_or_assign(function_names::heimdall_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
             // Business
             functions_.insert_or_assign(function_names::damocles_spoofing_detect, std::bind(&impl::damocles_spoofing_detect, this, std::placeholders::_1));
@@ -130,6 +138,7 @@ namespace glasssix::exposing::nessus
             functions_.insert_or_assign(function_names::gungnir_detect, std::bind(&impl::gungnir_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::mjollner_detect, std::bind(&impl::mjollner_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::valklyrs_detect, std::bind(&impl::valklyrs_detect, this, std::placeholders::_1));
+            functions_.insert_or_assign(function_names::heimdall_detect, std::bind(&impl::heimdall_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::longinus_trace, std::bind(&impl::longinus_trace, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::longinus_center_scale_align_face, std::bind(&impl::longinus_center_scale_align_face, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::romancia_align_face_128, std::bind(&impl::romancia_align_face_128, this, std::placeholders::_1));
@@ -299,6 +308,15 @@ namespace glasssix::exposing::nessus
             auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
             return add_instance(package_names::valklyrs, make_exported_interface<yolov5s_net>(models_directory + u8"/yolov5s.racy", models_directory + u8"/vehicle_attri.racy", models_directory + u8"/person_attri.racy", device));
+        }
+
+        unknown_object heimdall_new(const param_hash_map<param_string, unknown_object> &params)
+        {
+            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+            auto factory_type = unbox<std::int32_t>(params.get_value(u8"factory_type"));
+
+            return add_instance(package_names::heimdall, make_exported_interface<material_code>(models_directory, factory_type, device));
         }
 
         unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object> &params)
@@ -484,6 +502,22 @@ namespace glasssix::exposing::nessus
             auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
             return instance.detect(image, channels, height, width, order);
+        }
+
+        unknown_object heimdall_detect(const param_hash_map<param_string, unknown_object> &params)
+        {
+            constexpr std::int32_t channels = 3;
+            auto instance = get_instance<material_code>(params);
+            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+            auto x = unbox<std::int32_t>(params.get_value(u8"x"));
+            auto y = unbox<std::int32_t>(params.get_value(u8"y"));
+            auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+            auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
+            return instance.detect(image, channels, height, width, order, x, y, roi_width, roi_height);
         }
 
         unknown_object romancia_antispoofing(const param_hash_map<param_string, unknown_object> &params)
