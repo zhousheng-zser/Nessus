@@ -252,12 +252,6 @@ namespace glasssix::exposing::nessus
 				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
 				return to_param_string(writer.write(value));
 			}
-			else if (str_vec.size() != 2)
-			{
-				value["status"] = Json::Value("topic illegal");
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-				return to_param_string(writer.write(value));
-			}
 
 			if (str_vec[0] == "fusion")
 			{
