@@ -252,12 +252,6 @@ namespace glasssix::exposing::nessus
 				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
 				return to_param_string(writer.write(value));
 			}
-			else if (str_vec.size() != 2)
-			{
-				value["status"] = Json::Value("topic illegal");
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-				return to_param_string(writer.write(value));
-			}
 
 			if (str_vec[0] == "fusion")
 			{
@@ -571,6 +565,9 @@ namespace glasssix::exposing::nessus
         protocol_map["valklyrs.new"] = &Valklyrs_new_json;
 		protocol_map["valklyrs.delete"] = &Valklyrs_delete_json;
 		protocol_map["valklyrs.detect"] = &Valklyrs_detect_json;
+        protocol_map["heimdall.new"] = &Heimdall_new_json;
+		protocol_map["heimdall.delete"] = &Heimdall_delete_json;
+		protocol_map["heimdall.detect"] = &Heimdall_detect_json;
 		return protocol_map;
 	}();
 
