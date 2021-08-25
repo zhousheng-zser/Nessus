@@ -8,6 +8,7 @@
 #include "parser_exception.hpp"
 #include "../../common/include/gungnir/hat_info.hpp"
 #include "../../common/include/mjollner/box_info.hpp"
+#include "../../common/include/heimdall/box_info.hpp"
 #include "../../common/include/valklyrs/result_info.hpp"
 #include "../../common/include/valklyrs/vp_info.hpp"
 #include "../../common/include/longinus/face_info.hpp"
@@ -135,7 +136,7 @@ namespace glasssix
                 return dst;
             }
 
-            inline Json::Value Longinus_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Longinus_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -176,7 +177,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Longinus_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Longinus_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -212,7 +213,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Longinus_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Longinus_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -303,7 +304,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Longinus_trace_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Longinus_trace_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -391,7 +392,7 @@ namespace glasssix
             }
 
             constexpr int longinus_align_aligned_base64_buffer_len = TB64ENCLEN(3 * 128 * 128);
-            inline Json::Value Longinus_center_scale_alignFace_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+            inline Json::Value Longinus_center_scale_alignFace_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -415,15 +416,15 @@ namespace glasssix
                         param_span<std::uint8_t> data_i(data.data() + read_byte_size, image_byte_size);
                         read_byte_size += image_byte_size;
                         auto frame = decode_and_convert(data_i, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-                        param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+                        param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
 
                         auto param = make_param_hash_map<param_string, unknown_object>(
-                            { {u8"image", box(image_span)},
+                            {{u8"image", box(image_span)},
                              {u8"height", box(height)},
                              {u8"width", box(width)},
                              {u8"scale", box(scale)},
                              {u8"order", box(static_cast<int>(frame.order()))},
-                             {u8"object_id", box(instance)} });
+                             {u8"object_id", box(instance)}});
 
                         auto result = plugin.execute(u8"longinus.center_scale_alignFace", param).as<param_vector<param_vector<std::uint8_t>>>();
                         if (save2extrenal)
@@ -438,30 +439,30 @@ namespace glasssix
 
                             tb64xenc(buffer.data(), buffer.size(), ptr);
 
-                            value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + longinus_align_aligned_base64_buffer_len));
+                            value["aligned_images"].append(Json::Value(reinterpret_cast<char *>(ptr), reinterpret_cast<char *>(ptr) + longinus_align_aligned_base64_buffer_len));
                         }
                     }
-                    
+
                     value["format"] = Json::Value(0);
                     value["status"]["message"] = Json::Value("OK");
                     value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
                 }
-                catch (const parser_exception& ex)
+                catch (const parser_exception &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
                 }
-                catch (const Json::Exception& ex)
+                catch (const Json::Exception &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
                 }
-                catch (const std::exception& ex)
+                catch (const std::exception &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
                 }
-                catch (const abi_error& ex)
+                catch (const abi_error &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what_to_narrow());
                     value["status"]["code"] = Json::Int(ex.result());
@@ -470,7 +471,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Gungnir_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Gungnir_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -508,7 +509,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Gungnir_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Gungnir_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -544,7 +545,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Gungnir_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Gungnir_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -608,7 +609,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Mjollner_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Mjollner_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -646,7 +647,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Mjollner_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Mjollner_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -682,7 +683,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Mjollner_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Mjollner_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -697,7 +698,7 @@ namespace glasssix
                     int y = flag ? 0 : roi["y"].asInt();
                     int roi_width = flag ? width : roi["width"].asInt();
                     int roi_height = flag ? height : roi["height"].asInt();
-                    
+
                     auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
                     param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
 
@@ -731,6 +732,7 @@ namespace glasssix
                         }
                         jobj_box["location"] = jarray_points;
                         jobj_box["strinfo"] = Json::Value(exposing::to_narrow_string(box.strinfo()));
+                        jobj_box["angle"] = Json::Value(box.angle());
 
                         jarray_boxes.append(jobj_box);
                     }
@@ -765,7 +767,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Valklyrs_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Valklyrs_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -803,7 +805,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Valklyrs_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Valklyrs_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -839,7 +841,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Valklyrs_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Valklyrs_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -942,7 +944,167 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Heimdall_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
+            {
+                Json::Value value;
+                try
+                {
+                    int device = root["device"].asInt();
+                    int factory_type = root["factory_type"].asInt();
+                    std::string models_directory = root["models_directory"].asString();
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"device", box(device)},
+                         {u8"factory_type", box(factory_type)},
+                         {u8"models_directory", box(std::string_view(models_directory))}});
+                    instance = unbox<guid>(plugin.execute(u8"heimdall.new", param));
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Heimdall_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
+            {
+                Json::Value value;
+                try
+                {
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"object_id", box(instance)}});
+
+                    plugin.execute(u8"heimdall.delete", param);
+
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+                return value;
+            }
+
+            inline Json::Value Heimdall_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
+            {
+                Json::Value value;
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+
+                    Json::Value roi = root.get("roi", Json::Value());
+                    bool flag = roi.empty();
+                    int x = flag ? 0 : roi["x"].asInt();
+                    int y = flag ? 0 : roi["y"].asInt();
+                    int roi_width = flag ? width : roi["width"].asInt();
+                    int roi_height = flag ? height : roi["height"].asInt();
+
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
+
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {
+                            {u8"image", box(image_span)},
+                            {u8"height", box(height)},
+                            {u8"width", box(width)},
+                            {u8"order", box(static_cast<int>(frame.order()))},
+                            {u8"object_id", box(instance)},
+                            {u8"x", box(x)},
+                            {u8"y", box(y)},
+                            {u8"roi_width", box(roi_width)},
+                            {u8"roi_height", box(roi_height)},
+                        });
+
+                    auto result = plugin.execute(u8"heimdall.detect", param).as<param_vector<heimdall::box_info>>();
+                    Json::Value jarray_boxes = Json::Value(Json::arrayValue);
+                    for (auto box : result)
+                    {
+                        Json::Value jobj_box;
+                        Json::Value jarray_points = Json::Value(Json::arrayValue);
+                        auto location = box.location();
+                        for (size_t i = 0; i < 4; i++)
+                        {
+                            Json::Value point;
+                            point["x"] = Json::Value(location[i * 2]);
+                            point["y"] = Json::Value(location[i * 2 + 1]);
+
+                            jarray_points.append(point);
+                        }
+                        jobj_box["location"] = jarray_points;
+                        jobj_box["strinfo"] = Json::Value(exposing::to_narrow_string(box.strinfo()));
+                        jobj_box["angle"] = Json::Value(box.angle());
+
+                        jarray_boxes.append(jobj_box);
+                    }
+
+                    value["strinfo_list"] = jarray_boxes;
+
+                    // value["strinfo_list"] = "hello world";
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Romancia_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -980,7 +1142,8 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Romancia_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+
+            inline Json::Value Romancia_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -1017,7 +1180,7 @@ namespace glasssix
             }
 
             constexpr int romancia_align_aligned_base64_buffer_len = TB64ENCLEN(3 * 128 * 128);
-            inline Json::Value Romancia_alignFace_128_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Romancia_alignFace_128_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -1103,7 +1266,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_alignFace_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Romancia_alignFace_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -1189,7 +1352,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_blur_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Romancia_blur_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -1254,7 +1417,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_mask_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Romancia_mask_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -1332,7 +1495,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_antispoofing_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Romancia_antispoofing_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -1398,7 +1561,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Gaius_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Gaius_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -1438,7 +1601,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Gaius_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Gaius_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -1476,7 +1639,7 @@ namespace glasssix
             }
 
             constexpr int gaius_forward_aligned_buffer_len = 3 * 128 * 128;
-            inline Json::Value Gaius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Gaius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -1552,7 +1715,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Gaius_make_mask_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Gaius_make_mask_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -1643,7 +1806,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Cassius_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Cassius_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -1685,7 +1848,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Cassius_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Cassius_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -1722,7 +1885,7 @@ namespace glasssix
             }
 
             constexpr int cassius_forward_aligned_buffer_len = 3 * 128 * 128;
-            inline Json::Value Cassius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Cassius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -1738,7 +1901,7 @@ namespace glasssix
                     {
                         num = data.size() / cassius_forward_aligned_buffer_len;
                         param = make_param_hash_map<param_string, unknown_object>(
-                            { {u8"aligned_faces", box(data)},
+                            {{u8"aligned_faces", box(data)},
                              {u8"num", box(num)},
                              {u8"order", box(format)},
                              {u8"object_id", box(instance)} });
@@ -1757,7 +1920,7 @@ namespace glasssix
                             if (aligned_face_base64_str.size() != TB64ENCLEN(cassius_forward_aligned_buffer_len))
                                 throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(cassius_forward_aligned_buffer_len)");
 
-                            size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
+                            size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t *>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
                             if (aligned_face_decode_len != cassius_forward_aligned_buffer_len)
                                 throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != cassius_forward_aligned_buffer_len");
 
@@ -1781,7 +1944,7 @@ namespace glasssix
                     if (save2external)
                     {
                         for (size_t i = 0; i < result.size(); i++)
-                            std::copy(begin(result[i]), end(result[i]), reinterpret_cast<float*>(external.begin()) + i * 512);
+                            std::copy(begin(result[i]), end(result[i]), reinterpret_cast<float *>(external.begin()) + i * 512);
                     }
                     else
                     {
@@ -1822,7 +1985,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Selene_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Selene_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -1864,6 +2027,7 @@ namespace glasssix
 
                 return value;
             }
+            
             inline Json::Value Selene_new_test_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
             {
                 Json::Value value;
@@ -1944,7 +2108,7 @@ namespace glasssix
             }
 
             constexpr int selene_forward_aligned_buffer_len = 3 * 128 * 128;
-            inline Json::Value Selene_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Selene_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2018,7 +2182,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Selene_make_mask_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Selene_make_mask_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2112,7 +2276,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Damocles_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Damocles_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -2152,7 +2316,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Damocles_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Damocles_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -2188,7 +2352,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Damocles_spoofing_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Damocles_spoofing_detect_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2259,7 +2423,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Irisviel_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2303,7 +2467,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -2338,7 +2502,7 @@ namespace glasssix
                 }
                 return value;
             }
-            inline Json::Value Irisviel_search_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_search_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -2415,7 +2579,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_clear_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_clear_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -2448,7 +2612,7 @@ namespace glasssix
                 }
                 return value;
             }
-            inline Json::Value Irisviel_remove_all_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_remove_all_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -2482,7 +2646,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_load_databases_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_load_databases_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -2516,7 +2680,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_remove_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_remove_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2558,7 +2722,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_remove_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_remove_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2597,7 +2761,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_add_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_add_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2645,7 +2809,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_add_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_add_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2704,7 +2868,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_update_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_update_record_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2752,7 +2916,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Irisviel_update_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Irisviel_update_records_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2812,7 +2976,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Fusion_Romancia_alignFace128_Gaius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids, param_span<std::uint8_t>& external)
+            inline Json::Value Fusion_Romancia_alignFace128_Gaius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -2915,7 +3079,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Fusion_Romancia_alignFace_Selene_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids, param_span<std::uint8_t>& external)
+            inline Json::Value Fusion_Romancia_alignFace_Selene_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 
@@ -3016,7 +3180,7 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Fusion_Romancia_alignFace_Cassius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids, param_span<std::uint8_t>& external)
+            inline Json::Value Fusion_Romancia_alignFace_Cassius_forward_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, std::vector<guid> &guids, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
 

@@ -565,6 +565,9 @@ namespace glasssix::exposing::nessus
         protocol_map["valklyrs.new"] = &Valklyrs_new_json;
 		protocol_map["valklyrs.delete"] = &Valklyrs_delete_json;
 		protocol_map["valklyrs.detect"] = &Valklyrs_detect_json;
+        protocol_map["heimdall.new"] = &Heimdall_new_json;
+		protocol_map["heimdall.delete"] = &Heimdall_delete_json;
+		protocol_map["heimdall.detect"] = &Heimdall_detect_json;
 		return protocol_map;
 	}();
 
