@@ -11,6 +11,7 @@
 #include "../../common/include/heimdall/box_info.hpp"
 #include "../../common/include/valklyrs/result_info.hpp"
 #include "../../common/include/valklyrs/vp_info.hpp"
+#include "../../common/include/banshee/track_info.hpp"
 #include "../../common/include/longinus/face_info.hpp"
 #include "../../common/include/irisviel/search_result.hpp"
 #include "../../common/include/irisviel/record.hpp"
@@ -177,6 +178,7 @@ namespace glasssix
 
                 return value;
             }
+            
             inline Json::Value Longinus_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
@@ -434,7 +436,7 @@ namespace glasssix
                         else
                         {
                             std::vector<std::uint8_t> temp(longinus_align_aligned_base64_buffer_len, 0);
-                            std::uint8_t* ptr = temp.data();
+                            std::uint8_t *ptr = temp.data();
                             std::vector<std::uint8_t> buffer(begin(result[0]), end(result[0]));
 
                             tb64xenc(buffer.data(), buffer.size(), ptr);
@@ -1077,6 +1079,149 @@ namespace glasssix
                     value["strinfo_list"] = jarray_boxes;
 
                     // value["strinfo_list"] = "hello world";
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Banshee_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
+            {
+                Json::Value value;
+                try
+                {
+                    int format = root["format"].asInt();
+                    int width = root["width"].asInt();
+                    int height = root["height"].asInt();
+                    Json::Value roi = root.get("roi", Json::Value());
+                    int x = roi["x"].asInt();
+                    int y = roi["y"].asInt();
+                    int roi_width = roi["roi_width"].asInt();
+                    int roi_height = roi["roi_height"].asInt();
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {
+                            {u8"image", box(image_span)},
+                            {u8"width", box(width)},
+                            {u8"height", box(height)},
+                            {u8"x", box(x)},
+                            {u8"y", box(y)},
+                            {u8"roi_width", box(roi_width)},
+                            {u8"roi_height", box(roi_height)},
+                        });
+                    instance = unbox<guid>(plugin.execute(u8"banshee.new", param));
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Banshee_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
+            {
+                Json::Value value;
+                try
+                {
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {{u8"object_id", box(instance)}});
+
+                    plugin.execute(u8"banshee.delete", param);
+
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+                return value;
+            }
+
+            inline Json::Value Banshee_update_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
+            {
+                Json::Value value;
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        {
+                            {u8"image", box(image_span)},
+                            {u8"height", box(height)},
+                            {u8"width", box(width)},
+                            {u8"object_id", box(instance)},
+                        });
+
+                    auto result = plugin.execute(u8"banshee.update", param).as<banshee::track_info>();
+
+                    Json::Value jarray = Json::Value(Json::arrayValue);
+                    jarray["x"] = Json::Value(result.x());
+                    jarray["y"] = Json::Value(result.y());
+                    jarray["width"] = Json::Value(result.width());
+                    jarray["height"] = Json::Value(result.height());
+
+                    value["result"] = jarray;
                     value["status"]["message"] = Json::Value("OK");
                     value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
                 }
@@ -1904,7 +2049,7 @@ namespace glasssix
                             {{u8"aligned_faces", box(data)},
                              {u8"num", box(num)},
                              {u8"order", box(format)},
-                             {u8"object_id", box(instance)} });
+                             {u8"object_id", box(instance)}});
 
                         result = plugin.execute(u8"cassius.forward", param).as<param_vector<param_vector<float>>>();
                     }
@@ -1913,7 +2058,7 @@ namespace glasssix
                         auto aligned_face_array = root["aligned_images"];
                         std::vector<uint8_t> aligned_faces_vec;
                         std::vector<uint8_t> temp(cassius_forward_aligned_buffer_len, 0);
-                        std::uint8_t* ptr = temp.data();
+                        std::uint8_t *ptr = temp.data();
                         for (auto i : aligned_face_array)
                         {
                             std::string aligned_face_base64_str = i.asString();
@@ -1927,12 +2072,12 @@ namespace glasssix
                             aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
                             num++;
                         }
-                        
+
                         param = make_param_hash_map<param_string, unknown_object>(
-                            { {u8"aligned_faces", box(exposing::param_span<std::uint8_t>{ aligned_faces_vec.data(), aligned_faces_vec.size() })},
+                            {{u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
                              {u8"num", box(num)},
                              {u8"order", box(format)},
-                             {u8"object_id", box(instance)} });
+                             {u8"object_id", box(instance)}});
                         result = plugin.execute(u8"cassius.forward", param).as<param_vector<param_vector<float>>>();
                     }
 
@@ -2027,8 +2172,8 @@ namespace glasssix
 
                 return value;
             }
-            
-            inline Json::Value Selene_new_test_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+
+            inline Json::Value Selene_new_test_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -2038,31 +2183,31 @@ namespace glasssix
                     bool use_int8 = root["use_int8"].asBool();
                     std::string model_path = root["model_path"].asString();
                     auto param = make_param_hash_map<param_string, unknown_object>(
-                        { {u8"model_type", box(model_type)},
-                          {u8"device", box(device)},
-                          {u8"use_int8", box(use_int8 ? 1 : 0)},
-                          {u8"model_path", box(std::string_view(model_path))} });
+                        {{u8"model_type", box(model_type)},
+                         {u8"device", box(device)},
+                         {u8"use_int8", box(use_int8 ? 1 : 0)},
+                         {u8"model_path", box(std::string_view(model_path))}});
 
                     instance = unbox<guid>(plugin.execute(u8"selene.new.test", param));
                     value["status"]["message"] = Json::Value("OK");
                     value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
                 }
-                catch (const parser_exception& ex)
+                catch (const parser_exception &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
                 }
-                catch (const Json::Exception& ex)
+                catch (const Json::Exception &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
                 }
-                catch (const std::exception& ex)
+                catch (const std::exception &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what());
                     value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
                 }
-                catch (const abi_error& ex)
+                catch (const abi_error &ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what_to_narrow());
                     value["status"]["code"] = Json::Int(ex.result());
@@ -2070,7 +2215,7 @@ namespace glasssix
 
                 return value;
             }
-            inline Json::Value Selene_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t>& external)
+            inline Json::Value Selene_delete_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
                 try
@@ -2121,7 +2266,7 @@ namespace glasssix
                     auto aligned_face_array = root["aligned_images"];
                     std::vector<uint8_t> aligned_faces_vec;
                     int num = 0;
-                   std::vector<std::uint8_t> temp(selene_forward_aligned_buffer_len, 0);
+                    std::vector<std::uint8_t> temp(selene_forward_aligned_buffer_len, 0);
                     std::uint8_t *ptr = temp.data();
                     for (auto i : aligned_face_array)
                     {

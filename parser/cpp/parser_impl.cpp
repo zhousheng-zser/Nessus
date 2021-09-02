@@ -568,6 +568,9 @@ namespace glasssix::exposing::nessus
         protocol_map["heimdall.new"] = &Heimdall_new_json;
 		protocol_map["heimdall.delete"] = &Heimdall_delete_json;
 		protocol_map["heimdall.detect"] = &Heimdall_detect_json;
+        protocol_map["banshee.new"] = &Banshee_new_json;
+		protocol_map["banshee.delete"] = &Banshee_delete_json;
+		protocol_map["banshee.update"] = &Banshee_update_json;
 		return protocol_map;
 	}();
 
