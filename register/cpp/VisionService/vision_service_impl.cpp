@@ -545,13 +545,14 @@ namespace glasssix::exposing::nessus
             auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
             auto height = unbox<std::int32_t>(params.get_value(u8"height"));
             auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+            auto top_five = unbox<std::int32_t>(params.get_value(u8"top_five"));
             auto order = unbox<std::int32_t>(params.get_value(u8"order"));
             auto x = unbox<std::int32_t>(params.get_value(u8"x"));
             auto y = unbox<std::int32_t>(params.get_value(u8"y"));
             auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
             auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 
-            return instance.detect(image, channels, height, width, order, x, y, roi_width, roi_height);
+            return instance.detect(image, channels, height, width, top_five, order, x, y, roi_width, roi_height);
         }
 
         unknown_object banshee_update(const param_hash_map<param_string, unknown_object> &params)

@@ -1030,6 +1030,7 @@ namespace glasssix
                     int format = root["format"].asInt();
                     int height = root["height"].asInt();
                     int width = root["width"].asInt();
+                    int top_five = root["top_five"].asInt();
 
                     Json::Value roi = root.get("roi", Json::Value());
                     bool flag = roi.empty();
@@ -1046,6 +1047,7 @@ namespace glasssix
                             {u8"image", box(image_span)},
                             {u8"height", box(height)},
                             {u8"width", box(width)},
+                            {u8"top_five", box(top_five)},
                             {u8"order", box(static_cast<int>(frame.order()))},
                             {u8"object_id", box(instance)},
                             {u8"x", box(x)},
@@ -1060,6 +1062,7 @@ namespace glasssix
                     {
                         Json::Value jobj_box;
                         Json::Value jarray_points = Json::Value(Json::arrayValue);
+                        // location
                         auto location = box.location();
                         for (size_t i = 0; i < 4; i++)
                         {
@@ -1070,7 +1073,14 @@ namespace glasssix
                             jarray_points.append(point);
                         }
                         jobj_box["location"] = jarray_points;
-                        jobj_box["strinfo"] = Json::Value(exposing::to_narrow_string(box.strinfo()));
+                        // strinfos
+                        Json::Value jarray_strinfo = Json::Value(Json::arrayValue);
+                        for (auto strinfo : box.strinfos())
+                        {
+                            jarray_strinfo.append(Json::Value(exposing::to_narrow_string(strinfo)));
+                        }
+                        jobj_box["strinfo"] = jarray_strinfo;
+                        // angle
                         jobj_box["angle"] = Json::Value(box.angle());
 
                         jarray_boxes.append(jobj_box);
@@ -1215,13 +1225,13 @@ namespace glasssix
 
                     auto result = plugin.execute(u8"banshee.update", param).as<banshee::track_info>();
 
-                    Json::Value jarray = Json::Value(Json::arrayValue);
-                    jarray["x"] = Json::Value(result.x());
-                    jarray["y"] = Json::Value(result.y());
-                    jarray["width"] = Json::Value(result.width());
-                    jarray["height"] = Json::Value(result.height());
+                    Json::Value jobj = Json::Value();
+                    jobj["x"] = Json::Value(result.x());
+                    jobj["y"] = Json::Value(result.y());
+                    jobj["width"] = Json::Value(result.width());
+                    jobj["height"] = Json::Value(result.height());
 
-                    value["result"] = jarray;
+                    value["result"] = jobj;
                     value["status"]["message"] = Json::Value("OK");
                     value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
                 }
