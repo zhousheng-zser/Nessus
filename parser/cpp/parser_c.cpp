@@ -58,7 +58,7 @@ extern "C" {
 		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
 
 		glasssix::exposing::param_string topic_(topic);
-		glasssix::exposing::param_string str_param_(jstr_param);
+		glasssix::exposing::param_string str_param_(jstr_param ? jstr_param : u8"");
 		glasssix::exposing::param_span<std::uint8_t> data_(reinterpret_cast<std::uint8_t*>(data), data_len);
 		glasssix::exposing::param_span<std::uint8_t> external_(reinterpret_cast<std::uint8_t*>(external), external_size);
 
