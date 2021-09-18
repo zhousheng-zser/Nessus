@@ -1121,14 +1121,48 @@ namespace glasssix
                 Json::Value value;
                 try
                 {
+                    auto param = make_param_hash_map<param_string, unknown_object>();
+                    instance = unbox<guid>(plugin.execute(u8"banshee.new", param));
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Banshee_init_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
+            {
+                Json::Value value;
+                try
+                {
                     int format = root["format"].asInt();
                     int width = root["width"].asInt();
                     int height = root["height"].asInt();
                     Json::Value roi = root.get("roi", Json::Value());
                     int x = roi["x"].asInt();
                     int y = roi["y"].asInt();
-                    int roi_width = roi["roi_width"].asInt();
-                    int roi_height = roi["roi_height"].asInt();
+                    int roi_width = roi["width"].asInt();
+                    int roi_height = roi["height"].asInt();
                     auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
                     param_span<std::uint8_t> image_span(const_cast<std::uint8_t *>(frame.cpu_data()), frame.count());
                     auto param = make_param_hash_map<param_string, unknown_object>(
@@ -1140,8 +1174,9 @@ namespace glasssix
                             {u8"y", box(y)},
                             {u8"roi_width", box(roi_width)},
                             {u8"roi_height", box(roi_height)},
+                            {u8"object_id", box(instance)},
                         });
-                    instance = unbox<guid>(plugin.execute(u8"banshee.new", param));
+                    plugin.execute(u8"banshee.init", param);
                     value["status"]["message"] = Json::Value("OK");
                     value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
                 }
@@ -1230,6 +1265,7 @@ namespace glasssix
                     jobj["y"] = Json::Value(result.y());
                     jobj["width"] = Json::Value(result.width());
                     jobj["height"] = Json::Value(result.height());
+                    jobj["prob"] = Json::Value(result.prob());
 
                     value["result"] = jobj;
                     value["status"]["message"] = Json::Value("OK");
