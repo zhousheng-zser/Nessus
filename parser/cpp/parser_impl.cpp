@@ -229,8 +229,11 @@ namespace glasssix::exposing::nessus
 			Json::Value root;
 			try
 			{
-				if(!parser_.parse(std::string(str_param_view), root))
-					throw parser_exception(parser_exception::parser_exception_code::JSON_EXCEPTION, "parse json failed");
+				if (str_param_view.size() != 0)
+				{
+					if(!parser_.parse(std::string(str_param_view), root))
+						throw parser_exception(parser_exception::parser_exception_code::JSON_EXCEPTION, "parse json failed");
+				}
 			}
 			catch (const std::exception& ex)
 			{
@@ -570,6 +573,7 @@ namespace glasssix::exposing::nessus
 		protocol_map["heimdall.detect"] = &Heimdall_detect_json;
         protocol_map["banshee.new"] = &Banshee_new_json;
 		protocol_map["banshee.delete"] = &Banshee_delete_json;
+		protocol_map["banshee.init"] = &Banshee_init_json;
 		protocol_map["banshee.update"] = &Banshee_update_json;
 		return protocol_map;
 	}();

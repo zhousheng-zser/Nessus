@@ -17,6 +17,8 @@
 #include <heimdall/material_code.hpp>
 #include <banshee/kcf_tracker.hpp>
 
+#include <iostream>
+
 using namespace glasssix::gaius;
 using namespace glasssix::cassius;
 using namespace glasssix::romancia;
@@ -104,6 +106,7 @@ namespace glasssix::exposing::nessus
             static constexpr utf8_string_view mjollner_detect{u8"mjollner.detect"};
             static constexpr utf8_string_view valklyrs_detect{u8"valklyrs.detect"};
             static constexpr utf8_string_view heimdall_detect{u8"heimdall.detect"};
+            static constexpr utf8_string_view banshee_init{u8"banshee.init"};
             static constexpr utf8_string_view banshee_update{u8"banshee.update"};
         };
     }
@@ -149,6 +152,7 @@ namespace glasssix::exposing::nessus
             functions_.insert_or_assign(function_names::mjollner_detect, std::bind(&impl::mjollner_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::valklyrs_detect, std::bind(&impl::valklyrs_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::heimdall_detect, std::bind(&impl::heimdall_detect, this, std::placeholders::_1));
+            functions_.insert_or_assign(function_names::banshee_init, std::bind(&impl::banshee_init, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::banshee_update, std::bind(&impl::banshee_update, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::longinus_trace, std::bind(&impl::longinus_trace, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::longinus_center_scale_align_face, std::bind(&impl::longinus_center_scale_align_face, this, std::placeholders::_1));
@@ -171,6 +175,11 @@ namespace glasssix::exposing::nessus
             functions_.insert_or_assign(function_names::irisviel_remove_record, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_record, this, std::placeholders::_1)));
             functions_.insert_or_assign(function_names::irisviel_remove_records, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_records, this, std::placeholders::_1)));
             functions_.insert_or_assign(function_names::irisviel_search, std::bind(&impl::irisviel_search, this, std::placeholders::_1));
+        }
+
+        ~impl()
+        {
+            std::cout << "instances_.size: " << instances_.size() << std::endl;
         }
 
         param_string name() const
@@ -342,15 +351,8 @@ namespace glasssix::exposing::nessus
 
         unknown_object banshee_new(const param_hash_map<param_string, unknown_object> &params)
         {
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto x = unbox<std::int32_t>(params.get_value(u8"x"));
-            auto y = unbox<std::int32_t>(params.get_value(u8"y"));
-            auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
-            auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
-
-            return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>(image, width, height, x, y, roi_width, roi_height));
+  
+            return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
         }
 
         unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object> &params)
@@ -553,6 +555,21 @@ namespace glasssix::exposing::nessus
             auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 
             return instance.detect(image, channels, height, width, top_five, order, x, y, roi_width, roi_height);
+        }
+
+        unknown_object banshee_init(const param_hash_map<param_string, unknown_object> &params)
+        {
+            auto instance = get_instance<kcf_tracker>(params);
+            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+            auto x = unbox<std::int32_t>(params.get_value(u8"x"));
+            auto y = unbox<std::int32_t>(params.get_value(u8"y"));
+            auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+            auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
+            instance.init_trace(image, width, height, x, y, roi_width, roi_height);
+            return unknown_object();
         }
 
         unknown_object banshee_update(const param_hash_map<param_string, unknown_object> &params)
