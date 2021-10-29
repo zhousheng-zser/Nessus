@@ -87,6 +87,7 @@ namespace glasssix::exposing::nessus
             static constexpr utf8_string_view longinus_trace{u8"longinus.trace"};
             static constexpr utf8_string_view longinus_center_scale_align_face{u8"longinus.center_scale_alignFace"};
             static constexpr utf8_string_view damocles_spoofing_detect{u8"damocles.spoofing_detect"};
+            static constexpr utf8_string_view damocles_presentation_attack_detect{u8"damocles.presentation_attack_detect"};
             static constexpr utf8_string_view romancia_align_face_128{u8"romancia.alignFace128"};
             static constexpr utf8_string_view romancia_align_face{u8"romancia.alignFace"};
             static constexpr utf8_string_view romancia_antispoofing{u8"romancia.antispoofing"};
@@ -147,6 +148,7 @@ namespace glasssix::exposing::nessus
 
             // Business
             functions_.insert_or_assign(function_names::damocles_spoofing_detect, std::bind(&impl::damocles_spoofing_detect, this, std::placeholders::_1));
+            functions_.insert_or_assign(function_names::damocles_presentation_attack_detect, std::bind(&impl::damocles_presentation_attack_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::longinus_detect, std::bind(&impl::longinus_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::gungnir_detect, std::bind(&impl::gungnir_detect, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::mjollner_detect, std::bind(&impl::mjollner_detect, this, std::placeholders::_1));
@@ -296,7 +298,10 @@ namespace glasssix::exposing::nessus
             auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
             auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            return add_instance(package_names::damocles, make_exported_interface<damocles::anti_spoofing>(models_directory + (use_int8 ? u8"/FASMV2_int8.racy" : u8"/FASMV2.racy"), device, use_int8 ? true : false));
+            auto FAMSV2_racy_path = models_directory + (use_int8 ? u8"/FASMV2_int8.racy" : u8"/FASMV2.racy");
+            auto land65_racy_path = models_directory + (use_int8 ? u8"/pfld11_landmark65_simp.racy" : u8"/pfld11_landmark65_simp.racy");
+
+            return add_instance(package_names::damocles, make_exported_interface<damocles::anti_spoofing>(FAMSV2_racy_path, land65_racy_path, device, use_int8 ? true : false));
         }
 
         unknown_object romancia_new(const param_hash_map<param_string, unknown_object> &params)
@@ -419,6 +424,20 @@ namespace glasssix::exposing::nessus
             auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
             return instance.spoofing_detect(faces, image, channels, height, width, order);
+        }
+
+        unknown_object damocles_presentation_attack_detect(const param_hash_map<param_string, unknown_object>& params)
+        {
+            constexpr std::int32_t channels = 3;
+            auto instance = get_instance<anti_spoofing>(params);
+            auto action_cmd = unbox<std::int32_t>(params.get_value(u8"action_cmd"));
+            auto face = params.get_value(u8"face").as<face_info>();
+            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+            return box(instance.presentation_attack_detect(action_cmd, face, image, channels, height, width, order));
         }
 
         unknown_object longinus_trace(const param_hash_map<param_string, unknown_object> &params)
