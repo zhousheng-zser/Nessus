@@ -547,6 +547,7 @@ namespace glasssix::exposing::nessus
 		protocol_map["damocles.new"] = &Damocles_new_json;
 		protocol_map["damocles.delete"] = &Damocles_delete_json;
 		protocol_map["damocles.spoofing_detect"] = &Damocles_spoofing_detect_json;
+		protocol_map["damocles.presentation_attack_detect"] = &Damocles_presentation_attack_detect_json;
 		protocol_map["irisviel.new"] = &Irisviel_new_json;
 		protocol_map["irisviel.delete"] = &Irisviel_delete_json;
 		protocol_map["irisviel.search"] = &Irisviel_search_json;

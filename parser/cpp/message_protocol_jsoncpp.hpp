@@ -2614,6 +2614,66 @@ namespace glasssix
                 return value;
             }
 
+            inline Json::Value Damocles_presentation_attack_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+            {
+                Json::Value value;
+
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+                    int action_cmd = root["action_cmd"].asInt();
+
+                    Json::Value facerect = root["facerect"];
+                    auto face = make_exported_interface<longinus::face_info>();
+                    face.set_x(root["facerect"]["x"].asFloat());
+                    face.set_y(root["facerect"]["y"].asFloat());
+                    face.set_width(root["facerect"]["width"].asFloat());
+                    face.set_height(root["facerect"]["height"].asFloat());
+
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        { {u8"image", box(image_span)},
+                         {u8"action_cmd", box(action_cmd)},
+                         {u8"height", box(height)},
+                         {u8"width", box(width)},
+                         {u8"face", face},
+                         {u8"order", box(static_cast<int>(frame.order()))},
+                         {u8"object_id", box(instance)} });
+
+                    auto result = unbox<bool>(plugin.execute(u8"damocles.presentation_attack_detect", param));
+
+                    value["presentation_attack_result"] = Json::Value(result);
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
             inline Json::Value Irisviel_new_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
