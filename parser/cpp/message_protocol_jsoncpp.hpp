@@ -727,8 +727,8 @@ namespace glasssix
                         for (size_t i = 0; i < 4; i++)
                         {
                             Json::Value point;
-                            point["x"] = Json::Value(location[i * 2]);
-                            point["y"] = Json::Value(location[i * 2 + 1]);
+                            point["x"] = Json::Int(location[i * 2]);
+                            point["y"] = Json::Int(location[i * 2 + 1]);
 
                             jarray_points.append(point);
                         }
@@ -1067,8 +1067,8 @@ namespace glasssix
                         for (size_t i = 0; i < 4; i++)
                         {
                             Json::Value point;
-                            point["x"] = Json::Value(location[i * 2]);
-                            point["y"] = Json::Value(location[i * 2 + 1]);
+                            point["x"] = Json::Int(location[i * 2]);
+                            point["y"] = Json::Int(location[i * 2 + 1]);
 
                             jarray_points.append(point);
                         }
