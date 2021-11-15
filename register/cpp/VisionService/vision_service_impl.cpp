@@ -93,6 +93,8 @@ namespace glasssix::exposing::nessus
             static constexpr utf8_string_view romancia_antispoofing{u8"romancia.antispoofing"};
             static constexpr utf8_string_view romancia_blur_detect{u8"romancia.blur_detect"};
             static constexpr utf8_string_view romancia_mask_detect{u8"romancia.mask_detect"};
+            static constexpr utf8_string_view irisviel_record_count{ u8"irisviel.record_count" };
+            static constexpr utf8_string_view irisviel_contains_key{ u8"irisviel.contains_key" };
             static constexpr utf8_string_view irisviel_clear{u8"irisviel.clear"};
             static constexpr utf8_string_view irisviel_remove_all{u8"irisviel.remove_all"};
             static constexpr utf8_string_view irisviel_load_databases{u8"irisviel.load_databases"};
@@ -167,6 +169,8 @@ namespace glasssix::exposing::nessus
             functions_.insert_or_assign(function_names::cassius_forward, std::bind(&impl::cassius_extract_feature, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::selene_forward, std::bind(&impl::selene_extract_feature, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::selene_get_model_type, std::bind(&impl::selene_get_model_type, this, std::placeholders::_1));
+            functions_.insert_or_assign(function_names::irisviel_record_count, std::bind(&impl::irisviel_record_count, this, std::placeholders::_1));
+            functions_.insert_or_assign(function_names::irisviel_contains_key, std::bind(&impl::irisviel_contains_key, this, std::placeholders::_1));
             functions_.insert_or_assign(function_names::irisviel_clear, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_clear, this, std::placeholders::_1)));
             functions_.insert_or_assign(function_names::irisviel_remove_all, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_all, this, std::placeholders::_1)));
             functions_.insert_or_assign(function_names::irisviel_load_databases, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_load_databases, this, std::placeholders::_1)));
@@ -612,6 +616,19 @@ namespace glasssix::exposing::nessus
             auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
             return instance.antispoofing(faces, image, channels, height, width, order);
+        }
+
+        unknown_object irisviel_record_count(const param_hash_map<param_string, unknown_object>& params)
+        {
+            return box(get_instance<face_service>(params).record_count());
+        }
+
+        unknown_object irisviel_contains_key(const param_hash_map<param_string, unknown_object>& params)
+        {
+            auto instance = get_instance<face_service>(params);
+            auto key = unbox<param_string>(params.get_value(u8"key"));
+
+            return box(get_instance<face_service>(params).contains_key(key));
         }
 
         void irisviel_clear(const param_hash_map<param_string, unknown_object> &params)
