@@ -2830,6 +2830,67 @@ namespace glasssix
 				return value;
 			}
 
+			inline Json::Value Irisviel_try_get_record_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+
+				try
+				{
+					auto key = root["key"].asString();
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{ u8"key", box(to_param_string(key)) },
+						});
+
+					if (auto result = plugin.execute(u8"irisviel.try_get_record", param).as<irisviel::record>())
+					{
+						value["result"]["key"] = Json::Value(exposing::to_narrow_string(result.key()));
+						value["result"]["feature"] = [&]
+						{
+							Json::Value feature{ Json::arrayValue };
+							
+							for (auto&& item : result.feature())
+							{
+								feature.append(item);
+							}
+
+							return feature;
+						}();
+
+						
+					}
+					else
+					{
+						value["result"] = Json::Value(Json::nullValue);
+					}
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
 			inline Json::Value Irisviel_search_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
