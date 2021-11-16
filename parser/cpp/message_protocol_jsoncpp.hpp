@@ -61,11 +61,11 @@ namespace glasssix
 						dst = src;
 					else if (step > width * 3)
 					{
-						dst = memory::tensor<std::uint8_t>(std::vector<int>{1, 3, height, width}, src.device(), src.order(), src.allocator());
+						dst = memory::tensor<std::uint8_t>(std::vector<int>{1, height, width, 3}, src.device(), src.order(), src.allocator());
 						std::uint8_t* dst_ptr = dst.mutable_cpu_data();
 						const std::uint8_t* src_ptr = src.cpu_data();
 						for (size_t i = 0; i < height; i++)
-							std::copy(src_ptr + i * step, src_ptr + i * step + width * 3, dst_ptr);
+							std::copy(src_ptr + i * step, src_ptr + i * step + width * 3, dst_ptr + i * width * 3);
 					}
 					else
 					{
