@@ -34,23 +34,23 @@ using namespace glasssix::banshee;
 
 namespace glasssix::exposing::nessus
 {
-    namespace
-    {
-        struct package_names
-        {
-            static constexpr utf8_string_view gaius{u8"gaius"};
-            static constexpr utf8_string_view cassius{u8"cassius"};
-            static constexpr utf8_string_view longinus{u8"longinus"};
-            static constexpr utf8_string_view romancia{u8"romancia"};
-            static constexpr utf8_string_view irisviel{u8"irisviel"};
-            static constexpr utf8_string_view damocles{u8"damocles"};
-            static constexpr utf8_string_view selene{u8"selene"};
-            static constexpr utf8_string_view gungnir{u8"gungnir"};
-            static constexpr utf8_string_view mjollner{u8"mjollner"};
-            static constexpr utf8_string_view valklyrs{u8"valklyrs"};
-            static constexpr utf8_string_view heimdall{u8"heimdall"};
-            static constexpr utf8_string_view banshee{u8"banshee"};
-        };
+	namespace
+	{
+		struct package_names
+		{
+			static constexpr utf8_string_view gaius{ u8"gaius" };
+			static constexpr utf8_string_view cassius{ u8"cassius" };
+			static constexpr utf8_string_view longinus{ u8"longinus" };
+			static constexpr utf8_string_view romancia{ u8"romancia" };
+			static constexpr utf8_string_view irisviel{ u8"irisviel" };
+			static constexpr utf8_string_view damocles{ u8"damocles" };
+			static constexpr utf8_string_view selene{ u8"selene" };
+			static constexpr utf8_string_view gungnir{ u8"gungnir" };
+			static constexpr utf8_string_view mjollner{ u8"mjollner" };
+			static constexpr utf8_string_view valklyrs{ u8"valklyrs" };
+			static constexpr utf8_string_view heimdall{ u8"heimdall" };
+			static constexpr utf8_string_view banshee{ u8"banshee" };
+		};
 
         struct function_names final
         {
@@ -115,39 +115,39 @@ namespace glasssix::exposing::nessus
         };
     }
 
-    class vision_service_impl::impl
-    {
-    public:
-        impl()
-        {
-            // New
-            functions_.insert_or_assign(function_names::gaius_new, std::bind(&impl::gaius_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::cassius_new, std::bind(&impl::cassius_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::longinus_new, std::bind(&impl::longinus_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::damocles_new, std::bind(&impl::damocles_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::romancia_new, std::bind(&impl::romancia_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::irisviel_new, std::bind(&impl::irisviel_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::selene_new, std::bind(&impl::selene_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::selene_new_test, std::bind(&impl::selene_new_test, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::gungnir_new, std::bind(&impl::gungnir_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::mjollner_new, std::bind(&impl::mjollner_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::valklyrs_new, std::bind(&impl::valklyrs_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::heimdall_new, std::bind(&impl::heimdall_new, this, std::placeholders::_1));
-            functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
+	class vision_service_impl::impl
+	{
+	public:
+		impl()
+		{
+			// New
+			functions_.insert_or_assign(function_names::gaius_new, std::bind(&impl::gaius_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::cassius_new, std::bind(&impl::cassius_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::longinus_new, std::bind(&impl::longinus_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::damocles_new, std::bind(&impl::damocles_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::romancia_new, std::bind(&impl::romancia_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::irisviel_new, std::bind(&impl::irisviel_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::selene_new, std::bind(&impl::selene_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::selene_new_test, std::bind(&impl::selene_new_test, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::gungnir_new, std::bind(&impl::gungnir_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::mjollner_new, std::bind(&impl::mjollner_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::valklyrs_new, std::bind(&impl::valklyrs_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::heimdall_new, std::bind(&impl::heimdall_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
 
-            // Delete
-            functions_.insert_or_assign(function_names::gaius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::cassius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::irisviel_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::longinus_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::damocles_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::romancia_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::selene_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::mjollner_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::valklyrs_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::heimdall_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-            functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			// Delete
+			functions_.insert_or_assign(function_names::gaius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::cassius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::longinus_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::damocles_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::romancia_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::selene_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::mjollner_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::valklyrs_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::heimdall_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
             // Business
             functions_.insert_or_assign(function_names::damocles_spoofing_detect, std::bind(&impl::damocles_spoofing_detect, this, std::placeholders::_1));
@@ -185,345 +185,345 @@ namespace glasssix::exposing::nessus
             functions_.insert_or_assign(function_names::irisviel_search, std::bind(&impl::irisviel_search, this, std::placeholders::_1));
         }
 
-        ~impl()
-        {
-            std::cout << "instances_.size: " << instances_.size() << std::endl;
-        }
+		~impl()
+		{
+			std::cout << "instances_.size: " << instances_.size() << std::endl;
+		}
 
-        param_string name() const
-        {
-            return u8"Glasssix Vision Service";
-        }
+		param_string name() const
+		{
+			return u8"Glasssix Vision Service";
+		}
 
-        param_string version() const
-        {
-            return u8"1.0.0";
-        }
+		param_string version() const
+		{
+			return u8"1.0.0";
+		}
 
-        param_vector<param_string> available_functions() const
-        {
-            auto result = make_param_vector<param_string>();
+		param_vector<param_string> available_functions() const
+		{
+			auto result = make_param_vector<param_string>();
 
-            for (const auto &[key, value] : functions_)
-            {
-                result.push_back(key);
-            }
+			for (const auto& [key, value] : functions_)
+			{
+				result.push_back(key);
+			}
 
-            return result;
-        }
+			return result;
+		}
 
-        param_hash_map<guid, param_string> existing_instances() const
-        {
-            auto result = make_param_hash_map<guid, param_string>();
+		param_hash_map<guid, param_string> existing_instances() const
+		{
+			auto result = make_param_hash_map<guid, param_string>();
 
-            for (const auto &[key, value] : instances_)
-            {
-                result.add_or_update(key, std::get<param_string>(value));
-            }
+			for (const auto& [key, value] : instances_)
+			{
+				result.add_or_update(key, std::get<param_string>(value));
+			}
 
-            return result;
-        }
+			return result;
+		}
 
-        unknown_object execute(const param_string &function_name, const param_hash_map<param_string, unknown_object> &params) const
-        {
-            auto iter = functions_.find(function_name);
+		unknown_object execute(const param_string& function_name, const param_hash_map<param_string, unknown_object>& params) const
+		{
+			auto iter = functions_.find(function_name);
 
-            return iter != functions_.end() ? iter->second(params) : throw abi_key_not_found{function_name};
-        }
+			return iter != functions_.end() ? iter->second(params) : throw abi_key_not_found{ function_name };
+		}
 
-    private:
-        unknown_object cassius_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
-            auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
-            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
-            auto racy_path = model_type ? models_directory + (use_int8 ? u8"/unicorn_res101_int8.racy" : u8"/unicorn_res101.racy") : models_directory + (use_int8 ? u8"/unicorn_int8.racy" : u8"/unicorn.racy");
-            return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(model_type, racy_path, device, use_int8 ? true : false));
-        }
+	private:
+		unknown_object cassius_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
+			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+			auto racy_path = model_type ? models_directory + (use_int8 ? u8"/unicorn_res101_int8.racy" : u8"/unicorn_res101.racy") : models_directory + (use_int8 ? u8"/unicorn_int8.racy" : u8"/unicorn.racy");
+			return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(model_type, racy_path, device, use_int8 ? true : false));
+		}
 
-        unknown_object gaius_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
-            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+		unknown_object gaius_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            return add_instance(package_names::gaius, make_exported_interface<gaius::feature_extractor>(models_directory + (use_int8 ? u8"/mobile_unicorn_int8.racy" : u8"/mobile_unicorn.racy"),
-                                                                                                        models_directory + (use_int8 ? u8"/mobile_unicorn_mask_int8.racy" : u8"/mobile_unicorn_mask.racy"), device, use_int8 ? true : false));
-        }
+			return add_instance(package_names::gaius, make_exported_interface<gaius::feature_extractor>(models_directory + (use_int8 ? u8"/mobile_unicorn_int8.racy" : u8"/mobile_unicorn.racy"),
+				models_directory + (use_int8 ? u8"/mobile_unicorn_mask_int8.racy" : u8"/mobile_unicorn_mask.racy"), device, use_int8 ? true : false));
+		}
 
-        unknown_object selene_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
-            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+		unknown_object selene_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            param_string model_name = u8"";
-            switch (model_type)
-            {
-            case 0:
-                model_name = u8"unicorn_light_universal";
-                break;
-            case 1:
-                model_name = u8"unicorn_light_id";
-                break;
-            case 2:
-                model_name = u8"unicorn_light_universal_mask";
-                break;
-            default:
-                throw abi_invalid_argument("Invalid model_type value. ");
-                break;
-            }
+			param_string model_name = u8"";
+			switch (model_type)
+			{
+			case 0:
+				model_name = u8"unicorn_light_universal";
+				break;
+			case 1:
+				model_name = u8"unicorn_light_id";
+				break;
+			case 2:
+				model_name = u8"unicorn_light_universal_mask";
+				break;
+			default:
+				throw abi_invalid_argument("Invalid model_type value. ");
+				break;
+			}
 
-            return add_instance(package_names::selene, make_exported_interface<selene::feature_extractor>(models_directory + u8"/" + model_name + (use_int8 ? +u8"_int8.racy" : u8".racy"), model_type, device, use_int8 ? true : false));
-        }
+			return add_instance(package_names::selene, make_exported_interface<selene::feature_extractor>(models_directory + u8"/" + model_name + (use_int8 ? +u8"_int8.racy" : u8".racy"), model_type, device, use_int8 ? true : false));
+		}
 
-        unknown_object selene_new_test(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto model_path = unbox<param_string>(params.get_value(u8"model_path"));
-            auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
+		unknown_object selene_new_test(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto model_path = unbox<param_string>(params.get_value(u8"model_path"));
+			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
 
-            return add_instance(package_names::selene, make_exported_interface<selene::feature_extractor>(model_path, model_type, device, use_int8 ? true : false));
-        }
+			return add_instance(package_names::selene, make_exported_interface<selene::feature_extractor>(model_path, model_type, device, use_int8 ? true : false));
+		}
 
-        unknown_object longinus_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto nms = unbox<float>(params.get_value(u8"nms"));
-            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+		unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto nms = unbox<float>(params.get_value(u8"nms"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/longinus.racy", models_directory + u8"/pfld_land71_simp.racy", nms, device));
-        }
+			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/longinus.racy", models_directory + u8"/pfld_land71_simp.racy", nms, device));
+		}
 
-        unknown_object damocles_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
-            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+		unknown_object damocles_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            auto FAMSV2_racy_path = models_directory + (use_int8 ? u8"/FASMV2_int8.racy" : u8"/FASMV2.racy");
-            auto land65_racy_path = models_directory + (use_int8 ? u8"/pfld11_landmark65_simp.racy" : u8"/pfld11_landmark65_simp.racy");
+			auto FAMSV2_racy_path = models_directory + (use_int8 ? u8"/FASMV2_int8.racy" : u8"/FASMV2.racy");
+			auto land65_racy_path = models_directory + (use_int8 ? u8"/pfld11_landmark65_simp.racy" : u8"/pfld11_landmark65_simp.racy");
 
-            return add_instance(package_names::damocles, make_exported_interface<damocles::anti_spoofing>(FAMSV2_racy_path, land65_racy_path, device, use_int8 ? true : false));
-        }
+			return add_instance(package_names::damocles, make_exported_interface<damocles::anti_spoofing>(FAMSV2_racy_path, land65_racy_path, device, use_int8 ? true : false));
+		}
 
-        unknown_object romancia_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+		unknown_object romancia_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
             return add_instance(package_names::romancia, make_exported_interface<face_alignment>(models_directory + u8"/antispoofing80x80", device));
         }
 
-        unknown_object irisviel_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto single_database_capacity = unbox<std::int32_t>(params.get_value(u8"single_database_capacity"));
-            auto dimension = unbox<std::int32_t>(params.get_value(u8"dimension"));
-            auto working_directory = unbox<param_string>(params.get_value(u8"working_directory"));
+		unknown_object irisviel_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto single_database_capacity = unbox<std::int32_t>(params.get_value(u8"single_database_capacity"));
+			auto dimension = unbox<std::int32_t>(params.get_value(u8"dimension"));
+			auto working_directory = unbox<param_string>(params.get_value(u8"working_directory"));
 
-            return add_instance(package_names::irisviel, make_exported_interface<face_service>(irisviel::face_service_implemention::brute_force, single_database_capacity, dimension, working_directory));
-        }
+			return add_instance(package_names::irisviel, make_exported_interface<face_service>(irisviel::face_service_implemention::brute_force, single_database_capacity, dimension, working_directory));
+		}
 
-        unknown_object gungnir_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+		unknown_object gungnir_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            return add_instance(package_names::gungnir, make_exported_interface<yolo_net>(models_directory + u8"/gungnir.racy", device));
-        }
+			return add_instance(package_names::gungnir, make_exported_interface<yolo_net>(models_directory + u8"/gungnir.racy", device));
+		}
 
-        unknown_object mjollner_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+		unknown_object mjollner_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            return add_instance(package_names::mjollner, make_exported_interface<ocr_net>(models_directory + u8"/det_db_resnet18.racy", models_directory + u8"/rec_crnn_resnet34.racy", models_directory + u8"/ppocr_keys_v1.txt", device));
-        }
+			return add_instance(package_names::mjollner, make_exported_interface<ocr_net>(models_directory + u8"/det_db_resnet18.racy", models_directory + u8"/rec_crnn_resnet34.racy", models_directory + u8"/ppocr_keys_v1.txt", device));
+		}
 
-        unknown_object valklyrs_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+		unknown_object valklyrs_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            return add_instance(package_names::valklyrs, make_exported_interface<yolov5s_net>(models_directory + u8"/yolov5s.racy", models_directory + u8"/vehicle_attri.racy", models_directory + u8"/person_attri.racy", device));
-        }
+			return add_instance(package_names::valklyrs, make_exported_interface<yolov5s_net>(models_directory + u8"/yolov5s.racy", models_directory + u8"/vehicle_attri.racy", models_directory + u8"/person_attri.racy", device));
+		}
 
-        unknown_object heimdall_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-            auto factory_type = unbox<std::int32_t>(params.get_value(u8"factory_type"));
-            auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+		unknown_object heimdall_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto factory_type = unbox<std::int32_t>(params.get_value(u8"factory_type"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            return add_instance(package_names::heimdall, make_exported_interface<material_code>(models_directory, factory_type, device));
-        }
+			return add_instance(package_names::heimdall, make_exported_interface<material_code>(models_directory, factory_type, device));
+		}
 
-        unknown_object banshee_new(const param_hash_map<param_string, unknown_object> &params)
-        {
-  
-            return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
-        }
+		unknown_object banshee_new(const param_hash_map<param_string, unknown_object>& params)
+		{
 
-        unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto instance = get_instance<cassius::feature_extractor>(params);
-            auto aligned_faces = unbox<param_span<std::uint8_t>>(params.get_value(u8"aligned_faces"));
-            auto num = unbox<std::int32_t>(params.get_value(u8"num"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
+		}
 
-            return instance.get(aligned_faces, num, order);
-        }
+		unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<cassius::feature_extractor>(params);
+			auto aligned_faces = unbox<param_span<std::uint8_t>>(params.get_value(u8"aligned_faces"));
+			auto num = unbox<std::int32_t>(params.get_value(u8"num"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-        unknown_object gaius_extract_feature(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto instance = get_instance<gaius::feature_extractor>(params);
-            auto aligned_faces = unbox<param_span<std::uint8_t>>(params.get_value(u8"aligned_faces"));
-            auto num = unbox<std::int32_t>(params.get_value(u8"num"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
-            auto has_mask = unbox<std::int32_t>(params.get_value(u8"has_mask"));
+			return instance.get(aligned_faces, num, order);
+		}
 
-            return instance.get(aligned_faces, num, order, has_mask ? true : false);
-        }
+		unknown_object gaius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<gaius::feature_extractor>(params);
+			auto aligned_faces = unbox<param_span<std::uint8_t>>(params.get_value(u8"aligned_faces"));
+			auto num = unbox<std::int32_t>(params.get_value(u8"num"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			auto has_mask = unbox<std::int32_t>(params.get_value(u8"has_mask"));
 
-        unknown_object selene_extract_feature(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto instance = get_instance<selene::feature_extractor>(params);
-            auto aligned_faces = unbox<param_span<std::uint8_t>>(params.get_value(u8"aligned_faces"));
-            auto num = unbox<std::int32_t>(params.get_value(u8"num"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			return instance.get(aligned_faces, num, order, has_mask ? true : false);
+		}
 
-            return instance.get(aligned_faces, num, order);
-        }
+		unknown_object selene_extract_feature(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<selene::feature_extractor>(params);
+			auto aligned_faces = unbox<param_span<std::uint8_t>>(params.get_value(u8"aligned_faces"));
+			auto num = unbox<std::int32_t>(params.get_value(u8"num"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-        unknown_object selene_get_model_type(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto instance = get_instance<selene::feature_extractor>(params);
+			return instance.get(aligned_faces, num, order);
+		}
 
-            return box(instance.get_model_type());
-        }
+		unknown_object selene_get_model_type(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<selene::feature_extractor>(params);
 
-        unknown_object longinus_detect(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<retina_net>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto min_size = unbox<std::int32_t>(params.get_value(u8"min_size"));
-            auto threshold = unbox<float>(params.get_value(u8"threshold"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
-            auto do_attributing = unbox<bool>(params.get_value(u8"do_attributing"));
+			return box(instance.get_model_type());
+		}
 
-            return instance.detect(image, channels, height, width, min_size, threshold, order, do_attributing);
-        }
+		unknown_object longinus_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<retina_net>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto min_size = unbox<std::int32_t>(params.get_value(u8"min_size"));
+			auto threshold = unbox<float>(params.get_value(u8"threshold"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			auto do_attributing = unbox<bool>(params.get_value(u8"do_attributing"));
 
-        unknown_object damocles_spoofing_detect(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<anti_spoofing>(params);
-            auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			return instance.detect(image, channels, height, width, min_size, threshold, order, do_attributing);
+		}
 
-            return instance.spoofing_detect(faces, image, channels, height, width, order);
-        }
+		unknown_object damocles_spoofing_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<anti_spoofing>(params);
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-        unknown_object damocles_presentation_attack_detect(const param_hash_map<param_string, unknown_object>& params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<anti_spoofing>(params);
-            auto action_cmd = unbox<std::int32_t>(params.get_value(u8"action_cmd"));
-            auto face = params.get_value(u8"face").as<face_info>();
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			return instance.spoofing_detect(faces, image, channels, height, width, order);
+		}
 
-            return box(instance.presentation_attack_detect(action_cmd, face, image, channels, height, width, order));
-        }
+		unknown_object damocles_presentation_attack_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<anti_spoofing>(params);
+			auto action_cmd = unbox<std::int32_t>(params.get_value(u8"action_cmd"));
+			auto face = params.get_value(u8"face").as<face_info>();
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-        unknown_object longinus_trace(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<retina_net>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto face = params.get_value(u8"face").as<face_info>();
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
-            auto result = instance.single_trace(face, image, channels, height, width, order);
+			return box(instance.presentation_attack_detect(action_cmd, face, image, channels, height, width, order));
+		}
 
-            return result;
-        }
+		unknown_object longinus_trace(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<retina_net>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto face = params.get_value(u8"face").as<face_info>();
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			auto result = instance.single_trace(face, image, channels, height, width, order);
 
-        unknown_object longinus_center_scale_align_face(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<retina_net>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto scale = unbox<float>(params.get_value(u8"scale"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			return result;
+		}
 
-            return instance.center_scale_align(image, channels, height, width, scale, order);
-        }
+		unknown_object longinus_center_scale_align_face(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<retina_net>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto scale = unbox<float>(params.get_value(u8"scale"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-        unknown_object romancia_align_face_128(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<face_alignment>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			return instance.center_scale_align(image, channels, height, width, scale, order);
+		}
 
-            return instance.align128(image, channels, height, width, faces, order);
-        }
+		unknown_object romancia_align_face_128(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<face_alignment>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-        unknown_object romancia_align_face(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<face_alignment>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			return instance.align128(image, channels, height, width, faces, order);
+		}
 
-            return instance.align(image, channels, height, width, faces, order);
-        }
+		unknown_object romancia_align_face(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<face_alignment>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-        unknown_object romancia_blur_detect(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<face_alignment>(params);
-            auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			return instance.align(image, channels, height, width, faces, order);
+		}
 
-            return instance.blur_detect(faces, image, channels, height, width, order);
-        }
+		unknown_object romancia_blur_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<face_alignment>(params);
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-        unknown_object romancia_mask_detect(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<face_alignment>(params);
-            auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			return instance.blur_detect(faces, image, channels, height, width, order);
+		}
 
-            return instance.mask_detect(faces, image, channels, height, width, order);
-        }
+		unknown_object romancia_mask_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<face_alignment>(params);
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+			return instance.mask_detect(faces, image, channels, height, width, order);
+		}
 
         unknown_object romancia_rotate(const param_hash_map<param_string, unknown_object>& params)
         {
@@ -547,311 +547,319 @@ namespace glasssix::exposing::nessus
             auto width = unbox<std::int32_t>(params.get_value(u8"width"));
             auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-            return instance.detect(image, channels, height, width, order);
-        }
+			return instance.detect(image, channels, height, width, order);
+		}
 
-        unknown_object mjollner_detect(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<ocr_net>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
-            auto x = unbox<std::int32_t>(params.get_value(u8"x"));
-            auto y = unbox<std::int32_t>(params.get_value(u8"y"));
-            auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
-            auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+		unknown_object mjollner_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<ocr_net>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			auto x = unbox<std::int32_t>(params.get_value(u8"x"));
+			auto y = unbox<std::int32_t>(params.get_value(u8"y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 
-            return instance.detect(image, channels, height, width, order, x, y, roi_width, roi_height);
-        }
+			return instance.detect(image, channels, height, width, order, x, y, roi_width, roi_height);
+		}
 
-        unknown_object valklyrs_detect(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<yolov5s_net>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+		unknown_object valklyrs_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<yolov5s_net>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-            return instance.detect(image, channels, height, width, order);
-        }
+			return instance.detect(image, channels, height, width, order);
+		}
 
-        unknown_object heimdall_detect(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<material_code>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto top_five = unbox<std::int32_t>(params.get_value(u8"top_five"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
-            auto x = unbox<std::int32_t>(params.get_value(u8"x"));
-            auto y = unbox<std::int32_t>(params.get_value(u8"y"));
-            auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
-            auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+		unknown_object heimdall_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<material_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto top_five = unbox<std::int32_t>(params.get_value(u8"top_five"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			auto x = unbox<std::int32_t>(params.get_value(u8"x"));
+			auto y = unbox<std::int32_t>(params.get_value(u8"y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 
-            return instance.detect(image, channels, height, width, top_five, order, x, y, roi_width, roi_height);
-        }
+			return instance.detect(image, channels, height, width, top_five, order, x, y, roi_width, roi_height);
+		}
 
-        unknown_object banshee_init(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto instance = get_instance<kcf_tracker>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto x = unbox<std::int32_t>(params.get_value(u8"x"));
-            auto y = unbox<std::int32_t>(params.get_value(u8"y"));
-            auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
-            auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+		unknown_object banshee_init(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<kcf_tracker>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto x = unbox<std::int32_t>(params.get_value(u8"x"));
+			auto y = unbox<std::int32_t>(params.get_value(u8"y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 
-            instance.init_trace(image, width, height, x, y, roi_width, roi_height);
-            return unknown_object();
-        }
+			instance.init_trace(image, width, height, x, y, roi_width, roi_height);
+			return unknown_object();
+		}
 
-        unknown_object banshee_update(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto instance = get_instance<kcf_tracker>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+		unknown_object banshee_update(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<kcf_tracker>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 
-            return instance.update(image, width, height);
-        }
+			return instance.update(image, width, height);
+		}
 
-        unknown_object romancia_antispoofing(const param_hash_map<param_string, unknown_object> &params)
-        {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<face_alignment>(params);
-            auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+		unknown_object romancia_antispoofing(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<face_alignment>(params);
+			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-            return instance.antispoofing(faces, image, channels, height, width, order);
-        }
+			return instance.antispoofing(faces, image, channels, height, width, order);
+		}
 
-        unknown_object irisviel_record_count(const param_hash_map<param_string, unknown_object>& params)
-        {
-            return box(get_instance<face_service>(params).record_count());
-        }
+		void irisviel_clear(const param_hash_map<param_string, unknown_object>& params)
+		{
+			get_instance<face_service>(params).clear();
+		}
 
-        unknown_object irisviel_contains_key(const param_hash_map<param_string, unknown_object>& params)
-        {
-            auto instance = get_instance<face_service>(params);
-            auto key = unbox<param_string>(params.get_value(u8"key"));
+		void irisviel_remove_all(const param_hash_map<param_string, unknown_object>& params)
+		{
+			get_instance<face_service>(params).remove_all();
+		}
 
-            return box(get_instance<face_service>(params).contains_key(key));
-        }
+		void irisviel_load_databases(const param_hash_map<param_string, unknown_object>& params)
+		{
+			get_instance<face_service>(params).load_databases();
+		}
 
-        void irisviel_clear(const param_hash_map<param_string, unknown_object> &params)
-        {
-            get_instance<face_service>(params).clear();
-        }
+		unknown_object irisviel_record_count(const param_hash_map<param_string, unknown_object>& params)
+		{
+			return box(get_instance<face_service>(params).record_count());
+		}
 
-        void irisviel_remove_all(const param_hash_map<param_string, unknown_object> &params)
-        {
-            get_instance<face_service>(params).remove_all();
-        }
+		unknown_object irisviel_contains_key(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<face_service>(params);
+			auto key = unbox<param_string>(params.get_value(u8"key"));
 
-        void irisviel_load_databases(const param_hash_map<param_string, unknown_object> &params)
-        {
-            get_instance<face_service>(params).load_databases();
-        }
+			return box(get_instance<face_service>(params).contains_key(key));
+		}
 
-        void irisviel_add_record(const param_hash_map<param_string, unknown_object> &params)
-        {
-            irisviel_add_or_update_record_helper(params, false);
-        }
+		unknown_object irisviel_try_get_record(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<face_service>(params);
+			auto key = unbox<param_string>(params.get_value(u8"key"));
 
-        void irisviel_add_records(const param_hash_map<param_string, unknown_object> &params)
-        {
-            irisviel_add_or_update_records_helper(params, false);
-        }
+			return get_instance<face_service>(params).try_get_record(key);
+		}
 
-        void irisviel_update_record(const param_hash_map<param_string, unknown_object> &params)
-        {
-            irisviel_add_or_update_record_helper(params, true);
-        }
+		void irisviel_add_record(const param_hash_map<param_string, unknown_object>& params)
+		{
+			irisviel_add_or_update_record_helper(params, false);
+		}
 
-        void irisviel_update_records(const param_hash_map<param_string, unknown_object> &params)
-        {
-            irisviel_add_or_update_records_helper(params, true);
-        }
+		void irisviel_add_records(const param_hash_map<param_string, unknown_object>& params)
+		{
+			irisviel_add_or_update_records_helper(params, false);
+		}
 
-        void irisviel_remove_record(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto key = unbox<param_string>(params.get_value(u8"key"));
+		void irisviel_update_record(const param_hash_map<param_string, unknown_object>& params)
+		{
+			irisviel_add_or_update_record_helper(params, true);
+		}
 
-            get_instance<face_service>(params).remove_record(key);
-        }
+		void irisviel_update_records(const param_hash_map<param_string, unknown_object>& params)
+		{
+			irisviel_add_or_update_records_helper(params, true);
+		}
 
-        void irisviel_remove_records(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto keys = params.get_value(u8"keys").as<param_vector<param_string>>();
+		void irisviel_remove_record(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto key = unbox<param_string>(params.get_value(u8"key"));
 
-            get_instance<face_service>(params).remove_records(keys);
-        }
+			get_instance<face_service>(params).remove_record(key);
+		}
 
-        unknown_object irisviel_search(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto instance = get_instance<face_service>(params);
-            auto feature = params.get_value(u8"feature").as<param_vector<float>>();
+		void irisviel_remove_records(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto keys = params.get_value(u8"keys").as<param_vector<param_string>>();
 
-            unknown_object assuming_top{nullptr};
-            unknown_object assuming_min_similarity{nullptr};
-            bool has_top = params.try_get_value(u8"top", assuming_top) && assuming_top;
-            bool has_min_similarity = params.try_get_value(u8"min_similarity", assuming_min_similarity) && assuming_min_similarity;
+			get_instance<face_service>(params).remove_records(keys);
+		}
 
-            if (has_top && has_min_similarity)
-            {
-                return instance.search(feature, unbox<float>(assuming_min_similarity), unbox<std::uint32_t>(assuming_top));
-            }
+		unknown_object irisviel_search(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<face_service>(params);
+			auto feature = params.get_value(u8"feature").as<param_vector<float>>();
 
-            if (has_top)
-            {
-                return instance.search(feature, unbox<std::uint32_t>(assuming_top));
-            }
+			unknown_object assuming_top{ nullptr };
+			unknown_object assuming_min_similarity{ nullptr };
+			bool has_top = params.try_get_value(u8"top", assuming_top) && assuming_top;
+			bool has_min_similarity = params.try_get_value(u8"min_similarity", assuming_min_similarity) && assuming_min_similarity;
 
-            if (has_min_similarity)
-            {
-                return instance.search(feature, unbox<float>(assuming_min_similarity));
-            }
+			if (has_top && has_min_similarity)
+			{
+				return instance.search(feature, unbox<float>(assuming_min_similarity), unbox<std::uint32_t>(assuming_top));
+			}
 
-            throw abi_invalid_argument{"Missing required parameters: top or min_similarity."};
-        }
+			if (has_top)
+			{
+				return instance.search(feature, unbox<std::uint32_t>(assuming_top));
+			}
 
-        record irisviel_create_record_helper(const param_hash_map<param_string, unknown_object> &params)
-        {
-            auto dimension = unbox<std::int32_t>(params.get_value(u8"dimension"));
-            auto key = unbox<param_string>(params.get_value(u8"key"));
-            auto feature = params.get_value(u8"feature").as<param_vector<float>>();
-            auto result = make_exported_interface<record>(dimension);
+			if (has_min_similarity)
+			{
+				return instance.search(feature, unbox<float>(assuming_min_similarity));
+			}
 
-            result.key(key);
-            result.feature(feature);
+			throw abi_invalid_argument{ "Missing required parameters: top or min_similarity." };
+		}
 
-            return result;
-        }
+		record irisviel_create_record_helper(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto dimension = unbox<std::int32_t>(params.get_value(u8"dimension"));
+			auto key = unbox<param_string>(params.get_value(u8"key"));
+			auto feature = params.get_value(u8"feature").as<param_vector<float>>();
+			auto result = make_exported_interface<record>(dimension);
 
-        void irisviel_add_or_update_record_helper(const param_hash_map<param_string, unknown_object> &params, bool update)
-        {
-            auto instance = get_instance<face_service>(params);
-            auto record = irisviel_create_record_helper(params);
+			result.key(key);
+			result.feature(feature);
 
-            if (update)
-            {
-                instance.update_record(record);
-            }
-            else
-            {
-                instance.add_record(record);
-            }
-        }
+			return result;
+		}
 
-        void irisviel_add_or_update_records_helper(const param_hash_map<param_string, unknown_object> &params, bool update)
-        {
-            auto instance = get_instance<face_service>(params);
-            auto param_records = params.get_value(u8"records").as<param_vector<param_hash_map<param_string, unknown_object>>>();
-            auto records = make_param_vector<record>();
+		void irisviel_add_or_update_record_helper(const param_hash_map<param_string, unknown_object>& params, bool update)
+		{
+			auto instance = get_instance<face_service>(params);
+			auto record = irisviel_create_record_helper(params);
 
-            for (const auto &item : param_records)
-            {
-                records.push_back(irisviel_create_record_helper(item));
-            }
+			if (update)
+			{
+				instance.update_record(record);
+			}
+			else
+			{
+				instance.add_record(record);
+			}
+		}
 
-            if (update)
-            {
-                instance.update_records(records);
-            }
-            else
-            {
-                instance.add_records(records);
-            }
-        }
+		void irisviel_add_or_update_records_helper(const param_hash_map<param_string, unknown_object>& params, bool update)
+		{
+			auto instance = get_instance<face_service>(params);
+			auto param_records = params.get_value(u8"records").as<param_vector<param_hash_map<param_string, unknown_object>>>();
+			auto records = make_param_vector<record>();
 
-        unknown_object add_instance(utf8_string_view package_name, const unknown_object &instance)
-        {
-            auto id = create_guid_from_bytes(meta::to_array(reinterpret_cast<std::size_t>(get_abi(instance))));
-            {
-                std::scoped_lock lock{mutex_};
+			for (const auto& item : param_records)
+			{
+				records.push_back(irisviel_create_record_helper(item));
+			}
 
-                return (instances_.insert_or_assign(id, std::tuple{package_name, instance}), box(id));
-            }
-        }
+			if (update)
+			{
+				instance.update_records(records);
+			}
+			else
+			{
+				instance.add_records(records);
+			}
+		}
 
-        void delete_instance_by_id(const guid &id)
-        {
-            std::scoped_lock lock{mutex_};
+		unknown_object add_instance(utf8_string_view package_name, const unknown_object& instance)
+		{
+			auto id = create_guid_from_bytes(meta::to_array(reinterpret_cast<std::size_t>(get_abi(instance))));
+			{
+				std::scoped_lock lock{ mutex_ };
 
-            if (auto iter = instances_.find(id); iter != instances_.end())
-            {
-                instances_.erase(iter);
-            }
-        }
+				return (instances_.insert_or_assign(id, std::tuple{ package_name, instance }), box(id));
+			}
+		}
 
-        void delete_instance(const param_hash_map<param_string, unknown_object> &params)
-        {
-            delete_instance_by_id(get_instance_id(params));
-        }
+		void delete_instance_by_id(const guid& id)
+		{
+			std::scoped_lock lock{ mutex_ };
 
-        static guid get_instance_id(const param_hash_map<param_string, unknown_object> &params)
-        {
-            return unbox<guid>(params.get_value(u8"object_id"));
-        }
+			if (auto iter = instances_.find(id); iter != instances_.end())
+			{
+				instances_.erase(iter);
+			}
+		}
 
-        template <typename T>
-        T get_instance(const guid &id)
-        {
-            std::scoped_lock lock{mutex_};
-            auto iter = instances_.find(id);
+		void delete_instance(const param_hash_map<param_string, unknown_object>& params)
+		{
+			delete_instance_by_id(get_instance_id(params));
+		}
 
-            return iter != instances_.end() ? std::get<unknown_object>(iter->second).as<T>() : throw abi_key_not_found{exposing::format(u8"Cannot find instance: {}.", to_param_string(id))};
-        }
+		static guid get_instance_id(const param_hash_map<param_string, unknown_object>& params)
+		{
+			return unbox<guid>(params.get_value(u8"object_id"));
+		}
 
-        template <typename T>
-        T get_instance(const param_hash_map<param_string, unknown_object> &params)
-        {
-            return get_instance<T>(unbox<guid>(params.get_value(u8"object_id")));
-        }
+		template <typename T>
+		T get_instance(const guid& id)
+		{
+			std::scoped_lock lock{ mutex_ };
+			auto iter = instances_.find(id);
 
-        std::mutex mutex_;
-        std::unordered_map<guid, std::tuple<param_string, unknown_object>> instances_;
-        std::unordered_map<param_string, std::function<unknown_object(const param_hash_map<param_string, unknown_object> &)>> functions_;
-    };
+			return iter != instances_.end() ? std::get<unknown_object>(iter->second).as<T>() : throw abi_key_not_found{ exposing::format(u8"Cannot find instance: {}.", to_param_string(id)) };
+		}
 
-    vision_service_impl::vision_service_impl() : impl_{std::make_unique<impl>()}
-    {
-    }
+		template <typename T>
+		T get_instance(const param_hash_map<param_string, unknown_object>& params)
+		{
+			return get_instance<T>(unbox<guid>(params.get_value(u8"object_id")));
+		}
 
-    vision_service_impl::~vision_service_impl()
-    {
-    }
+		std::mutex mutex_;
+		std::unordered_map<guid, std::tuple<param_string, unknown_object>> instances_;
+		std::unordered_map<param_string, std::function<unknown_object(const param_hash_map<param_string, unknown_object>&)>> functions_;
+	};
 
-    param_string vision_service_impl::name() const
-    {
-        return impl_->name();
-    }
+	vision_service_impl::vision_service_impl() : impl_{ std::make_unique<impl>() }
+	{
+	}
 
-    param_string vision_service_impl::version() const
-    {
-        return impl_->version();
-    }
+	vision_service_impl::~vision_service_impl()
+	{
+	}
 
-    param_vector<param_string> vision_service_impl::available_functions() const
-    {
-        return impl_->available_functions();
-    }
+	param_string vision_service_impl::name() const
+	{
+		return impl_->name();
+	}
 
-    param_hash_map<guid, param_string> vision_service_impl::existing_instances() const
-    {
-        return impl_->existing_instances();
-    }
+	param_string vision_service_impl::version() const
+	{
+		return impl_->version();
+	}
 
-    unknown_object vision_service_impl::execute(const param_string &function_name, const param_hash_map<param_string, unknown_object> &params) const
-    {
-        return impl_->execute(function_name, params);
-    }
+	param_vector<param_string> vision_service_impl::available_functions() const
+	{
+		return impl_->available_functions();
+	}
+
+	param_hash_map<guid, param_string> vision_service_impl::existing_instances() const
+	{
+		return impl_->existing_instances();
+	}
+
+	unknown_object vision_service_impl::execute(const param_string& function_name, const param_hash_map<param_string, unknown_object>& params) const
+	{
+		return impl_->execute(function_name, params);
+	}
 }
