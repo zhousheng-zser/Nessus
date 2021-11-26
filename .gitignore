@@ -1,4 +1,5 @@
 build/
+build_v7/
 .vs/
 /cmake/ndk_cmake.bat
 .vscode

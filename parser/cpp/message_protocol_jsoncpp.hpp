@@ -1686,6 +1686,69 @@ namespace glasssix
                 return value;
             }
 
+            inline Json::Value Romancia_rotate_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+            {
+                Json::Value value;
+
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+                    float angle = root["angle"].asFloat();
+
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        { {u8"image", box(image_span)},
+                         {u8"height", box(height)},
+                         {u8"width", box(width)},
+                         {u8"angle", box(angle)},
+                         {u8"order", box(static_cast<int>(frame.order()))},
+                         {u8"object_id", box(instance)} });
+
+                    auto result = plugin.execute(u8"romancia.rotate", param).as<param_vector<std::uint8_t>>();
+                    if (external.size() == result.size())
+                    {
+                        std::copy(exposing::begin(result), exposing::end(result), external.begin());
+                        value["result"] = Json::Value(Json::arrayValue);
+                    }
+                    else
+                    {
+                        Json::Value img_data = Json::Value(Json::arrayValue);
+                        for (auto i : result)
+                            img_data.append(i);
+                        value["result"] = Json::Value(img_data);
+                    }
+
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
             inline Json::Value Romancia_antispoofing_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
             {
                 Json::Value value;
@@ -3524,6 +3587,124 @@ namespace glasssix
                     value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
                 }
                 catch (const abi_error &ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Fusion_Romancia_rotate_Longinus_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, std::vector<guid>& guids, param_span<std::uint8_t>& external)
+            {
+                Json::Value value;
+
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+                    int min_size = root["min_size"].asInt();
+                    float threshold = root["threshold"].asFloat();
+                    bool do_attributing = root["do_attributing"].asBool();
+                    float angle = root["angle"].asFloat();
+
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+
+                    auto romancia_param = make_param_hash_map<param_string, unknown_object>(
+                        { {u8"image", box(image_span)},
+                         {u8"height", box(height)},
+                         {u8"width", box(width)},
+                         {u8"angle", box(angle)},
+                         {u8"order", box(static_cast<int>(frame.order()))},
+                         {u8"object_id", box(guids[0])} });
+
+                    auto romancia_result = plugin.execute(u8"romancia.rotate", romancia_param).as<param_vector<std::uint8_t>>();
+
+                    if (external.size() == romancia_result.size())
+                        std::copy(exposing::begin(romancia_result), exposing::end(romancia_result), external.begin());
+
+                    int rotated_height = height;
+                    int rotated_width = width;
+                    if (angle == 90.0f || angle == 270.0f)
+                    {
+                        rotated_height = width;
+                        rotated_width = height;
+                    }
+
+                    std::vector<std::uint8_t> img_rotated(romancia_result.size());
+                    std::copy(exposing::begin(romancia_result), exposing::end(romancia_result), img_rotated.begin());
+                    param_span<std::uint8_t> img_rotated_span(img_rotated.data(), img_rotated.size());
+
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        { {u8"image", box(img_rotated_span)},
+                         {u8"height", box(rotated_height)},
+                         {u8"width", box(rotated_width)},
+                         {u8"min_size", box(min_size)},
+                         {u8"threshold", box(threshold)},
+                         {u8"order", box(1)},
+                         {u8"do_attributing", box(do_attributing)},
+                         {u8"object_id", box(guids[1])} });
+
+                    auto longinus_result = plugin.execute(u8"longinus.detect", param).as<param_vector<longinus::face_info>>();
+
+                    Json::Value jarray_rect = Json::Value(Json::arrayValue);
+
+                    for (auto obj : longinus_result)
+                    {
+                        Json::Value jobj_face;
+                        jobj_face["x"] = Json::Int(obj.x());
+                        jobj_face["y"] = Json::Int(obj.y());
+                        jobj_face["width"] = Json::Int(obj.width());
+                        jobj_face["height"] = Json::Int(obj.height());
+                        jobj_face["confidence"] = Json::Value(obj.confidence());
+
+                        if (do_attributing)
+                        {
+                            jobj_face["attributes"]["yaw"] = Json::Value(obj.yaw());
+                            jobj_face["attributes"]["pitch"] = Json::Value(obj.pitch());
+                            jobj_face["attributes"]["roll"] = Json::Value(obj.roll());
+                            jobj_face["attributes"]["glass_index"] = Json::Int(obj.glass_index());
+                            jobj_face["attributes"]["mask_index"] = Json::Int(obj.mask_index());
+                        }
+                        else
+                            jobj_face["attributes"] = Json::Value(Json::nullValue);
+
+                        Json::Value jarray_landmark;
+
+                        for (const auto& pt : obj.pts())
+                        {
+
+                            Json::Value jobj_point;
+                            jobj_point["x"] = Json::Int((int)pt.key());
+                            jobj_point["y"] = Json::Int((int)pt.value());
+                            jarray_landmark.append(jobj_point);
+                        }
+                        jobj_face["landmark"] = jarray_landmark;
+                        jarray_rect.append(jobj_face);
+                    }
+
+                    value["facerectwithfaceinfo_list"] = jarray_rect;
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error& ex)
                 {
                     value["status"]["message"] = Json::Value(ex.what_to_narrow());
                     value["status"]["code"] = Json::Int(ex.result());
