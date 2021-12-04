@@ -15,7 +15,6 @@
 #include "../../common/include/longinus/face_info.hpp"
 #include "../../common/include/irisviel/search_result.hpp"
 #include "../../common/include/irisviel/record.hpp"
-#include "../../common/include/Primitives/tensor.hpp"
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -31,28 +30,44 @@ namespace glasssix
 			{
 				PROTOCOL_IMAGE_BGR_NCHW = 0,
 				PROTOCOL_IMAGE_BGR_NHWC = 1,
-				PROTOCOL_IMAGE_NV21 = 2
+				PROTOCOL_IMAGE_NV21 = 2,
+				PROTOCOL_IMAGE_UNKNOW = 3
 			};
 
-			inline void convert_to_bgr(memory::tensor<std::uint8_t>& src, PROTOCOL_IMAGE_FORMAT src_format, memory::tensor<std::uint8_t>& dst, int width, int height)
+			struct data_handler
 			{
-				switch (src_format)
+				data_handler() : data_{ nullptr }, size_{ 0 }, format_{ PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_UNKNOW }, is_heap_allocated_{ false } {}
+				data_handler(std::uint8_t* data, size_t size, PROTOCOL_IMAGE_FORMAT format, bool is_heap_allocated) : data_{ data }, size_{ size }, format_{ format }, is_heap_allocated_{ is_heap_allocated } {}
+				~data_handler()
+				{
+					if (is_heap_allocated_)
+						if (data_)
+							delete[] data_;
+				}
+				const std::uint8_t* data_;
+				size_t size_;
+				PROTOCOL_IMAGE_FORMAT format_;
+				bool is_heap_allocated_;
+			};
+
+			inline void convert_to_bgr(std::shared_ptr<data_handler>& src, std::shared_ptr<data_handler>& dst, int width, int height)
+			{
+				switch (src->format_)
 				{
 				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NCHW:
 				{
-					if (width * height * 3 != src.count())
-						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NCHW, width * height * 3 != src.count()");
+					if (width * height * 3 != src->size_)
+						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NCHW, width * height * 3 != src->size_");
 					dst = src;
-					break;
 				}
 				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC:
 				{
 					int step = 0;
-					if (src.count() != width * height * 3)
+					if (src->size_ != width * height * 3)
 					{
 						step = ((width * 3 + 3) >> 2) << 2;
-						if (src.count() != step * height)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, src.count() != width * height * 3 || src.count() != (((width * 3 + 3) >> 2) << 2) * height");
+						if (src->size_ != step * height)
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, src->size_ != width * height * 3 || src->size_ != (((width * 3 + 3) >> 2) << 2) * height");
 					}
 					else
 						step = width * 3;
@@ -61,11 +76,13 @@ namespace glasssix
 						dst = src;
 					else if (step > width * 3)
 					{
-						dst = memory::tensor<std::uint8_t>(std::vector<int>{1, height, width, 3}, src.device(), src.order(), src.allocator());
-						std::uint8_t* dst_ptr = dst.mutable_cpu_data();
-						const std::uint8_t* src_ptr = src.cpu_data();
+						size_t size = 3 * height * width;
+						std::uint8_t* dst_ptr = new std::uint8_t[size];
+						const std::uint8_t* src_ptr = src->data_;
 						for (size_t i = 0; i < height; i++)
 							std::copy(src_ptr + i * step, src_ptr + i * step + width * 3, dst_ptr + i * width * 3);
+
+						dst = std::make_shared<data_handler>(dst_ptr, size, PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC, true);
 					}
 					else
 					{
@@ -76,16 +93,18 @@ namespace glasssix
 				}
 				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_NV21:
 				{
-					if (src.count() != (width * height * 3 >> 1))
-						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "convert_to_bgr: src.count() != (width * height * 3 >> 1)");
+					size_t size = width * height * 3;
+					if (src->size_ != (size >> 1))
+						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "convert_to_bgr: src->size_ != (width * height * 3 >> 1)");
 
-					dst = memory::tensor<std::uint8_t>(std::vector<int>{1, height, width, 3}, -1, memory::NHWC /*, & memory::pool_allocator_default<std::uint8_t>::get()*/);
+					std::uint8_t* dst_ptr = new std::uint8_t[size];
 					int aligned_src_width = (width + 1) & ~1;
-					const uint8_t* y = src.cpu_data();
-					const uint8_t* uv = src.cpu_data() + aligned_src_width * height;
-					if (libyuv::NV21ToRGB24(y, width, uv, aligned_src_width, dst.mutable_cpu_data(), width * 3, width, height))
+					const uint8_t* y = src->data_;
+					const uint8_t* uv = src->data_ + aligned_src_width * height;
+					if (libyuv::NV21ToRGB24(y, width, uv, aligned_src_width, dst_ptr, width * 3, width, height))
 						throw parser_exception(parser_exception::parser_exception_code::INTERNAL_FUNCTION_FAILURE, "NV21ToRGB24 failed.");
 
+					dst = std::make_shared<data_handler>(dst_ptr, size, PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC, true);
 					break;
 				}
 				default:
@@ -94,7 +113,7 @@ namespace glasssix
 				}
 			}
 
-			inline memory::tensor<std::uint8_t> decode_and_convert(param_span<std::uint8_t> src, bool is_base64, PROTOCOL_IMAGE_FORMAT format, int width, int height)
+			inline std::shared_ptr<data_handler> decode_and_convert(param_span<std::uint8_t> src, bool is_base64, PROTOCOL_IMAGE_FORMAT format, int width, int height)
 			{
 				if (height <= 0 || width <= 0)
 					throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Invalid argument: height <= 0 || width <= 0");
@@ -102,38 +121,22 @@ namespace glasssix
 				if (src.size() <= 0)
 					throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Invalid argument: src.size() <= 0");
 
-				memory::orderType order;
-				switch (format)
-				{
-				case glasssix::exposing::nessus::PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NCHW:
-					order = memory::NCHW;
-					break;
-				case glasssix::exposing::nessus::PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC:
-					order = memory::NHWC;
-					break;
-				default:
-					order = memory::NHWC;
-					break;
-				}
-
-				memory::tensor<std::uint8_t> temp;
+				std::shared_ptr<data_handler> temp;
 				if (is_base64)
 				{
 					int current_image_str_len = TB64DECLEN(src.size());
 
-					temp = memory::tensor<std::uint8_t>(current_image_str_len, -1, order /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-					tb64xdec(reinterpret_cast<const std::uint8_t*>(src.data()), src.size(), temp.mutable_cpu_data());
+					std::uint8_t* decoded_data = new std::uint8_t[current_image_str_len];
+					tb64xdec(reinterpret_cast<const std::uint8_t*>(src.data()), src.size(), decoded_data);
+					temp = std::make_shared<data_handler>(decoded_data, current_image_str_len, format, true);
 				}
 				else
 				{
-					temp = memory::tensor<std::uint8_t>(src.size(), -1, order /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-					std::copy(src.begin(), src.end(), temp.mutable_cpu_data());
+					temp = std::make_shared<data_handler>(src.data(), src.size(), format, false);
 				}
 
-				memory::tensor<std::uint8_t> dst;
-
-				convert_to_bgr(temp, format, dst, width, height);
-
+				std::shared_ptr<data_handler> dst;
+				convert_to_bgr(temp, dst, width, height);
 				return dst;
 			}
 
@@ -228,7 +231,7 @@ namespace glasssix
 					bool do_attributing = root["do_attributing"].asBool();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
@@ -236,7 +239,7 @@ namespace glasssix
 						 {u8"width", box(width)},
 						 {u8"min_size", box(min_size)},
 						 {u8"threshold", box(threshold)},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"do_attributing", box(do_attributing)},
 						 {u8"object_id", box(instance)} });
 
@@ -321,14 +324,14 @@ namespace glasssix
 					face.set_height(root["face"]["height"].asFloat());
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"face", face},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 					auto result = plugin.execute(u8"longinus.trace", param).as<longinus::face_info>();
 
@@ -418,14 +421,14 @@ namespace glasssix
 						param_span<std::uint8_t> data_i(data.data() + read_byte_size, image_byte_size);
 						read_byte_size += image_byte_size;
 						auto frame = decode_and_convert(data_i, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-						param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+						param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 						auto param = make_param_hash_map<param_string, unknown_object>(
 							{ {u8"image", box(image_span)},
 							 {u8"height", box(height)},
 							 {u8"width", box(width)},
 							 {u8"scale", box(scale)},
-							 {u8"order", box(static_cast<int>(frame.order()))},
+							 {u8"order", box(static_cast<int>(frame->format_))},
 							 {u8"object_id", box(instance)} });
 
 						auto result = plugin.execute(u8"longinus.center_scale_alignFace", param).as<param_vector<param_vector<std::uint8_t>>>();
@@ -558,13 +561,13 @@ namespace glasssix
 					int width = root["width"].asInt();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"gungnir.detect", param).as<param_vector<gungnir::hat_info>>();
@@ -703,14 +706,14 @@ namespace glasssix
 					int roi_height = flag ? height : roi["height"].asInt();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"image", box(image_span)},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
-							{u8"order", box(static_cast<int>(frame.order()))},
+							{u8"order", box(static_cast<int>(frame->format_))},
 							{u8"object_id", box(instance)},
 							{u8"x", box(x)},
 							{u8"y", box(y)},
@@ -854,13 +857,13 @@ namespace glasssix
 					int width = root["width"].asInt();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"valklyrs.detect", param).as<param_vector<valklyrs::result_info>>();
@@ -1041,7 +1044,7 @@ namespace glasssix
 					int roi_height = flag ? height : roi["height"].asInt();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
@@ -1049,7 +1052,7 @@ namespace glasssix
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"top_five", box(top_five)},
-							{u8"order", box(static_cast<int>(frame.order()))},
+							{u8"order", box(static_cast<int>(frame->format_))},
 							{u8"object_id", box(instance)},
 							{u8"x", box(x)},
 							{u8"y", box(y)},
@@ -1165,7 +1168,7 @@ namespace glasssix
 					int roi_width = roi["width"].asInt();
 					int roi_height = roi["height"].asInt();
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"image", box(image_span)},
@@ -1250,7 +1253,7 @@ namespace glasssix
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"image", box(image_span)},
@@ -1407,29 +1410,44 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"romancia.alignFace128", param).as<param_vector<param_vector<std::uint8_t>>>();
 
 					value["aligned_images"] = Json::Value(Json::arrayValue);
-					std::vector<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, 0);
-					std::uint8_t* ptr = temp.data();
-					for (size_t i = 0; i < result.size(); i++)
+					size_t total_size = 0;
+					for (const auto& x : result)
+						total_size += x.size();
+					if (external.size() >= total_size)
 					{
-						std::vector<std::uint8_t> buffer(result[i].size());
-						result[i].copy_to(0, buffer);
+						size_t coped_size = 0;
+						for (const auto& x : result)
+						{
+							x.copy_to(0, { external.data() + coped_size, x.size() });
+							coped_size += x.size();
+						}
+					}
+					else
+					{
+						std::vector<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						for (size_t i = 0; i < result.size(); i++)
+						{
+							std::vector<std::uint8_t> buffer(result[i].size());
+							result[i].copy_to(0, buffer);
 
-						tb64xenc(buffer.data(), buffer.size(), ptr);
+							tb64xenc(buffer.data(), buffer.size(), ptr);
 
-						value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + romancia_align_aligned_base64_buffer_len));
+							value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + romancia_align_aligned_base64_buffer_len));
+						}
 					}
 					value["format"] = Json::Value(0);
 					value["status"]["message"] = Json::Value("OK");
@@ -1494,30 +1512,46 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"romancia.alignFace", param).as<param_vector<param_vector<std::uint8_t>>>();
 
 					value["aligned_images"] = Json::Value(Json::arrayValue);
-					std::vector<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, 0);
-					std::uint8_t* ptr = temp.data();
-					for (size_t i = 0; i < result.size(); i++)
+					size_t total_size = 0;
+					for (const auto& x : result)
+						total_size += x.size();
+					if (external.size() >= total_size)
 					{
-						std::vector<std::uint8_t> buffer(result[i].size());
-						result[i].copy_to(0, buffer);
-
-						tb64xenc(buffer.data(), buffer.size(), ptr);
-
-						value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + romancia_align_aligned_base64_buffer_len));
+						size_t coped_size = 0;
+						for (const auto& x : result)
+						{
+							x.copy_to(0, { external.data() + coped_size, x.size() });
+							coped_size += x.size();
+						}
 					}
+					else
+					{
+						std::vector<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						for (size_t i = 0; i < result.size(); i++)
+						{
+							std::vector<std::uint8_t> buffer(result[i].size());
+							result[i].copy_to(0, buffer);
+
+							tb64xenc(buffer.data(), buffer.size(), ptr);
+
+							value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + romancia_align_aligned_base64_buffer_len));
+						}
+					}
+					
 					value["format"] = Json::Value(0);
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -1568,14 +1602,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"romancia.blur_detect", param).as<param_vector<double>>();
@@ -1646,14 +1680,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					Json::Value mask_value = Json::Value(Json::arrayValue);
@@ -1701,21 +1735,21 @@ namespace glasssix
                     float angle = root["angle"].asFloat();
 
                     auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
                     auto param = make_param_hash_map<param_string, unknown_object>(
                         { {u8"image", box(image_span)},
                          {u8"height", box(height)},
                          {u8"width", box(width)},
                          {u8"angle", box(angle)},
-                         {u8"order", box(static_cast<int>(frame.order()))},
+                         {u8"order", box(static_cast<int>(frame->format_))},
                          {u8"object_id", box(instance)} });
 
                     auto result = plugin.execute(u8"romancia.rotate", param).as<param_vector<std::uint8_t>>();
                     if (external.size() >= result.size())
                     {
                         //std::copy(exposing::begin(result), exposing::end(result), external.begin());
-						result.copy_to(0, { external.data(), result.size() });
+						result.copy_to(0, { external.data(), static_cast<size_t>(result.size()) });
                         value["result"] = Json::Value(Json::arrayValue);
                     }
                     else
@@ -1776,14 +1810,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"romancia.antispoofing", param).as<param_vector<bool>>();
@@ -2771,14 +2805,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"damocles.spoofing_detect", param).as<param_vector<param_vector<float>>>();
@@ -2838,7 +2872,7 @@ namespace glasssix
 					face.set_height(root["facerect"]["height"].asFloat());
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
@@ -2846,7 +2880,7 @@ namespace glasssix
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"face", face},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = unbox<bool>(plugin.execute(u8"damocles.presentation_attack_detect", param));
@@ -3606,14 +3640,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto romancia_param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(guids[0])} });
 
 					auto romancia_result = plugin.execute(u8"romancia.alignFace128", romancia_param).as<param_vector<param_vector<std::uint8_t>>>();
@@ -3717,14 +3751,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto romancia_param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(guids[0])} });
 
 					auto romancia_result = plugin.execute(u8"romancia.alignFace", romancia_param).as<param_vector<param_vector<std::uint8_t>>>();
@@ -3827,14 +3861,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto romancia_param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(guids[0])} });
 
 					auto romancia_result = plugin.execute(u8"romancia.alignFace", romancia_param).as<param_vector<param_vector<std::uint8_t>>>();
@@ -3917,20 +3951,20 @@ namespace glasssix
                     float angle = root["angle"].asFloat();
 
                     auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
                     auto romancia_param = make_param_hash_map<param_string, unknown_object>(
                         { {u8"image", box(image_span)},
                          {u8"height", box(height)},
                          {u8"width", box(width)},
                          {u8"angle", box(angle)},
-                         {u8"order", box(static_cast<int>(frame.order()))},
+                         {u8"order", box(static_cast<int>(frame->format_))},
                          {u8"object_id", box(guids[0])} });
 
                     auto romancia_result = plugin.execute(u8"romancia.rotate", romancia_param).as<param_vector<std::uint8_t>>();
 
                     if (external.size() >= romancia_result.size())
-						romancia_result.copy_to(0, { external.data(), romancia_result.size() });
+						romancia_result.copy_to(0, { external.data(), static_cast<size_t>(romancia_result.size()) });
 
                     int rotated_height = height;
                     int rotated_width = width;
