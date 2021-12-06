@@ -15,8 +15,14 @@ if (NOT ${CMAKE_GENERATOR} MATCHES "Visual Studio")
 endif()
 
 project(Nessus C CXX)
-option(WITH_JNI "Compile java native interface." OFF)
+
+unset(WITH_JNI CACHE)
+unset(USE_SIMDJSON CACHE)
+unset(DISABLE_LICENSE CACHE)
+
+option(WITH_JNI "Compile java native interface." ON)
 option(USE_SIMDJSON "Compile and use simdjson to parse json. It can only work when compiling 64bit binary." OFF)
+option(DISABLE_LICENSE "Disable the license system." ON)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	set(CMAKE_FIND_LIBRARY_PREFIXES "lib")

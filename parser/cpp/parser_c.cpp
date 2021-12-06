@@ -1,8 +1,11 @@
 #include "parser_c.hpp"
 #include "parser.hpp"
-#include <vulcanus/license.hpp>
 
 #include <memory.hpp>
+
+#ifndef G6_DISABLE_LICENSE
+#include <vulcanus/license.hpp>
+#endif
 
 bool parser_module_ready = []
 {
@@ -26,6 +29,8 @@ extern "C" {
 
 	PARSER_C_EXPORT char* parser_init_plugin(void* instance, const char* config_file_path, const char* license_key)
 	{
+#ifndef G6_DISABLE_LICENSE
+
 		init_license_system(license_key);
 		
 		try
@@ -39,6 +44,7 @@ extern "C" {
 
 			return (inner.copy(what, inner.size()), what);
 		}
+#endif
 
 		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
 
