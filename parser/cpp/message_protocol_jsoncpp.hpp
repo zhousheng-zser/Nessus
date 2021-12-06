@@ -1431,7 +1431,7 @@ namespace glasssix
 						size_t coped_size = 0;
 						for (const auto& x : result)
 						{
-							x.copy_to(0, { external.data() + coped_size, x.size() });
+							x.copy_to(0, { external.data() + coped_size, static_cast<size_t>(x.size()) });
 							coped_size += x.size();
 						}
 					}
@@ -1533,7 +1533,7 @@ namespace glasssix
 						size_t coped_size = 0;
 						for (const auto& x : result)
 						{
-							x.copy_to(0, { external.data() + coped_size, x.size() });
+							x.copy_to(0, { external.data() + coped_size, static_cast<size_t>(x.size()) });
 							coped_size += x.size();
 						}
 					}
@@ -1750,18 +1750,14 @@ namespace glasssix
                     {
                         //std::copy(exposing::begin(result), exposing::end(result), external.begin());
 						result.copy_to(0, { external.data(), static_cast<size_t>(result.size()) });
-                        value["result"] = Json::Value(Json::arrayValue);
+						value["status"]["message"] = Json::Value("OK");
+						value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
                     }
-                    else
-                    {
-                        Json::Value img_data = Json::Value(Json::arrayValue);
-                        for (auto i : result)
-                            img_data.append(i);
-                        value["result"] = Json::Value(img_data);
-                    }
-
-                    value["status"]["message"] = Json::Value("OK");
-                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+					else
+					{
+						value["status"]["message"] = Json::Value("external.size() not match");
+						value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::INVALID_OPERATION));
+					}
                 }
                 catch (const parser_exception& ex)
                 {
@@ -4052,6 +4048,119 @@ namespace glasssix
 
                 return value;
             }
+
+			inline Json::Value Fusion_Romancia_rotate_Longinus_trace_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, std::vector<guid>& guids, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+					float angle = root["angle"].asFloat();
+					auto face = make_exported_interface<longinus::face_info>();
+					face.set_x(root["face"]["x"].asFloat());
+					face.set_y(root["face"]["y"].asFloat());
+					face.set_width(root["face"]["width"].asFloat());
+					face.set_height(root["face"]["height"].asFloat());
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+					auto romancia_param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"image", box(image_span)},
+						 {u8"height", box(height)},
+						 {u8"width", box(width)},
+						 {u8"angle", box(angle)},
+						 {u8"order", box(static_cast<int>(frame->format_))},
+						 {u8"object_id", box(guids[0])} });
+
+					auto romancia_result = plugin.execute(u8"romancia.rotate", romancia_param).as<param_vector<std::uint8_t>>();
+
+					if (external.size() >= romancia_result.size())
+						romancia_result.copy_to(0, { external.data(), static_cast<size_t>(romancia_result.size()) });
+
+					int rotated_height = height;
+					int rotated_width = width;
+					if (angle == 90.0f || angle == 270.0f)
+					{
+						rotated_height = width;
+						rotated_width = height;
+					}
+
+					std::vector<std::uint8_t> img_rotated(romancia_result.size());
+					romancia_result.copy_to(0, img_rotated);
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"image", box(param_span<std::uint8_t>{img_rotated})},
+						 {u8"height", box(rotated_height)},
+						 {u8"width", box(rotated_width)},
+						 {u8"face", face},
+						 {u8"order", box(1)},
+						 {u8"object_id", box(guids[1])} });
+					auto result = plugin.execute(u8"longinus.trace", param).as<longinus::face_info>();
+
+					Json::Value jobj_face;
+					if (result.confidence() > 0.1f)
+					{
+						value["trace_success"] = Json::Value(true);
+						jobj_face["x"] = Json::Int(result.x());
+						jobj_face["y"] = Json::Int(result.y());
+						jobj_face["width"] = Json::Int(result.width());
+						jobj_face["height"] = Json::Int(result.height());
+						jobj_face["confidence"] = Json::Value(result.confidence());
+
+						jobj_face["attributes"]["glass_index"] = Json::Int(result.glass_index());
+						jobj_face["attributes"]["mask_index"] = Json::Int(result.mask_index());
+						jobj_face["attributes"]["yaw"] = Json::Value(result.yaw());
+						jobj_face["attributes"]["pitch"] = Json::Value(result.pitch());
+						jobj_face["attributes"]["roll"] = Json::Value(result.roll());
+
+						Json::Value jarray_landmark;
+
+						for (const auto& pt : result.pts())
+						{
+
+							Json::Value jobj_point;
+							jobj_point["x"] = Json::Int((int)pt.key());
+							jobj_point["y"] = Json::Int((int)pt.value());
+							jarray_landmark.append(jobj_point);
+						}
+						jobj_face["landmark"] = jarray_landmark;
+					}
+					else
+					{
+						value["trace_success"] = Json::Value(false);
+					}
+
+					value["facerectwithfaceinfo"] = jobj_face;
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
         }
     }
 }
