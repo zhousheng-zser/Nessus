@@ -15,7 +15,6 @@
 #include "../../common/include/longinus/face_info.hpp"
 #include "../../common/include/irisviel/search_result.hpp"
 #include "../../common/include/irisviel/record.hpp"
-#include "../../common/include/Primitives/tensor.hpp"
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -31,28 +30,44 @@ namespace glasssix
 			{
 				PROTOCOL_IMAGE_BGR_NCHW = 0,
 				PROTOCOL_IMAGE_BGR_NHWC = 1,
-				PROTOCOL_IMAGE_NV21 = 2
+				PROTOCOL_IMAGE_NV21 = 2,
+				PROTOCOL_IMAGE_UNKNOW = 3
 			};
 
-			inline void convert_to_bgr(memory::tensor<std::uint8_t>& src, PROTOCOL_IMAGE_FORMAT src_format, memory::tensor<std::uint8_t>& dst, int width, int height)
+			struct data_handler
 			{
-				switch (src_format)
+				data_handler() : data_{ nullptr }, size_{ 0 }, format_{ PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_UNKNOW }, is_heap_allocated_{ false } {}
+				data_handler(std::uint8_t* data, size_t size, PROTOCOL_IMAGE_FORMAT format, bool is_heap_allocated) : data_{ data }, size_{ size }, format_{ format }, is_heap_allocated_{ is_heap_allocated } {}
+				~data_handler()
+				{
+					if (is_heap_allocated_)
+						if (data_)
+							delete[] data_;
+				}
+				const std::uint8_t* data_;
+				size_t size_;
+				PROTOCOL_IMAGE_FORMAT format_;
+				bool is_heap_allocated_;
+			};
+
+			inline void convert_to_bgr(std::shared_ptr<data_handler>& src, std::shared_ptr<data_handler>& dst, int width, int height)
+			{
+				switch (src->format_)
 				{
 				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NCHW:
 				{
-					if (width * height * 3 != src.count())
-						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NCHW, width * height * 3 != src.count()");
+					if (width * height * 3 != src->size_)
+						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NCHW, width * height * 3 != src->size_");
 					dst = src;
-					break;
 				}
 				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC:
 				{
 					int step = 0;
-					if (src.count() != width * height * 3)
+					if (src->size_ != width * height * 3)
 					{
 						step = ((width * 3 + 3) >> 2) << 2;
-						if (src.count() != step * height)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, src.count() != width * height * 3 || src.count() != (((width * 3 + 3) >> 2) << 2) * height");
+						if (src->size_ != step * height)
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, src->size_ != width * height * 3 || src->size_ != (((width * 3 + 3) >> 2) << 2) * height");
 					}
 					else
 						step = width * 3;
@@ -61,11 +76,13 @@ namespace glasssix
 						dst = src;
 					else if (step > width * 3)
 					{
-						dst = memory::tensor<std::uint8_t>(std::vector<int>{1, height, width, 3}, src.device(), src.order(), src.allocator());
-						std::uint8_t* dst_ptr = dst.mutable_cpu_data();
-						const std::uint8_t* src_ptr = src.cpu_data();
+						size_t size = 3 * height * width;
+						std::uint8_t* dst_ptr = new std::uint8_t[size];
+						const std::uint8_t* src_ptr = src->data_;
 						for (size_t i = 0; i < height; i++)
 							std::copy(src_ptr + i * step, src_ptr + i * step + width * 3, dst_ptr + i * width * 3);
+
+						dst = std::make_shared<data_handler>(dst_ptr, size, PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC, true);
 					}
 					else
 					{
@@ -76,16 +93,18 @@ namespace glasssix
 				}
 				case PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_NV21:
 				{
-					if (src.count() != (width * height * 3 >> 1))
-						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "convert_to_bgr: src.count() != (width * height * 3 >> 1)");
+					size_t size = width * height * 3;
+					if (src->size_ != (size >> 1))
+						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "convert_to_bgr: src->size_ != (width * height * 3 >> 1)");
 
-					dst = memory::tensor<std::uint8_t>(std::vector<int>{1, height, width, 3}, -1, memory::NHWC /*, & memory::pool_allocator_default<std::uint8_t>::get()*/);
+					std::uint8_t* dst_ptr = new std::uint8_t[size];
 					int aligned_src_width = (width + 1) & ~1;
-					const uint8_t* y = src.cpu_data();
-					const uint8_t* uv = src.cpu_data() + aligned_src_width * height;
-					if (libyuv::NV21ToRGB24(y, width, uv, aligned_src_width, dst.mutable_cpu_data(), width * 3, width, height))
+					const uint8_t* y = src->data_;
+					const uint8_t* uv = src->data_ + aligned_src_width * height;
+					if (libyuv::NV21ToRGB24(y, width, uv, aligned_src_width, dst_ptr, width * 3, width, height))
 						throw parser_exception(parser_exception::parser_exception_code::INTERNAL_FUNCTION_FAILURE, "NV21ToRGB24 failed.");
 
+					dst = std::make_shared<data_handler>(dst_ptr, size, PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC, true);
 					break;
 				}
 				default:
@@ -94,7 +113,7 @@ namespace glasssix
 				}
 			}
 
-			inline memory::tensor<std::uint8_t> decode_and_convert(param_span<std::uint8_t> src, bool is_base64, PROTOCOL_IMAGE_FORMAT format, int width, int height)
+			inline std::shared_ptr<data_handler> decode_and_convert(param_span<std::uint8_t> src, bool is_base64, PROTOCOL_IMAGE_FORMAT format, int width, int height)
 			{
 				if (height <= 0 || width <= 0)
 					throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Invalid argument: height <= 0 || width <= 0");
@@ -102,38 +121,22 @@ namespace glasssix
 				if (src.size() <= 0)
 					throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Invalid argument: src.size() <= 0");
 
-				memory::orderType order;
-				switch (format)
-				{
-				case glasssix::exposing::nessus::PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NCHW:
-					order = memory::NCHW;
-					break;
-				case glasssix::exposing::nessus::PROTOCOL_IMAGE_FORMAT::PROTOCOL_IMAGE_BGR_NHWC:
-					order = memory::NHWC;
-					break;
-				default:
-					order = memory::NHWC;
-					break;
-				}
-
-				memory::tensor<std::uint8_t> temp;
+				std::shared_ptr<data_handler> temp;
 				if (is_base64)
 				{
 					int current_image_str_len = TB64DECLEN(src.size());
 
-					temp = memory::tensor<std::uint8_t>(current_image_str_len, -1, order /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-					tb64xdec(reinterpret_cast<const std::uint8_t*>(src.data()), src.size(), temp.mutable_cpu_data());
+					std::uint8_t* decoded_data = new std::uint8_t[current_image_str_len];
+					tb64xdec(reinterpret_cast<const std::uint8_t*>(src.data()), src.size(), decoded_data);
+					temp = std::make_shared<data_handler>(decoded_data, current_image_str_len, format, true);
 				}
 				else
 				{
-					temp = memory::tensor<std::uint8_t>(src.size(), -1, order /*, &memory::pool_allocator_default<std::uint8_t>::get()*/);
-					std::copy(src.begin(), src.end(), temp.mutable_cpu_data());
+					temp = std::make_shared<data_handler>(src.data(), src.size(), format, false);
 				}
 
-				memory::tensor<std::uint8_t> dst;
-
-				convert_to_bgr(temp, format, dst, width, height);
-
+				std::shared_ptr<data_handler> dst;
+				convert_to_bgr(temp, dst, width, height);
 				return dst;
 			}
 
@@ -228,7 +231,7 @@ namespace glasssix
 					bool do_attributing = root["do_attributing"].asBool();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
@@ -236,7 +239,7 @@ namespace glasssix
 						 {u8"width", box(width)},
 						 {u8"min_size", box(min_size)},
 						 {u8"threshold", box(threshold)},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"do_attributing", box(do_attributing)},
 						 {u8"object_id", box(instance)} });
 
@@ -321,14 +324,14 @@ namespace glasssix
 					face.set_height(root["face"]["height"].asFloat());
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"face", face},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 					auto result = plugin.execute(u8"longinus.trace", param).as<longinus::face_info>();
 
@@ -418,26 +421,27 @@ namespace glasssix
 						param_span<std::uint8_t> data_i(data.data() + read_byte_size, image_byte_size);
 						read_byte_size += image_byte_size;
 						auto frame = decode_and_convert(data_i, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-						param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+						param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 						auto param = make_param_hash_map<param_string, unknown_object>(
 							{ {u8"image", box(image_span)},
 							 {u8"height", box(height)},
 							 {u8"width", box(width)},
 							 {u8"scale", box(scale)},
-							 {u8"order", box(static_cast<int>(frame.order()))},
+							 {u8"order", box(static_cast<int>(frame->format_))},
 							 {u8"object_id", box(instance)} });
 
 						auto result = plugin.execute(u8"longinus.center_scale_alignFace", param).as<param_vector<param_vector<std::uint8_t>>>();
 						if (save2extrenal)
 						{
-							std::copy(begin(result[0]), end(result[0]), external.begin() + i * 128 * 128 * 3);
+							result[0].copy_to(0, { external.data() + i * 128 * 128 * 3, 128 * 128 * 3 });
 						}
 						else
 						{
 							std::vector<std::uint8_t> temp(longinus_align_aligned_base64_buffer_len, 0);
 							std::uint8_t* ptr = temp.data();
-							std::vector<std::uint8_t> buffer(begin(result[0]), end(result[0]));
+							std::vector<std::uint8_t> buffer(128 * 128 * 3);
+							result[0].copy_to(0, buffer);
 
 							tb64xenc(buffer.data(), buffer.size(), ptr);
 
@@ -557,13 +561,13 @@ namespace glasssix
 					int width = root["width"].asInt();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"gungnir.detect", param).as<param_vector<gungnir::hat_info>>();
@@ -702,14 +706,14 @@ namespace glasssix
 					int roi_height = flag ? height : roi["height"].asInt();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"image", box(image_span)},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
-							{u8"order", box(static_cast<int>(frame.order()))},
+							{u8"order", box(static_cast<int>(frame->format_))},
 							{u8"object_id", box(instance)},
 							{u8"x", box(x)},
 							{u8"y", box(y)},
@@ -853,13 +857,13 @@ namespace glasssix
 					int width = root["width"].asInt();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"valklyrs.detect", param).as<param_vector<valklyrs::result_info>>();
@@ -1040,7 +1044,7 @@ namespace glasssix
 					int roi_height = flag ? height : roi["height"].asInt();
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
@@ -1048,7 +1052,7 @@ namespace glasssix
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"top_five", box(top_five)},
-							{u8"order", box(static_cast<int>(frame.order()))},
+							{u8"order", box(static_cast<int>(frame->format_))},
 							{u8"object_id", box(instance)},
 							{u8"x", box(x)},
 							{u8"y", box(y)},
@@ -1164,7 +1168,7 @@ namespace glasssix
 					int roi_width = roi["width"].asInt();
 					int roi_height = roi["height"].asInt();
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"image", box(image_span)},
@@ -1249,7 +1253,7 @@ namespace glasssix
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"image", box(image_span)},
@@ -1406,28 +1410,44 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"romancia.alignFace128", param).as<param_vector<param_vector<std::uint8_t>>>();
 
 					value["aligned_images"] = Json::Value(Json::arrayValue);
-					std::vector<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, 0);
-					std::uint8_t* ptr = temp.data();
-					for (size_t i = 0; i < result.size(); i++)
+					size_t total_size = 0;
+					for (const auto& x : result)
+						total_size += x.size();
+					if (external.size() >= total_size)
 					{
-						std::vector<std::uint8_t> buffer(begin(result[i]), end(result[i]));
+						size_t coped_size = 0;
+						for (const auto& x : result)
+						{
+							x.copy_to(0, { external.data() + coped_size, x.size() });
+							coped_size += x.size();
+						}
+					}
+					else
+					{
+						std::vector<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						for (size_t i = 0; i < result.size(); i++)
+						{
+							std::vector<std::uint8_t> buffer(result[i].size());
+							result[i].copy_to(0, buffer);
 
-						tb64xenc(buffer.data(), buffer.size(), ptr);
+							tb64xenc(buffer.data(), buffer.size(), ptr);
 
-						value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + romancia_align_aligned_base64_buffer_len));
+							value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + romancia_align_aligned_base64_buffer_len));
+						}
 					}
 					value["format"] = Json::Value(0);
 					value["status"]["message"] = Json::Value("OK");
@@ -1492,29 +1512,46 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"romancia.alignFace", param).as<param_vector<param_vector<std::uint8_t>>>();
 
 					value["aligned_images"] = Json::Value(Json::arrayValue);
-					std::vector<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, 0);
-					std::uint8_t* ptr = temp.data();
-					for (size_t i = 0; i < result.size(); i++)
+					size_t total_size = 0;
+					for (const auto& x : result)
+						total_size += x.size();
+					if (external.size() >= total_size)
 					{
-						std::vector<std::uint8_t> buffer(begin(result[i]), end(result[i]));
-
-						tb64xenc(buffer.data(), buffer.size(), ptr);
-
-						value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + romancia_align_aligned_base64_buffer_len));
+						size_t coped_size = 0;
+						for (const auto& x : result)
+						{
+							x.copy_to(0, { external.data() + coped_size, x.size() });
+							coped_size += x.size();
+						}
 					}
+					else
+					{
+						std::vector<std::uint8_t> temp(romancia_align_aligned_base64_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						for (size_t i = 0; i < result.size(); i++)
+						{
+							std::vector<std::uint8_t> buffer(result[i].size());
+							result[i].copy_to(0, buffer);
+
+							tb64xenc(buffer.data(), buffer.size(), ptr);
+
+							value["aligned_images"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + romancia_align_aligned_base64_buffer_len));
+						}
+					}
+					
 					value["format"] = Json::Value(0);
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -1565,14 +1602,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"romancia.blur_detect", param).as<param_vector<double>>();
@@ -1643,14 +1680,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					Json::Value mask_value = Json::Value(Json::arrayValue);
@@ -1686,9 +1723,73 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Romancia_antispoofing_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
-			{
-				Json::Value value;
+            inline Json::Value Romancia_rotate_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+            {
+                Json::Value value;
+
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+                    float angle = root["angle"].asFloat();
+
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+                        { {u8"image", box(image_span)},
+                         {u8"height", box(height)},
+                         {u8"width", box(width)},
+                         {u8"angle", box(angle)},
+                         {u8"order", box(static_cast<int>(frame->format_))},
+                         {u8"object_id", box(instance)} });
+
+                    auto result = plugin.execute(u8"romancia.rotate", param).as<param_vector<std::uint8_t>>();
+                    if (external.size() >= result.size())
+                    {
+                        //std::copy(exposing::begin(result), exposing::end(result), external.begin());
+						result.copy_to(0, { external.data(), static_cast<size_t>(result.size()) });
+                        value["result"] = Json::Value(Json::arrayValue);
+                    }
+                    else
+                    {
+                        Json::Value img_data = Json::Value(Json::arrayValue);
+                        for (auto i : result)
+                            img_data.append(i);
+                        value["result"] = Json::Value(img_data);
+                    }
+
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+
+            inline Json::Value Romancia_antispoofing_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
+            {
+                Json::Value value;
 
 				try
 				{
@@ -1709,14 +1810,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"romancia.antispoofing", param).as<param_vector<bool>>();
@@ -1841,41 +1942,65 @@ namespace glasssix
 					if (format < 0 || format > 1)
 						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: format < 0 || format > 1");
 
-					auto aligned_face_array = root["aligned_images"];
-					std::vector<uint8_t> aligned_faces_vec;
 					int num = 0;
-					std::vector<std::uint8_t> temp(gaius_forward_aligned_buffer_len, 0);
-					std::uint8_t* ptr = temp.data();
-					for (auto i : aligned_face_array)
+					param_vector<param_vector<float>> result;
+					if (data.size() && (data.size() % gaius_forward_aligned_buffer_len == 0))
 					{
-						std::string aligned_face_base64_str = i.asString();
-						if (aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len))
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len)");
+						num = data.size() / gaius_forward_aligned_buffer_len;
+						auto param = make_param_hash_map<param_string, unknown_object>(
+							{ {u8"aligned_faces", box(data)},
+							 {u8"num", box(num)},
+							 {u8"order", box(format)},
+							 {u8"has_mask", box(has_mask ? 1 : 0)},
+							 {u8"object_id", box(instance)} });
 
-						size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
-						if (aligned_face_decode_len != gaius_forward_aligned_buffer_len)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != gaius_forward_aligned_buffer_len");
+						result = plugin.execute(u8"gaius.forward", param).as<param_vector<param_vector<float>>>();
+					}
+					else
+					{
+						auto aligned_face_array = root["aligned_images"];
+						std::vector<uint8_t> aligned_faces_vec;
+						std::vector<uint8_t> temp(gaius_forward_aligned_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						for (auto i : aligned_face_array)
+						{
+							std::string aligned_face_base64_str = i.asString();
+							if (aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len))
+								throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len)");
 
-						aligned_faces_vec.insert(aligned_faces_vec.end(), ptr, ptr + gaius_forward_aligned_buffer_len);
-						num++;
+							size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
+							if (aligned_face_decode_len != gaius_forward_aligned_buffer_len)
+								throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != gaius_forward_aligned_buffer_len");
+
+							aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
+							num++;
+						}
+
+						auto param = make_param_hash_map<param_string, unknown_object>(
+							{ {u8"aligned_faces", box(param_span<std::uint8_t>{aligned_faces_vec})},
+							 {u8"num", box(num)},
+							 {u8"order", box(format)},
+							 {u8"has_mask", box(has_mask ? 1 : 0)},
+							 {u8"object_id", box(instance)} });
+
+						result = plugin.execute(u8"gaius.forward", param).as<param_vector<param_vector<float>>>();
 					}
 
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
-						 {u8"num", box(num)},
-						 {u8"order", box(format)},
-						 {u8"has_mask", box(has_mask ? 1 : 0)},
-						 {u8"object_id", box(instance)} });
-
-					auto result = plugin.execute(u8"gaius.forward", param).as<param_vector<param_vector<float>>>();
-
 					Json::Value jobj_features = Json::Value(Json::arrayValue);
-					for (size_t i = 0; i < result.size(); i++)
+					if (external.size() >= num * gaius_forward_aligned_buffer_len * sizeof(float))
 					{
-						Json::Value jarray_feature;
-						for (size_t j = 0; j < result[i].size(); j++)
-							jarray_feature["feature"].append(result[i][j]);
-						jobj_features.append(jarray_feature);
+						for (size_t i = 0; i < result.size(); i++)
+							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * gaius_forward_aligned_buffer_len, gaius_forward_aligned_buffer_len });
+					}
+					else
+					{
+						for (size_t i = 0; i < result.size(); i++)
+						{
+							Json::Value jarray_feature;
+							for (size_t j = 0; j < result[i].size(); j++)
+								jarray_feature["feature"].append(result[i][j]);
+							jobj_features.append(jarray_feature);
+						}
 					}
 
 					value["features"] = jobj_features;
@@ -1910,63 +2035,110 @@ namespace glasssix
 			{
 				Json::Value value;
 
-				std::uint8_t mask[64 * 128] = { 0 };
 				try
 				{
 					int format = root["format"].asInt();
 					if (format < 0 || format > 1)
 						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: format < 0 || format > 1");
 
-					auto aligned_face_array = root["aligned_images"];
-					std::vector<uint8_t> aligned_faces_vec;
+					std::uint8_t mask[64 * 128] = { 0 };
 					int num = 0;
-					std::vector<std::uint8_t> temp(gaius_forward_aligned_buffer_len, 0);
-					std::uint8_t* ptr = temp.data();
-					for (auto i : aligned_face_array)
+					param_vector<param_vector<float>> result;
+					if (data.size() && (data.size() % gaius_forward_aligned_buffer_len == 0))
 					{
-						std::string aligned_face_base64_str = i.asString();
-						if (aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len))
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len)");
-
-						size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
-						if (aligned_face_decode_len != gaius_forward_aligned_buffer_len)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != gaius_forward_aligned_buffer_len");
-
+						num = data.size() / gaius_forward_aligned_buffer_len;
+						std::vector<std::uint8_t> temp(num * gaius_forward_aligned_buffer_len, 0);
+						std::copy(data.begin(), data.end(), temp.begin());
+						std::uint8_t* ptr = temp.data();
 						if (format == 0)
 						{
-							for (size_t j = 0; j < 3; j++)
+							for (int i = 0; i < num; i++)
 							{
-								std::copy(mask, mask + 64 * 128, ptr + j * 128 * 128 + 64 * 128);
+								for (int j = 0; j < 3; j++)
+								{
+									std::copy(mask, mask + 64 * 128, ptr + i * gaius_forward_aligned_buffer_len + j * 128 * 128 + 64 * 128);
+								}
 							}
 						}
 						else
 						{
-							for (size_t j = 0; j < 3; j++)
+							for (int i = 0; i < num; i++)
 							{
-								std::copy(mask, mask + 64 * 128, ptr + 3 * 64 * 128 + j * 64 * 128);
+								for (int j = 0; j < 3; j++)
+								{
+									std::copy(mask, mask + 64 * 128, ptr + i * gaius_forward_aligned_buffer_len + 3 * 64 * 128 + j * 64 * 128);
+								}
 							}
 						}
 
-						aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
-						num++;
+						auto param = make_param_hash_map<param_string, unknown_object>(
+							{ {u8"aligned_faces", box(param_span<std::uint8_t>{temp})},
+							 {u8"num", box(num)},
+							 {u8"order", box(format)},
+							 {u8"has_mask", box(1)},
+							 {u8"object_id", box(instance)} });
+
+						result = plugin.execute(u8"gaius.forward", param).as<param_vector<param_vector<float>>>();
+					}
+					else
+					{
+						auto aligned_face_array = root["aligned_images"];
+						std::vector<std::uint8_t> temp(gaius_forward_aligned_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						std::vector<uint8_t> aligned_faces_vec;
+						for (auto i : aligned_face_array)
+						{
+							std::string aligned_face_base64_str = i.asString();
+							if (aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len))
+								throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len)");
+
+							size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
+							if (aligned_face_decode_len != gaius_forward_aligned_buffer_len)
+								throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != gaius_forward_aligned_buffer_len");
+
+							if (format == 0)
+							{
+								for (size_t j = 0; j < 3; j++)
+								{
+									std::copy(mask, mask + 64 * 128, ptr + j * 128 * 128 + 64 * 128);
+								}
+							}
+							else
+							{
+								for (size_t j = 0; j < 3; j++)
+								{
+									std::copy(mask, mask + 64 * 128, ptr + 3 * 64 * 128 + j * 64 * 128);
+								}
+							}
+							aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
+							num++;
+						}
+
+						auto param = make_param_hash_map<param_string, unknown_object>(
+							{ {u8"aligned_faces", box(param_span<std::uint8_t>{aligned_faces_vec})},
+							 {u8"num", box(num)},
+							 {u8"order", box(format)},
+							 {u8"has_mask", box(1)},
+							 {u8"object_id", box(instance)} });
+
+						result = plugin.execute(u8"gaius.forward", param).as<param_vector<param_vector<float>>>();
 					}
 
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
-						 {u8"num", box(num)},
-						 {u8"order", box(format)},
-						 {u8"has_mask", box(1)},
-						 {u8"object_id", box(instance)} });
-
-					auto result = plugin.execute(u8"gaius.forward", param).as<param_vector<param_vector<float>>>();
-
-					Json::Value jobj_features;
-					for (size_t i = 0; i < result.size(); i++)
+					Json::Value jobj_features = Json::Value(Json::arrayValue);
+					if (external.size() >= num * gaius_forward_aligned_buffer_len * sizeof(float))
 					{
-						Json::Value jarray_feature;
-						for (size_t j = 0; j < result[i].size(); j++)
-							jarray_feature["feature"].append(result[i][j]);
-						jobj_features.append(jarray_feature);
+						for (size_t i = 0; i < result.size(); i++)
+							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * gaius_forward_aligned_buffer_len, gaius_forward_aligned_buffer_len });
+					}
+					else
+					{
+						for (size_t i = 0; i < result.size(); i++)
+						{
+							Json::Value jarray_feature;
+							for (size_t j = 0; j < result[i].size(); j++)
+								jarray_feature["feature"].append(result[i][j]);
+							jobj_features.append(jarray_feature);
+						}
 					}
 
 					value["features"] = jobj_features;
@@ -2086,12 +2258,11 @@ namespace glasssix
 						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: format < 0 || format > 1");
 
 					int num = 0;
-					exposing::param_hash_map<param_string, unknown_object> param;
 					param_vector<param_vector<float>> result;
 					if (data.size() && (data.size() % cassius_forward_aligned_buffer_len == 0))
 					{
 						num = data.size() / cassius_forward_aligned_buffer_len;
-						param = make_param_hash_map<param_string, unknown_object>(
+						auto param = make_param_hash_map<param_string, unknown_object>(
 							{ {u8"aligned_faces", box(data)},
 							 {u8"num", box(num)},
 							 {u8"order", box(format)},
@@ -2119,23 +2290,19 @@ namespace glasssix
 							num++;
 						}
 
-						param = make_param_hash_map<param_string, unknown_object>(
-							{ {u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
+						auto param = make_param_hash_map<param_string, unknown_object>(
+							{ {u8"aligned_faces", box(param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
 							 {u8"num", box(num)},
 							 {u8"order", box(format)},
 							 {u8"object_id", box(instance)} });
 						result = plugin.execute(u8"cassius.forward", param).as<param_vector<param_vector<float>>>();
 					}
 
-					bool save2external = false;
-					if (external.size() >= num * 512 * sizeof(float))
-						save2external = true;
-
 					Json::Value jobj_features = Json::Value(Json::arrayValue);
-					if (save2external)
+					if (external.size() >= num * cassius_forward_aligned_buffer_len * sizeof(float))
 					{
 						for (size_t i = 0; i < result.size(); i++)
-							std::copy(begin(result[i]), end(result[i]), reinterpret_cast<float*>(external.begin()) + i * 512);
+							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * cassius_forward_aligned_buffer_len, cassius_forward_aligned_buffer_len });
 					}
 					else
 					{
@@ -2309,40 +2476,62 @@ namespace glasssix
 					if (format < 0 || format > 1)
 						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: format < 0 || format > 1");
 
-					auto aligned_face_array = root["aligned_images"];
-					std::vector<uint8_t> aligned_faces_vec;
 					int num = 0;
-					std::vector<std::uint8_t> temp(selene_forward_aligned_buffer_len, 0);
-					std::uint8_t* ptr = temp.data();
-					for (auto i : aligned_face_array)
+					param_vector<param_vector<float>> result;
+					if (data.size() && (data.size() % selene_forward_aligned_buffer_len == 0))
 					{
-						std::string aligned_face_base64_str = i.asString();
-						if (aligned_face_base64_str.size() != TB64ENCLEN(selene_forward_aligned_buffer_len))
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(selene_forward_aligned_buffer_len)");
+						num = data.size() / selene_forward_aligned_buffer_len;
+						auto param = make_param_hash_map<param_string, unknown_object>(
+							{ {u8"aligned_faces", box(data)},
+							 {u8"num", box(num)},
+							 {u8"order", box(format)},
+							 {u8"object_id", box(instance)} });
 
-						size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
-						if (aligned_face_decode_len != selene_forward_aligned_buffer_len)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != selene_forward_aligned_buffer_len");
+						result = plugin.execute(u8"selene.forward", param).as<param_vector<param_vector<float>>>();
+					}
+					else
+					{
+						auto aligned_face_array = root["aligned_images"];
+						std::vector<uint8_t> aligned_faces_vec;
+						std::vector<uint8_t> temp(selene_forward_aligned_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						for (auto i : aligned_face_array)
+						{
+							std::string aligned_face_base64_str = i.asString();
+							if (aligned_face_base64_str.size() != TB64ENCLEN(selene_forward_aligned_buffer_len))
+								throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(selene_forward_aligned_buffer_len)");
 
-						aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
-						num++;
+							size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
+							if (aligned_face_decode_len != selene_forward_aligned_buffer_len)
+								throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != selene_forward_aligned_buffer_len");
+
+							aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
+							num++;
+						}
+
+						auto param = make_param_hash_map<param_string, unknown_object>(
+							{ {u8"aligned_faces", box(param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
+							 {u8"num", box(num)},
+							 {u8"order", box(format)},
+							 {u8"object_id", box(instance)} });
+						result = plugin.execute(u8"selene.forward", param).as<param_vector<param_vector<float>>>();
 					}
 
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
-						 {u8"num", box(num)},
-						 {u8"order", box(format)},
-						 {u8"object_id", box(instance)} });
-
-					auto result = plugin.execute(u8"selene.forward", param).as<param_vector<param_vector<float>>>();
-
 					Json::Value jobj_features = Json::Value(Json::arrayValue);
-					for (size_t i = 0; i < result.size(); i++)
+					if (external.size() >= num * selene_forward_aligned_buffer_len * sizeof(float))
 					{
-						Json::Value jarray_feature;
-						for (size_t j = 0; j < result[i].size(); j++)
-							jarray_feature["feature"].append(result[i][j]);
-						jobj_features.append(jarray_feature);
+						for (size_t i = 0; i < result.size(); i++)
+							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * selene_forward_aligned_buffer_len, selene_forward_aligned_buffer_len });
+					}
+					else
+					{
+						for (size_t i = 0; i < result.size(); i++)
+						{
+							Json::Value jarray_feature;
+							for (size_t j = 0; j < result[i].size(); j++)
+								jarray_feature["feature"].append(result[i][j]);
+							jobj_features.append(jarray_feature);
+						}
 					}
 
 					value["features"] = jobj_features;
@@ -2376,67 +2565,117 @@ namespace glasssix
 			inline Json::Value Selene_make_mask_forward_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
-
-				std::uint8_t mask[64 * 128] = { 0 };
+				
 				try
 				{
 					int format = root["format"].asInt();
 					if (format < 0 || format > 1)
 						throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: format < 0 || format > 1");
 
-					auto aligned_face_array = root["aligned_images"];
-					std::vector<uint8_t> aligned_faces_vec;
+					std::uint8_t mask[64 * 128] = { 0 };
 					int num = 0;
-					std::vector<std::uint8_t> temp(selene_forward_aligned_buffer_len, 0);
-					std::uint8_t* ptr = temp.data();
-					for (auto i : aligned_face_array)
+					param_vector<param_vector<float>> result;
+					if (data.size() && (data.size() % selene_forward_aligned_buffer_len == 0))
 					{
-						std::string aligned_face_base64_str = i.asString();
-						if (aligned_face_base64_str.size() != TB64ENCLEN(selene_forward_aligned_buffer_len))
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(gaius_forward_aligned_buffer_len)");
-
-						size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
-						if (aligned_face_decode_len != selene_forward_aligned_buffer_len)
-							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != gaius_forward_aligned_buffer_len");
-
+						num = data.size() / selene_forward_aligned_buffer_len;
+						std::vector<std::uint8_t> temp(num * selene_forward_aligned_buffer_len, 0);
+						std::copy(data.begin(), data.end(), temp.begin());
+						std::uint8_t* ptr = temp.data();
 						if (format == 0)
 						{
-							for (size_t j = 0; j < 3; j++)
+							for (int i = 0; i < num; i++)
 							{
-								std::copy(mask, mask + 64 * 128, ptr + j * 128 * 128 + 64 * 128);
+								for (int j = 0; j < 3; j++)
+								{
+									std::copy(mask, mask + 64 * 128, ptr + i * selene_forward_aligned_buffer_len + j * 128 * 128 + 64 * 128);
+								}
 							}
 						}
 						else
 						{
-							for (size_t j = 0; j < 3; j++)
+							for (int i = 0; i < num; i++)
 							{
-								std::copy(mask, mask + 64 * 128, ptr + 3 * 64 * 128 + j * 64 * 128);
+								for (int j = 0; j < 3; j++)
+								{
+									std::copy(mask, mask + 64 * 128, ptr + i * selene_forward_aligned_buffer_len + 3 * 64 * 128 + j * 64 * 128);
+								}
 							}
 						}
 
-						aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
-						num++;
+						auto param = make_param_hash_map<param_string, unknown_object>(
+							{ {u8"aligned_faces", box(param_span<std::uint8_t>{temp})},
+							 {u8"num", box(num)},
+							 {u8"order", box(format)},
+							 {u8"object_id", box(instance)} });
+
+						std::int32_t model_type = unbox<std::int32_t>(plugin.execute(u8"selene.get_model_type", param));
+						if (model_type != 2)
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_OPERATION, "Illegal operation. model_type != 2");
+
+						result = plugin.execute(u8"selene.forward", param).as<param_vector<param_vector<float>>>();
+					}
+					else
+					{
+						auto aligned_face_array = root["aligned_images"];
+						std::vector<std::uint8_t> temp(selene_forward_aligned_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						std::vector<uint8_t> aligned_faces_vec;
+						for (auto i : aligned_face_array)
+						{
+							std::string aligned_face_base64_str = i.asString();
+							if (aligned_face_base64_str.size() != TB64ENCLEN(selene_forward_aligned_buffer_len))
+								throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Error: aligned_face_base64_str.size() != TB64ENCLEN(selene_forward_aligned_buffer_len)");
+
+							size_t aligned_face_decode_len = tb64xdec(reinterpret_cast<const std::uint8_t*>(aligned_face_base64_str.data()), aligned_face_base64_str.size(), ptr);
+							if (aligned_face_decode_len != selene_forward_aligned_buffer_len)
+								throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "aligned_face_decode_len != selene_forward_aligned_buffer_len");
+
+							if (format == 0)
+							{
+								for (size_t j = 0; j < 3; j++)
+								{
+									std::copy(mask, mask + 64 * 128, ptr + j * 128 * 128 + 64 * 128);
+								}
+							}
+							else
+							{
+								for (size_t j = 0; j < 3; j++)
+								{
+									std::copy(mask, mask + 64 * 128, ptr + 3 * 64 * 128 + j * 64 * 128);
+								}
+							}
+							aligned_faces_vec.insert(aligned_faces_vec.end(), temp.begin(), temp.end());
+							num++;
+						}
+
+						auto param = make_param_hash_map<param_string, unknown_object>(
+							{ {u8"aligned_faces", box(param_span<std::uint8_t>{aligned_faces_vec})},
+							 {u8"num", box(num)},
+							 {u8"order", box(format)},
+							 {u8"object_id", box(instance)} });
+
+						std::int32_t model_type = unbox<std::int32_t>(plugin.execute(u8"selene.get_model_type", param));
+						if (model_type != 2)
+							throw parser_exception(parser_exception::parser_exception_code::INVALID_OPERATION, "Illegal operation. model_type != 2");
+						
+						result = plugin.execute(u8"selene.forward", param).as<param_vector<param_vector<float>>>();
 					}
 
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"aligned_faces", box(exposing::param_span<std::uint8_t>{aligned_faces_vec.data(), aligned_faces_vec.size()})},
-						 {u8"num", box(num)},
-						 {u8"order", box(format)},
-						 {u8"object_id", box(instance)} });
-
-					std::int32_t model_type = unbox<std::int32_t>(plugin.execute(u8"selene.get_model_type", param));
-					if (model_type != 2)
-						throw parser_exception(parser_exception::parser_exception_code::INVALID_OPERATION, "Illegal operation. model_type != 2");
-
-					auto result = plugin.execute(u8"selene.forward", param).as<param_vector<param_vector<float>>>();
-
-					Json::Value jobj_features;
-					for (size_t i = 0; i < result.size(); i++)
+					Json::Value jobj_features = Json::Value(Json::arrayValue);
+					if (external.size() >= num * selene_forward_aligned_buffer_len * sizeof(float))
 					{
-						Json::Value jarray_feature;
-						for (size_t j = 0; j < result[i].size(); j++)
-							jarray_feature["feature"].append(result[i][j]);
-						jobj_features.append(jarray_feature);
+						for (size_t i = 0; i < result.size(); i++)
+							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * selene_forward_aligned_buffer_len, selene_forward_aligned_buffer_len });
+					}
+					else
+					{
+						for (size_t i = 0; i < result.size(); i++)
+						{
+							Json::Value jarray_feature;
+							for (size_t j = 0; j < result[i].size(); j++)
+								jarray_feature["feature"].append(result[i][j]);
+							jobj_features.append(jarray_feature);
+						}
 					}
 
 					value["features"] = jobj_features;
@@ -2566,14 +2805,14 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = plugin.execute(u8"damocles.spoofing_detect", param).as<param_vector<param_vector<float>>>();
@@ -2633,7 +2872,7 @@ namespace glasssix
 					face.set_height(root["facerect"]["height"].asFloat());
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
@@ -2641,7 +2880,7 @@ namespace glasssix
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"face", face},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
 					auto result = unbox<bool>(plugin.execute(u8"damocles.presentation_attack_detect", param));
@@ -2762,7 +3001,7 @@ namespace glasssix
 				{
 					auto param = make_param_hash_map<param_string, unknown_object>();
 
-					value["result"] = unbox<std::uint64_t>(plugin.execute(u8"irisviel.record_count", param));
+					value["result"] = static_cast<Json::UInt64>(unbox<std::uint64_t>(plugin.execute(u8"irisviel.record_count", param)));
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
@@ -3401,25 +3640,26 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto romancia_param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(guids[0])} });
 
 					auto romancia_result = plugin.execute(u8"romancia.alignFace128", romancia_param).as<param_vector<param_vector<std::uint8_t>>>();
 
-					std::vector<std::uint8_t> buffer;
+					std::vector<std::uint8_t> buffer(romancia_result.size() * gaius_forward_aligned_buffer_len);
 					for (size_t i = 0; i < romancia_result.size(); i++)
 					{
 						if (romancia_result[i].size() != gaius_forward_aligned_buffer_len)
 							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "romancia_result[i].size() != gaius_forward_aligned_buffer_len");
 
-						buffer.insert(buffer.end(), begin(romancia_result[i]), end(romancia_result[i]));
+						romancia_result[i].copy_to(0, {buffer.data() + i * gaius_forward_aligned_buffer_len, gaius_forward_aligned_buffer_len });
+						//buffer.insert(buffer.end(), begin(romancia_result[i]), end(romancia_result[i]));
 					}
 
 					auto gaius_param = make_param_hash_map<param_string, unknown_object>(
@@ -3431,13 +3671,21 @@ namespace glasssix
 
 					auto gaius_result = plugin.execute(u8"gaius.forward", gaius_param).as<param_vector<param_vector<float>>>();
 
-					Json::Value jobj_features;
-					for (size_t i = 0; i < gaius_result.size(); i++)
+					Json::Value jobj_features = Json::Value(Json::arrayValue);
+					if (external.size() >= gaius_result.size() * gaius_forward_aligned_buffer_len * sizeof(float))
 					{
-						Json::Value jarray_feature;
-						for (size_t j = 0; j < gaius_result[i].size(); j++)
-							jarray_feature["feature"].append(gaius_result[i][j]);
-						jobj_features.append(jarray_feature);
+						for (size_t i = 0; i < gaius_result.size(); i++)
+							gaius_result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * gaius_forward_aligned_buffer_len, gaius_forward_aligned_buffer_len });
+					}
+					else
+					{
+						for (size_t i = 0; i < gaius_result.size(); i++)
+						{
+							Json::Value jarray_feature;
+							for (size_t j = 0; j < gaius_result[i].size(); j++)
+								jarray_feature["feature"].append(gaius_result[i][j]);
+							jobj_features.append(jarray_feature);
+						}
 					}
 
 					value["features"] = jobj_features;
@@ -3503,25 +3751,26 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto romancia_param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(guids[0])} });
 
 					auto romancia_result = plugin.execute(u8"romancia.alignFace", romancia_param).as<param_vector<param_vector<std::uint8_t>>>();
 
-					std::vector<std::uint8_t> buffer;
+					std::vector<std::uint8_t> buffer(romancia_result.size() * selene_forward_aligned_buffer_len);
 					for (size_t i = 0; i < romancia_result.size(); i++)
 					{
 						if (romancia_result[i].size() != selene_forward_aligned_buffer_len)
 							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "romancia_result[i].size() != selene_forward_aligned_buffer_len");
-
-						buffer.insert(buffer.end(), begin(romancia_result[i]), end(romancia_result[i]));
+						
+						romancia_result[i].copy_to(0, { buffer.data() + i * selene_forward_aligned_buffer_len, selene_forward_aligned_buffer_len });
+						//buffer.insert(buffer.end(), begin(romancia_result[i]), end(romancia_result[i]));
 					}
 
 					auto selene_param = make_param_hash_map<param_string, unknown_object>(
@@ -3532,13 +3781,21 @@ namespace glasssix
 
 					auto selene_result = plugin.execute(u8"selene.forward", selene_param).as<param_vector<param_vector<float>>>();
 
-					Json::Value jobj_features;
-					for (size_t i = 0; i < selene_result.size(); i++)
+					Json::Value jobj_features = Json::Value(Json::arrayValue);
+					if (external.size() >= selene_result.size() * selene_forward_aligned_buffer_len * sizeof(float))
 					{
-						Json::Value jarray_feature;
-						for (size_t j = 0; j < selene_result[i].size(); j++)
-							jarray_feature["feature"].append(selene_result[i][j]);
-						jobj_features.append(jarray_feature);
+						for (size_t i = 0; i < selene_result.size(); i++)
+							selene_result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * selene_forward_aligned_buffer_len, selene_forward_aligned_buffer_len });
+					}
+					else
+					{
+						for (size_t i = 0; i < selene_result.size(); i++)
+						{
+							Json::Value jarray_feature;
+							for (size_t j = 0; j < selene_result[i].size(); j++)
+								jarray_feature["feature"].append(selene_result[i][j]);
+							jobj_features.append(jarray_feature);
+						}
 					}
 
 					value["features"] = jobj_features;
@@ -3604,25 +3861,26 @@ namespace glasssix
 					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame.cpu_data()), frame.count());
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto romancia_param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
 						 {u8"width", box(width)},
 						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame.order()))},
+						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(guids[0])} });
 
 					auto romancia_result = plugin.execute(u8"romancia.alignFace", romancia_param).as<param_vector<param_vector<std::uint8_t>>>();
 
-					std::vector<std::uint8_t> buffer;
+					std::vector<std::uint8_t> buffer(romancia_result.size() * cassius_forward_aligned_buffer_len);
 					for (size_t i = 0; i < romancia_result.size(); i++)
 					{
 						if (romancia_result[i].size() != cassius_forward_aligned_buffer_len)
 							throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "romancia_result[i].size() != cassius_forward_aligned_buffer_len");
 
-						buffer.insert(buffer.end(), begin(romancia_result[i]), end(romancia_result[i]));
+						romancia_result[i].copy_to(0, {buffer.data()+ i * cassius_forward_aligned_buffer_len, cassius_forward_aligned_buffer_len});
+						//buffer.insert(buffer.end(), begin(romancia_result[i]), end(romancia_result[i]));
 					}
 
 					auto cassius_param = make_param_hash_map<param_string, unknown_object>(
@@ -3633,13 +3891,21 @@ namespace glasssix
 
 					auto cassius_result = plugin.execute(u8"cassius.forward", cassius_param).as<param_vector<param_vector<float>>>();
 
-					Json::Value jobj_features;
-					for (size_t i = 0; i < cassius_result.size(); i++)
+					Json::Value jobj_features = Json::Value(Json::arrayValue);
+					if (external.size() >= cassius_result.size() * cassius_forward_aligned_buffer_len * sizeof(float))
 					{
-						Json::Value jarray_feature;
-						for (size_t j = 0; j < cassius_result[i].size(); j++)
-							jarray_feature["feature"].append(cassius_result[i][j]);
-						jobj_features.append(jarray_feature);
+						for (size_t i = 0; i < cassius_result.size(); i++)
+							cassius_result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * cassius_forward_aligned_buffer_len, cassius_forward_aligned_buffer_len });
+					}
+					else
+					{
+						for (size_t i = 0; i < cassius_result.size(); i++)
+						{
+							Json::Value jarray_feature;
+							for (size_t j = 0; j < cassius_result[i].size(); j++)
+								jarray_feature["feature"].append(cassius_result[i][j]);
+							jobj_features.append(jarray_feature);
+						}
 					}
 
 					value["features"] = jobj_features;
@@ -3667,9 +3933,126 @@ namespace glasssix
 					value["status"]["code"] = Json::Int(ex.result());
 				}
 
-				return value;
-			}
-		}
-	}
+                return value;
+            }
+
+            inline Json::Value Fusion_Romancia_rotate_Longinus_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, std::vector<guid>& guids, param_span<std::uint8_t>& external)
+            {
+                Json::Value value;
+
+                try
+                {
+                    int format = root["format"].asInt();
+                    int height = root["height"].asInt();
+                    int width = root["width"].asInt();
+                    int min_size = root["min_size"].asInt();
+                    float threshold = root["threshold"].asFloat();
+                    bool do_attributing = root["do_attributing"].asBool();
+                    float angle = root["angle"].asFloat();
+
+                    auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+                    param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+                    auto romancia_param = make_param_hash_map<param_string, unknown_object>(
+                        { {u8"image", box(image_span)},
+                         {u8"height", box(height)},
+                         {u8"width", box(width)},
+                         {u8"angle", box(angle)},
+                         {u8"order", box(static_cast<int>(frame->format_))},
+                         {u8"object_id", box(guids[0])} });
+
+                    auto romancia_result = plugin.execute(u8"romancia.rotate", romancia_param).as<param_vector<std::uint8_t>>();
+
+                    if (external.size() >= romancia_result.size())
+						romancia_result.copy_to(0, { external.data(), static_cast<size_t>(romancia_result.size()) });
+
+                    int rotated_height = height;
+                    int rotated_width = width;
+                    if (angle == 90.0f || angle == 270.0f)
+                    {
+                        rotated_height = width;
+                        rotated_width = height;
+                    }
+
+                    std::vector<std::uint8_t> img_rotated(romancia_result.size());
+					romancia_result.copy_to(0, img_rotated);
+
+                    auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"image", box(param_span<std::uint8_t>{img_rotated})},
+                         {u8"height", box(rotated_height)},
+                         {u8"width", box(rotated_width)},
+                         {u8"min_size", box(min_size)},
+                         {u8"threshold", box(threshold)},
+                         {u8"order", box(1)},
+                         {u8"do_attributing", box(do_attributing)},
+                         {u8"object_id", box(guids[1])} });
+
+                    auto longinus_result = plugin.execute(u8"longinus.detect", param).as<param_vector<longinus::face_info>>();
+
+                    Json::Value jarray_rect = Json::Value(Json::arrayValue);
+
+                    for (auto obj : longinus_result)
+                    {
+                        Json::Value jobj_face;
+                        jobj_face["x"] = Json::Int(obj.x());
+                        jobj_face["y"] = Json::Int(obj.y());
+                        jobj_face["width"] = Json::Int(obj.width());
+                        jobj_face["height"] = Json::Int(obj.height());
+                        jobj_face["confidence"] = Json::Value(obj.confidence());
+
+                        if (do_attributing)
+                        {
+                            jobj_face["attributes"]["yaw"] = Json::Value(obj.yaw());
+                            jobj_face["attributes"]["pitch"] = Json::Value(obj.pitch());
+                            jobj_face["attributes"]["roll"] = Json::Value(obj.roll());
+                            jobj_face["attributes"]["glass_index"] = Json::Int(obj.glass_index());
+                            jobj_face["attributes"]["mask_index"] = Json::Int(obj.mask_index());
+                        }
+                        else
+                            jobj_face["attributes"] = Json::Value(Json::nullValue);
+
+                        Json::Value jarray_landmark;
+
+                        for (const auto& pt : obj.pts())
+                        {
+
+                            Json::Value jobj_point;
+                            jobj_point["x"] = Json::Int((int)pt.key());
+                            jobj_point["y"] = Json::Int((int)pt.value());
+                            jarray_landmark.append(jobj_point);
+                        }
+                        jobj_face["landmark"] = jarray_landmark;
+                        jarray_rect.append(jobj_face);
+                    }
+
+                    value["facerectwithfaceinfo_list"] = jarray_rect;
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+                }
+                catch (const parser_exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+                }
+                catch (const Json::Exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+                }
+                catch (const std::exception& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what());
+                    value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+                }
+                catch (const abi_error& ex)
+                {
+                    value["status"]["message"] = Json::Value(ex.what_to_narrow());
+                    value["status"]["code"] = Json::Int(ex.result());
+                }
+
+                return value;
+            }
+        }
+    }
 }
 #endif
