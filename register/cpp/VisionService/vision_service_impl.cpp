@@ -93,6 +93,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view romancia_antispoofing{ u8"romancia.antispoofing" };
 			static constexpr utf8_string_view romancia_blur_detect{ u8"romancia.blur_detect" };
 			static constexpr utf8_string_view romancia_mask_detect{ u8"romancia.mask_detect" };
+			static constexpr utf8_string_view romancia_rotate{ u8"romancia.rotate" };
 			static constexpr utf8_string_view irisviel_clear{ u8"irisviel.clear" };
 			static constexpr utf8_string_view irisviel_remove_all{ u8"irisviel.remove_all" };
 			static constexpr utf8_string_view irisviel_load_databases{ u8"irisviel.load_databases" };
@@ -166,6 +167,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::romancia_antispoofing, std::bind(&impl::romancia_antispoofing, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_blur_detect, std::bind(&impl::romancia_blur_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_mask_detect, std::bind(&impl::romancia_mask_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::romancia_rotate, std::bind(&impl::romancia_rotate, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gaius_forward, std::bind(&impl::gaius_extract_feature, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::cassius_forward, std::bind(&impl::cassius_extract_feature, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::selene_forward, std::bind(&impl::selene_extract_feature, this, std::placeholders::_1));
@@ -315,8 +317,8 @@ namespace glasssix::exposing::nessus
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::romancia, make_exported_interface<face_alignment>(/*models_directory + u8"/mask30x30", */ models_directory + u8"/antispoofing80x80", device));
-		}
+            return add_instance(package_names::romancia, make_exported_interface<face_alignment>(models_directory + u8"/antispoofing80x80", device));
+        }
 
 		unknown_object irisviel_new(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -525,14 +527,27 @@ namespace glasssix::exposing::nessus
 			return instance.mask_detect(faces, image, channels, height, width, order);
 		}
 
-		unknown_object gungnir_detect(const param_hash_map<param_string, unknown_object>& params)
-		{
-			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<yolo_net>(params);
-			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+        unknown_object romancia_rotate(const param_hash_map<param_string, unknown_object>& params)
+        {
+            constexpr std::int32_t channels = 3;
+            auto instance = get_instance<face_alignment>(params);
+            auto angle = unbox<float>(params.get_value(u8"angle"));
+            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+            return instance.rotate(angle, image, channels, height, width, order);
+        }
+
+        unknown_object gungnir_detect(const param_hash_map<param_string, unknown_object> &params)
+        {
+            constexpr std::int32_t channels = 3;
+            auto instance = get_instance<yolo_net>(params);
+            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
 			return instance.detect(image, channels, height, width, order);
 		}
