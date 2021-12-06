@@ -45,7 +45,7 @@ extern "C" EXPORT_NESSUS_LICENSE void request_license_async(request_license_asyn
 /// </summary>
 /// <param name="callback">The callback with a result</param>
 /// <param name="context">The user-defined context</param>
-extern "C" EXPORT_NESSUS_LICENSE void evaluate_license_or_rejuvenate(evaluate_license_callback_type callback, void* context = nullptr);
+extern "C" EXPORT_NESSUS_LICENSE void evaluate_license_or_rejuvenate(evaluate_license_callback_type callback, std::uint32_t timeout = 10, void* context = nullptr);
 
 /// <summary>
 /// Sets a license deadline callback.
