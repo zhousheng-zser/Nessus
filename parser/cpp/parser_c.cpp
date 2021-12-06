@@ -1,6 +1,6 @@
 #include "parser_c.hpp"
 #include "parser.hpp"
-#include "license.hpp"
+#include <vulcanus/license.hpp>
 
 #include <memory.hpp>
 
