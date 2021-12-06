@@ -27,8 +27,8 @@ if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"))
 	target_link_directories(${module_name} PRIVATE ${COMMON_LIBRARY_DIRS})
 endif()
 
-target_link_libraries(${module_name} yuv plugin_register license_client ${COMMON_LIBRARIES} Threads::Threads)
-add_dependencies(${module_name} yuv plugin_register license_client)
+target_link_libraries(${module_name} yuv plugin_register ${G6_LICENSE_LIBRARY} ${COMMON_LIBRARIES} Threads::Threads)
+add_dependencies(${module_name} yuv plugin_register)
 
 if((CMAKE_SIZEOF_VOID_P EQUAL 8) AND USE_SIMDJSON)
 	target_compile_definitions(${module_name} PRIVATE -DUSE_SIMDJSON)
