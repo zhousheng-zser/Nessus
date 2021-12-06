@@ -1,5 +1,4 @@
 #include "../parser.hpp"
-#include "license.hpp"
 
 #include <memory>
 #include <cstdlib>
@@ -10,8 +9,15 @@
 #include <jni.h>
 #include <os_context.hpp>
 
+#ifndef G6_DISABLE_LICENSE
+#include <vulcanus/license.hpp>
+#endif
+
 using namespace glasssix;
+
+#ifndef G6_DISABLE_LICENSE
 using namespace glasssix::license;
+#endif
 
 static inline std::string jstring2string(JNIEnv* env, jstring jstr)
 {
@@ -77,6 +83,7 @@ extern "C" {
 
 	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jtopic, jstring jstr_param, jbyteArray dataArray, jbyteArray externalArray)
 	{
+#ifndef G6_DISABLE_LICENSE
 		try
 		{
 			check_last_license_error();
@@ -87,6 +94,7 @@ extern "C" {
 
 			return (env->ThrowNew(class_exception.get(), ex.what_to_narrow().c_str()), nullptr);
 		}
+#endif
 
 		jclass clazz = env->GetObjectClass(thiz);
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
@@ -128,6 +136,7 @@ extern "C" {
 	{
 		std::unique_ptr<_jclass, std::function<void(jclass)>> class_exception{ env->FindClass("java/lang/Exception"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
 
+#ifndef G6_DISABLE_LICENSE
 		init_license_system(jstring2string(env, license_key).c_str());
 
 		try
@@ -138,6 +147,7 @@ extern "C" {
 		{
 			return (env->ThrowNew(class_exception.get(), ex.what_to_narrow().c_str()), nullptr);
 		}
+#endif
 
 		jclass clazz = env->GetObjectClass(thiz);
 		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
