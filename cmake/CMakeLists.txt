@@ -16,11 +16,7 @@ endif()
 
 project(Nessus C CXX)
 
-unset(WITH_JNI CACHE)
-unset(USE_SIMDJSON CACHE)
-unset(DISABLE_LICENSE CACHE)
-
-option(WITH_JNI "Compile java native interface." ON)
+option(WITH_JNI "Compile java native interface." OFF)
 option(USE_SIMDJSON "Compile and use simdjson to parse json. It can only work when compiling 64bit binary." OFF)
 option(DISABLE_LICENSE "Disable the license system." ON)
 
