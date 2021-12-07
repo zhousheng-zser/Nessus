@@ -2995,7 +2995,10 @@ namespace glasssix
 
 				try
 				{
-					auto param = make_param_hash_map<param_string, unknown_object>();
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{ u8"object_id", box(instance) }
+						});
 
 					value["result"] = static_cast<Json::UInt64>(unbox<std::uint64_t>(plugin.execute(u8"irisviel.record_count", param)));
 					value["status"]["message"] = Json::Value("OK");
@@ -3034,6 +3037,7 @@ namespace glasssix
 					auto key = root["key"].asString();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
+							{ u8"object_id", box(instance) },
 							{ u8"key", box(to_param_string(key)) },
 						});
 
@@ -3074,6 +3078,7 @@ namespace glasssix
 					auto key = root["key"].asString();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
+							{ u8"object_id", box(instance) },
 							{ u8"key", box(to_param_string(key)) },
 						});
 
