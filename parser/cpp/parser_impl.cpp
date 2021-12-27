@@ -313,7 +313,7 @@ namespace glasssix::exposing::nessus
 						value["instance_guid"] = Json::Value(std::string(array.begin(), array.end()));
 					}
 				}
-				else
+				else if(str_vec.size() == 2)
 				{
 					std::string instance_guid = "";
 					try
@@ -346,6 +346,12 @@ namespace glasssix::exposing::nessus
 					if (method == "delete")
 						::malloc_trim(0);
 #endif
+				}
+				else
+				{
+					value["status"] = Json::Value("topic illegal");
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
+					return to_param_string(writer.write(value));
 				}
 			}
 
@@ -530,7 +536,6 @@ namespace glasssix::exposing::nessus
 		protocol_map["romancia.alignface128"] = &Romancia_alignFace_128_json;
 		protocol_map["romancia.alignface"] = &Romancia_alignFace_json;
 		protocol_map["romancia.blur_detect"] = &Romancia_blur_detect_json;
-		protocol_map["romancia.antispoofing"] = &Romancia_antispoofing_json;
 		protocol_map["romancia.mask_detect"] = &Romancia_mask_detect_json;
 		protocol_map["romancia.rotate"] = &Romancia_rotate_json;
 		protocol_map["gaius.new"] = &Gaius_new_json;
