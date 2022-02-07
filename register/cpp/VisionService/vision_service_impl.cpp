@@ -90,7 +90,6 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view damocles_presentation_attack_detect{ u8"damocles.presentation_attack_detect" };
 			static constexpr utf8_string_view romancia_align_face_128{ u8"romancia.alignFace128" };
 			static constexpr utf8_string_view romancia_align_face{ u8"romancia.alignFace" };
-			static constexpr utf8_string_view romancia_antispoofing{ u8"romancia.antispoofing" };
 			static constexpr utf8_string_view romancia_blur_detect{ u8"romancia.blur_detect" };
 			static constexpr utf8_string_view romancia_mask_detect{ u8"romancia.mask_detect" };
 			static constexpr utf8_string_view romancia_rotate{ u8"romancia.rotate" };
@@ -164,7 +163,6 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::longinus_center_scale_align_face, std::bind(&impl::longinus_center_scale_align_face, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_align_face_128, std::bind(&impl::romancia_align_face_128, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_align_face, std::bind(&impl::romancia_align_face, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::romancia_antispoofing, std::bind(&impl::romancia_antispoofing, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_blur_detect, std::bind(&impl::romancia_blur_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_mask_detect, std::bind(&impl::romancia_mask_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::romancia_rotate, std::bind(&impl::romancia_rotate, this, std::placeholders::_1));
@@ -317,7 +315,7 @@ namespace glasssix::exposing::nessus
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-            return add_instance(package_names::romancia, make_exported_interface<face_alignment>(models_directory + u8"/antispoofing80x80", device));
+            return add_instance(package_names::romancia, make_exported_interface<face_alignment>(models_directory + u8"/blur_detection_best.racy", device));
         }
 
 		unknown_object irisviel_new(const param_hash_map<param_string, unknown_object>& params)
@@ -620,19 +618,6 @@ namespace glasssix::exposing::nessus
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 
 			return instance.update(image, width, height);
-		}
-
-		unknown_object romancia_antispoofing(const param_hash_map<param_string, unknown_object>& params)
-		{
-			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<face_alignment>(params);
-			auto faces = params.get_value(u8"faces").as<param_vector<face_info>>();
-			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
-
-			return instance.antispoofing(faces, image, channels, height, width, order);
 		}
 
 		void irisviel_clear(const param_hash_map<param_string, unknown_object>& params)

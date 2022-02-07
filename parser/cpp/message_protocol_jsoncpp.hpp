@@ -1068,7 +1068,7 @@ namespace glasssix
 						Json::Value jarray_points = Json::Value(Json::arrayValue);
 						// location
 						auto location = box.location();
-						for (size_t i = 0; i < 4; i++)
+						for (size_t i = 0; i < location.size() / 2; i++)
 						{
 							Json::Value point;
 							point["x"] = Json::Int(location[i * 2]);
@@ -1086,6 +1086,21 @@ namespace glasssix
 						jobj_box["strinfo"] = jarray_strinfo;
 						// angle
 						jobj_box["angle"] = Json::Value(box.angle());
+
+						jobj_box["cut_roi"] = Json::Value(Json::arrayValue);
+						
+						auto cut_roi = box.cut_roi();
+						std::vector<std::uint8_t> temp(TB64ENCLEN(cut_roi.size()), 0);
+						std::uint8_t* ptr = temp.data();
+						std::vector<std::uint8_t> buffer(cut_roi.size());
+						cut_roi.copy_to(0, buffer);
+
+						size_t base64_len = tb64xenc(buffer.data(), buffer.size(), ptr);
+
+						jobj_box["cut_roi"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + base64_len));
+
+						jobj_box["cut_roi_width"] = Json::Value(box.cut_roi_width());
+						jobj_box["cut_roi_height"] = Json::Value(box.cut_roi_height());
 
 						jarray_boxes.append(jobj_box);
 					}
@@ -1612,7 +1627,7 @@ namespace glasssix
 						 {u8"order", box(static_cast<int>(frame->format_))},
 						 {u8"object_id", box(instance)} });
 
-					auto result = plugin.execute(u8"romancia.blur_detect", param).as<param_vector<double>>();
+					auto result = plugin.execute(u8"romancia.blur_detect", param).as<param_vector<float>>();
 
 					Json::Value clarity = Json::Value(Json::arrayValue);
 					for (auto i : result)
@@ -1783,72 +1798,6 @@ namespace glasssix
                 return value;
             }
 
-            inline Json::Value Romancia_antispoofing_json(plugin_interface &plugin, Json::Value &root, param_span<std::uint8_t> &data, guid &instance, param_span<std::uint8_t> &external)
-            {
-                Json::Value value;
-
-				try
-				{
-					int format = root["format"].asInt();
-					int height = root["height"].asInt();
-					int width = root["width"].asInt();
-
-					Json::Value facerect_list = root["facerect_list"];
-					auto faces = make_param_vector<longinus::face_info>();
-					for (auto& i : facerect_list)
-					{
-						auto face = make_exported_interface<longinus::face_info>();
-						face.set_x(i["x"].asFloat());
-						face.set_y(i["y"].asFloat());
-						face.set_width(i["width"].asFloat());
-						face.set_height(i["height"].asFloat());
-						faces.push_back(face);
-					}
-
-					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
-					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
-
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"image", box(image_span)},
-						 {u8"height", box(height)},
-						 {u8"width", box(width)},
-						 {u8"faces", faces},
-						 {u8"order", box(static_cast<int>(frame->format_))},
-						 {u8"object_id", box(instance)} });
-
-					auto result = plugin.execute(u8"romancia.antispoofing", param).as<param_vector<bool>>();
-					Json::Value is_alive = Json::Value(Json::arrayValue);
-					for (auto i : result)
-						is_alive.append(i);
-
-					value["is_alive"] = Json::Value(is_alive);
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-				}
-				catch (const parser_exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
-				}
-				catch (const Json::Exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-				}
-				catch (const std::exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
-				}
-				catch (const abi_error& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what_to_narrow());
-					value["status"]["code"] = Json::Int(ex.result());
-				}
-
-				return value;
-			}
-
 			inline Json::Value Gaius_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -1983,10 +1932,10 @@ namespace glasssix
 					}
 
 					Json::Value jobj_features = Json::Value(Json::arrayValue);
-					if (external.size() >= num * gaius_forward_aligned_buffer_len * sizeof(float))
+					if (external.size() >= num * 128 * sizeof(float))
 					{
 						for (size_t i = 0; i < result.size(); i++)
-							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * gaius_forward_aligned_buffer_len, gaius_forward_aligned_buffer_len });
+							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * 128, 128 });
 					}
 					else
 					{
@@ -2295,10 +2244,10 @@ namespace glasssix
 					}
 
 					Json::Value jobj_features = Json::Value(Json::arrayValue);
-					if (external.size() >= num * cassius_forward_aligned_buffer_len * sizeof(float))
+					if (external.size() >= num * 512 * sizeof(float))
 					{
 						for (size_t i = 0; i < result.size(); i++)
-							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * cassius_forward_aligned_buffer_len, cassius_forward_aligned_buffer_len });
+							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * 512, 512 });
 					}
 					else
 					{
@@ -2514,10 +2463,10 @@ namespace glasssix
 					}
 
 					Json::Value jobj_features = Json::Value(Json::arrayValue);
-					if (external.size() >= num * selene_forward_aligned_buffer_len * sizeof(float))
+					if (external.size() >= num * 256 * sizeof(float))
 					{
 						for (size_t i = 0; i < result.size(); i++)
-							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * selene_forward_aligned_buffer_len, selene_forward_aligned_buffer_len });
+							result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * 256, 256 });
 					}
 					else
 					{
@@ -3673,10 +3622,10 @@ namespace glasssix
 					auto gaius_result = plugin.execute(u8"gaius.forward", gaius_param).as<param_vector<param_vector<float>>>();
 
 					Json::Value jobj_features = Json::Value(Json::arrayValue);
-					if (external.size() >= gaius_result.size() * gaius_forward_aligned_buffer_len * sizeof(float))
+					if (external.size() >= gaius_result.size() * 128 * sizeof(float))
 					{
 						for (size_t i = 0; i < gaius_result.size(); i++)
-							gaius_result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * gaius_forward_aligned_buffer_len, gaius_forward_aligned_buffer_len });
+							gaius_result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * 128, 128 });
 					}
 					else
 					{
@@ -3783,10 +3732,10 @@ namespace glasssix
 					auto selene_result = plugin.execute(u8"selene.forward", selene_param).as<param_vector<param_vector<float>>>();
 
 					Json::Value jobj_features = Json::Value(Json::arrayValue);
-					if (external.size() >= selene_result.size() * selene_forward_aligned_buffer_len * sizeof(float))
+					if (external.size() >= selene_result.size() * 256 * sizeof(float))
 					{
 						for (size_t i = 0; i < selene_result.size(); i++)
-							selene_result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * selene_forward_aligned_buffer_len, selene_forward_aligned_buffer_len });
+							selene_result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * 256, 256 });
 					}
 					else
 					{
@@ -3893,10 +3842,10 @@ namespace glasssix
 					auto cassius_result = plugin.execute(u8"cassius.forward", cassius_param).as<param_vector<param_vector<float>>>();
 
 					Json::Value jobj_features = Json::Value(Json::arrayValue);
-					if (external.size() >= cassius_result.size() * cassius_forward_aligned_buffer_len * sizeof(float))
+					if (external.size() >= cassius_result.size() * 512 * sizeof(float))
 					{
 						for (size_t i = 0; i < cassius_result.size(); i++)
-							cassius_result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * cassius_forward_aligned_buffer_len, cassius_forward_aligned_buffer_len });
+							cassius_result[i].copy_to(0, { reinterpret_cast<float*>(external.data()) + i * 512, 512 });
 					}
 					else
 					{
