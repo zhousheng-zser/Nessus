@@ -128,6 +128,7 @@ namespace glasssix
 				return dst;
 			}
 
+
 			inline Json::Value Longinus_new_json(plugin_interface &plugin, simdjson::dom::element& root, param_span<std::uint8_t>& data, guid &instance)
 			{
 				Json::Value value;

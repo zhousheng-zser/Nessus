@@ -16,6 +16,7 @@
 #include <valklyrs/yolov5s_net.hpp>
 #include <heimdall/material_code.hpp>
 #include <banshee/kcf_tracker.hpp>
+#include <ring/material_code.hpp>
 
 #include <iostream>
 
@@ -50,10 +51,14 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view valklyrs{ u8"valklyrs" };
 			static constexpr utf8_string_view heimdall{ u8"heimdall" };
 			static constexpr utf8_string_view banshee{ u8"banshee" };
+			static constexpr utf8_string_view ring{ u8"ring" };
 		};
 
 		struct function_names final
 		{
+			static constexpr utf8_string_view ring_new{ u8"ring.new" };
+			static constexpr utf8_string_view ring_detect{ u8"ring.detect" };
+			static constexpr utf8_string_view ring_delete{ u8"ring.delete" };
 			static constexpr utf8_string_view gaius_new{ u8"gaius.new" };
 			static constexpr utf8_string_view cassius_new{ u8"cassius.new" };
 			static constexpr utf8_string_view longinus_new{ u8"longinus.new" };
@@ -121,6 +126,7 @@ namespace glasssix::exposing::nessus
 		impl()
 		{
 			// New
+			functions_.insert_or_assign(function_names::ring_new, std::bind(&impl::ring_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gaius_new, std::bind(&impl::gaius_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::cassius_new, std::bind(&impl::cassius_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_new, std::bind(&impl::longinus_new, this, std::placeholders::_1));
@@ -136,6 +142,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
 
 			// Delete
+			functions_.insert_or_assign(function_names::ring_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::gaius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::cassius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::irisviel_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -150,6 +157,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
+			functions_.insert_or_assign(function_names::ring_detect, std::bind(&impl::ring_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::damocles_spoofing_detect, std::bind(&impl::damocles_spoofing_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::damocles_presentation_attack_detect, std::bind(&impl::damocles_presentation_attack_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_detect, std::bind(&impl::longinus_detect, this, std::placeholders::_1));
@@ -232,6 +240,15 @@ namespace glasssix::exposing::nessus
 		}
 
 	private:
+		unknown_object ring_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto factory_type = unbox<std::int32_t>(params.get_value(u8"factory_type"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+
+			return add_instance(package_names::ring, make_exported_interface<ring::material_code>(models_directory, factory_type, device));
+		}
+
 		unknown_object cassius_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
@@ -364,6 +381,23 @@ namespace glasssix::exposing::nessus
 		{
 
 			return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
+		}
+
+		unknown_object ring_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<ring::material_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto border_orient = unbox<std::int32_t>(params.get_value(u8"border_orient"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+			auto x = unbox<std::int32_t>(params.get_value(u8"x"));
+			auto y = unbox<std::int32_t>(params.get_value(u8"y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
+			return instance.detect(image, channels, height, width, border_orient, order, x, y, roi_width, roi_height);
 		}
 
 		unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
