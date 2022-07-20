@@ -228,7 +228,7 @@ namespace glasssix
 						Json::Value jarray_points = Json::Value(Json::arrayValue);
 						// location
 						auto location = box.location();
-						for (size_t i = 0; i < 4; i++)
+						for (size_t i = 0; i < (int)location.size() / 2; i++)
 						{
 							Json::Value point;
 							point["x"] = Json::Int(location[i * 2]);
