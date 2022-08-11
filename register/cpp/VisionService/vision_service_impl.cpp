@@ -397,7 +397,8 @@ namespace glasssix::exposing::nessus
 			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
 			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 
-			return instance.detect(image, channels, height, width, border_orient, order, x, y, roi_width, roi_height);
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+			return instance.detect(image, channels, height, width, border_orient, order, x, y, roi_width, roi_height, params_map_abi);
 		}
 
 		unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
