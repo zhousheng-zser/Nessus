@@ -203,6 +203,16 @@ namespace glasssix
 					int roi_width = flag ? width : roi["width"].asInt();
 					int roi_height = flag ? height : roi["height"].asInt();
 
+					Json::Value params = root.get("params", Json::Value());
+
+
+					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+
+					for (auto& param_name : params.getMemberNames()) {
+						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					}
+
+
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
@@ -218,6 +228,7 @@ namespace glasssix
 							{u8"y", box(y)},
 							{u8"roi_width", box(roi_width)},
 							{u8"roi_height", box(roi_height)},
+							{u8"params", param_map_abi},
 						});
 
 					auto result = plugin.execute(u8"ring.detect", param).as<param_vector<ring::box_info>>();
