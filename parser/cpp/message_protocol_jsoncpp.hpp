@@ -238,16 +238,12 @@ namespace glasssix
 						Json::Value jobj_box;
 						
 						// location
-						auto location = obj.location();
 						Json::Value jarray_points = Json::Value(Json::arrayValue);
-						for (size_t i = 0; i < (int)location.size() / 2; i++)
-						{
-							Json::Value point;
-							point["x"] = Json::Int(location[i * 2]);
-							point["y"] = Json::Int(location[i * 2 + 1]);
+						jarray_points["x"] = obj.x();
+						jarray_points["y"] = obj.y();
+						jarray_points["height"] = obj.height();
+						jarray_points["width"] = obj.width();
 
-							jarray_points.append(point);
-						}
 						jobj_box["location"] = jarray_points;
 
 						// strinfos
@@ -278,6 +274,89 @@ namespace glasssix
 
 					value["strinfo_list"] = jarray_boxes;
 
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Plate_trace_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+					auto plate = make_exported_interface<plate::box_info>();
+					plate.set_x(root["location"]["x"].asFloat());
+					plate.set_y(root["location"]["y"].asFloat());
+					plate.set_width(root["location"]["width"].asFloat());
+					plate.set_height(root["location"]["height"].asFloat());
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"image", box(image_span)},
+						 {u8"height", box(height)},
+						 {u8"width", box(width)},
+						 {u8"plate", plate},
+						 {u8"order", box(static_cast<int>(frame->format_))},
+						 {u8"object_id", box(instance)} });
+					auto result = plugin.execute(u8"plate.trace", param).as<plate::box_info>();
+
+					Json::Value jobj_face;
+					if (result.confidence() > 0.1f)
+					{
+						value["trace_success"] = Json::Value(true);
+						jobj_face["x"] = Json::Int(result.x());
+						jobj_face["y"] = Json::Int(result.y());
+						jobj_face["width"] = Json::Int(result.width());
+						jobj_face["height"] = Json::Int(result.height());
+						jobj_face["confidence"] = Json::Value(result.confidence());
+
+						jobj_face["stinginfos"] = Json::Value(result.strinfos());
+
+						Json::Value jarray_aligned_images = Json::Value(Json::arrayValue);
+
+						auto aligned_images = result.aligned_images();
+
+						std::vector<std::uint8_t> temp(plate_aligned_base64_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						std::vector<std::uint8_t> buffer(aligned_images.size());
+						aligned_images.copy_to(0, buffer);
+						tb64xenc(buffer.data(), buffer.size(), ptr);
+						jarray_aligned_images.append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + plate_aligned_base64_buffer_len));
+						jobj_face["stinginfos"] = jarray_aligned_images;
+					}
+					else
+					{
+						value["trace_success"] = Json::Value(false);
+					}
+
+					value["updatefaceinfo"] = jobj_face;
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
