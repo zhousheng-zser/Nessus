@@ -185,7 +185,7 @@ namespace glasssix
 
 			}
 
-			constexpr int plate_aligned_base64_buffer_len = TB64ENCLEN(3 * 12 * 44);
+			constexpr int plate_aligned_base64_buffer_len = TB64ENCLEN(3 * 140 * 440);
 			inline Json::Value Plate_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -301,7 +301,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Plate_trace_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			/*inline Json::Value Plate_trace_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -382,7 +382,7 @@ namespace glasssix
 				}
 
 				return value;
-			}
+			}*/
 
 			inline Json::Value Plate_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{

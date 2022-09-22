@@ -61,7 +61,7 @@ namespace glasssix::exposing::nessus
 		{
 			static constexpr utf8_string_view plate_new{ u8"plate.new" };
 			static constexpr utf8_string_view plate_detect{ u8"plate.detect" };
-			static constexpr utf8_string_view plate_trace{ u8"plate.trace" };
+			// static constexpr utf8_string_view plate_trace{ u8"plate.trace" };
 			static constexpr utf8_string_view plate_delete{ u8"plate.delete" };
 			static constexpr utf8_string_view ring_new{ u8"ring.new" };
 			static constexpr utf8_string_view ring_detect{ u8"ring.detect" };
@@ -418,19 +418,19 @@ namespace glasssix::exposing::nessus
 			return instance.detect(image, channels, height, width, order, x, y, roi_width, roi_height, params_map_abi);
 		}
 
-		unknown_object plate_trace(const param_hash_map<param_string, unknown_object>& params)
-		{
-				constexpr std::int32_t channels = 3;
-				auto instance = get_instance<plate::ocr_code >(params);
-				auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-				auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-				auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-				auto face = params.get_value(u8"plate").as<plate::box_info>();
-				auto order = unbox<std::int32_t>(params.get_value(u8"order"));
-				auto result = instance.trace(face, image, channels, height, width, order);
+		//unknown_object plate_trace(const param_hash_map<param_string, unknown_object>& params)
+		//{
+		//		constexpr std::int32_t channels = 3;
+		//		auto instance = get_instance<plate::ocr_code >(params);
+		//		auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+		//		auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+		//		auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+		//		auto face = params.get_value(u8"plate").as<plate::box_info>();
+		//		auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+		//		auto result = instance.trace(face, image, channels, height, width, order);
 
-				return result;
-		}
+		//		return result;
+		//}
 
 		unknown_object ring_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
