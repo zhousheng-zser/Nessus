@@ -17,6 +17,8 @@
 #include "../../common/include/irisviel/record.hpp"
 #include "../../common/include/ring/material_code.hpp"
 #include "../../common/include/ring/box_info.hpp"
+#include "../../common/include/plate/ocr_code.hpp"
+#include "../../common/include/plate/box_info.hpp"
 
 #include <string>
 #include <memory>
@@ -143,6 +145,280 @@ namespace glasssix
 				return dst;
 			}
 
+			inline Json::Value Plate_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+
+				try {
+					int device = root["device"].asInt();
+					std::string models_directory = root["models_directory"].asString();
+				auto param = make_param_hash_map<param_string, unknown_object>(
+					{ {u8"device", box(device)},
+							{u8"models_directory", box(std::string_view(models_directory))} });
+
+					instance = unbox<guid>(plugin.execute(u8"plate.new", param));
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+
+			}
+
+			constexpr int plate_aligned_base64_buffer_len = TB64ENCLEN(3 * 140 * 440);
+			inline Json::Value Plate_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+
+					Json::Value roi = root.get("roi", Json::Value());
+					bool flag = roi.empty();
+					int x = flag ? 0 : roi["x"].asInt();
+					int y = flag ? 0 : roi["y"].asInt();
+					int roi_width = flag ? width : roi["width"].asInt();
+					int roi_height = flag ? height : roi["height"].asInt();
+
+					Json::Value params = root.get("params", Json::Value());
+
+
+					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+
+					for (auto& param_name : params.getMemberNames()) {
+						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					}
+
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"image", box(image_span)},
+							{u8"height", box(height)},
+							{u8"width", box(width)},
+							{u8"order", box(static_cast<int>(frame->format_))},
+							{u8"object_id", box(instance)},
+							{u8"x", box(x)},
+							{u8"y", box(y)},
+							{u8"roi_width", box(roi_width)},
+							{u8"roi_height", box(roi_height)},
+							{u8"params", param_map_abi},
+						});
+
+					auto result = plugin.execute(u8"plate.detect", param).as<param_vector<plate::box_info>>();
+					
+					Json::Value jarray_boxes = Json::Value(Json::arrayValue);
+					
+					for (auto obj : result)
+					{
+						Json::Value jobj_box;
+						
+						// location
+						Json::Value jarray_points = Json::Value(Json::arrayValue);
+						jarray_points["x"] = obj.x();
+						jarray_points["y"] = obj.y();
+						jarray_points["height"] = obj.height();
+						jarray_points["width"] = obj.width();
+
+						jobj_box["location"] = jarray_points;
+
+						// strinfos
+						Json::Value jarray_strinfos = Json::Value(Json::arrayValue);
+
+						for (auto strinfo : obj.strinfos())
+						{
+							jarray_strinfos.append(Json::Value(exposing::to_narrow_string(strinfo)));
+						}
+
+						jobj_box["strinfos"] = jarray_strinfos;
+
+						// aligned_images
+						Json::Value jarray_aligned_images = Json::Value(Json::arrayValue);
+						
+						auto aligned_images = obj.aligned_images();
+
+						std::vector<std::uint8_t> temp(plate_aligned_base64_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						std::vector<std::uint8_t> buffer(aligned_images.size());
+						aligned_images.copy_to(0, buffer);
+						tb64xenc(buffer.data(), buffer.size(), ptr);
+						jarray_aligned_images.append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + plate_aligned_base64_buffer_len));
+						jobj_box["aligned_images"] = jarray_aligned_images;
+
+						jarray_boxes.append(jobj_box);
+					}
+
+					value["strinfo_list"] = jarray_boxes;
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			/*inline Json::Value Plate_trace_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+					auto plate = make_exported_interface<plate::box_info>();
+					plate.set_x(root["location"]["x"].asFloat());
+					plate.set_y(root["location"]["y"].asFloat());
+					plate.set_width(root["location"]["width"].asFloat());
+					plate.set_height(root["location"]["height"].asFloat());
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"image", box(image_span)},
+						 {u8"height", box(height)},
+						 {u8"width", box(width)},
+						 {u8"plate", plate},
+						 {u8"order", box(static_cast<int>(frame->format_))},
+						 {u8"object_id", box(instance)} });
+					auto result = plugin.execute(u8"plate.trace", param).as<plate::box_info>();
+
+					Json::Value jobj_face;
+					if (result.confidence() > 0.1f)
+					{
+						value["trace_success"] = Json::Value(true);
+						jobj_face["x"] = Json::Int(result.x());
+						jobj_face["y"] = Json::Int(result.y());
+						jobj_face["width"] = Json::Int(result.width());
+						jobj_face["height"] = Json::Int(result.height());
+						jobj_face["confidence"] = Json::Value(result.confidence());
+
+						jobj_face["stinginfos"] = Json::Value(result.strinfos());
+
+						Json::Value jarray_aligned_images = Json::Value(Json::arrayValue);
+
+						auto aligned_images = result.aligned_images();
+
+						std::vector<std::uint8_t> temp(plate_aligned_base64_buffer_len, 0);
+						std::uint8_t* ptr = temp.data();
+						std::vector<std::uint8_t> buffer(aligned_images.size());
+						aligned_images.copy_to(0, buffer);
+						tb64xenc(buffer.data(), buffer.size(), ptr);
+						jarray_aligned_images.append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + plate_aligned_base64_buffer_len));
+						jobj_face["stinginfos"] = jarray_aligned_images;
+					}
+					else
+					{
+						value["trace_success"] = Json::Value(false);
+					}
+
+					value["updatefaceinfo"] = jobj_face;
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}*/
+
+			inline Json::Value Plate_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"object_id", box(instance)} });
+
+					plugin.execute(u8"plate.delete", param);
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+				return value;
+			}
 
 			inline Json::Value Ring_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
@@ -339,8 +615,6 @@ namespace glasssix
 				}
 				return value;
 			}
-
-
 
 			inline Json::Value Longinus_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
