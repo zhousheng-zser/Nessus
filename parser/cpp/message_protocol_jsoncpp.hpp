@@ -301,7 +301,7 @@ namespace glasssix
 				return value;
 			}
 
-			/*inline Json::Value Plate_trace_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Plate_trace_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -328,14 +328,13 @@ namespace glasssix
 					auto result = plugin.execute(u8"plate.trace", param).as<plate::box_info>();
 
 					Json::Value jobj_face;
-					if (result.confidence() > 0.1f)
+					if (result.strinfos().size() > 0)
 					{
 						value["trace_success"] = Json::Value(true);
 						jobj_face["x"] = Json::Int(result.x());
 						jobj_face["y"] = Json::Int(result.y());
 						jobj_face["width"] = Json::Int(result.width());
 						jobj_face["height"] = Json::Int(result.height());
-						jobj_face["confidence"] = Json::Value(result.confidence());
 
 						jobj_face["stinginfos"] = Json::Value(result.strinfos());
 
@@ -382,7 +381,7 @@ namespace glasssix
 				}
 
 				return value;
-			}*/
+			}
 
 			inline Json::Value Plate_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
