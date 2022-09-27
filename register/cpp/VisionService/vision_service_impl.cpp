@@ -391,8 +391,8 @@ namespace glasssix::exposing::nessus
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto factory_type = unbox<std::int32_t>(params.get_value(u8"factory_type"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
-
-			return add_instance(package_names::heimdall, make_exported_interface<material_code>(models_directory, factory_type, device));
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+			return add_instance(package_names::heimdall, make_exported_interface<material_code>(models_directory, factory_type, device, params_map_abi));
 		}
 
 		unknown_object banshee_new(const param_hash_map<param_string, unknown_object>& params)

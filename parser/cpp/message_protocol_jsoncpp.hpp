@@ -1434,10 +1434,20 @@ namespace glasssix
 					int device = root["device"].asInt();
 					int factory_type = root["factory_type"].asInt();
 					std::string models_directory = root["models_directory"].asString();
+
+					Json::Value params = root.get("params", Json::Value());
+					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+					for (auto& param_name : params.getMemberNames()) {
+						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					}
+
 					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"device", box(device)},
-						 {u8"factory_type", box(factory_type)},
-						 {u8"models_directory", box(std::string_view(models_directory))} });
+						{
+							{u8"device", box(device)},
+							{u8"factory_type", box(factory_type)},
+							{u8"models_directory", box(std::string_view(models_directory))},
+							{u8"params", param_map_abi}
+						});
 					instance = unbox<guid>(plugin.execute(u8"heimdall.new", param));
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
