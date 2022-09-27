@@ -23,8 +23,15 @@ namespace glasssix::exposing::impl
             virtual std::int32_t G6_ABI_CALL y(abi_out_t<float> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL width(abi_out_t<float> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL height(abi_out_t<float> result) noexcept = 0;
-            virtual std::int32_t G6_ABI_CALL strinfos(abi_out_t<param_vector<param_string>> result) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL strinfos(abi_out_t<param_string> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL aligned_images(abi_out_t<param_vector<std::uint8_t>> result) noexcept = 0;
+
+            virtual std::int32_t G6_ABI_CALL set_x(abi_in_t<float> input) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL set_y(abi_in_t<float> input) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL set_width(abi_in_t<float> input) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL set_height(abi_in_t<float> input) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL set_strinfos(abi_in_t<exposing::param_string> input) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL set_aligned_images(abi_in_t<param_vector<std::uint8_t>> input) noexcept = 0;
         };
     };
 
@@ -56,7 +63,7 @@ namespace glasssix::exposing::impl
                 { *result = detach_abi(this->self().height()); });
         }
 
-        virtual std::int32_t G6_ABI_CALL strinfos(abi_out_t<param_vector<param_string>> result) noexcept override
+        virtual std::int32_t G6_ABI_CALL strinfos(abi_out_t<exposing::param_string> result) noexcept override
         {
             return abi_safe_call([&]
                 { *result = detach_abi(this->self().strinfos()); });
@@ -66,6 +73,39 @@ namespace glasssix::exposing::impl
         {
             return abi_safe_call([&]
                 { *result = detach_abi(this->self().aligned_images()); });
+        }
+
+        virtual std::int32_t G6_ABI_CALL set_x(abi_in_t<float> input) noexcept override
+        {
+            return abi_safe_call([&]
+                { this->self().set_x(create_from_abi<float>(input)); });
+        }
+        virtual std::int32_t G6_ABI_CALL set_y(abi_in_t<float> input) noexcept override
+        {
+            return abi_safe_call([&]
+                { this->self().set_y(create_from_abi<float>(input)); });
+        }
+        virtual std::int32_t G6_ABI_CALL set_width(abi_in_t<float> input) noexcept override
+        {
+            return abi_safe_call([&]
+                { this->self().set_width(create_from_abi<float>(input)); });
+        }
+        virtual std::int32_t G6_ABI_CALL set_height(abi_in_t<float> input) noexcept override
+        {
+            return abi_safe_call([&]
+                { this->self().set_height(create_from_abi<float>(input)); });
+        }
+
+        virtual std::int32_t G6_ABI_CALL set_strinfos(abi_in_t<exposing::param_string> input) noexcept override
+        {
+            return abi_safe_call([&]
+                { this->self().set_strinfos(create_from_abi<exposing::param_string>(input)); });
+        }
+
+        virtual std::int32_t G6_ABI_CALL set_aligned_images(abi_in_t<param_vector<std::uint8_t>> input) noexcept override
+        {
+            return abi_safe_call([&]
+                { this->self().set_aligned_images(create_from_abi<param_vector<std::uint8_t>>(input)); });
         }
 
     };
@@ -116,6 +156,30 @@ namespace glasssix::exposing::impl
                 return (check_abi_result(this->self_abi().aligned_images(put_abi(result))), result);
             }
 
+            void set_x(float input)
+            {
+                check_abi_result(this->self_abi().set_x(get_abi(input)));
+            }
+            void set_y(float input)
+            {
+                check_abi_result(this->self_abi().set_y(get_abi(input)));
+            }
+            void set_width(float input)
+            {
+                check_abi_result(this->self_abi().set_width(get_abi(input)));
+            }
+            void set_height(float input)
+            {
+                check_abi_result(this->self_abi().set_height(get_abi(input)));
+            }
+            void set_strinfos(exposing::param_string input)
+            {
+                check_abi_result(this->self_abi().set_strinfos(get_abi(input)));
+            }
+            void set_aligned_images(param_vector<std::uint8_t> input)
+            {
+                check_abi_result(this->self_abi().set_aligned_images(get_abi(input)));
+            }
         };
     };
 }
