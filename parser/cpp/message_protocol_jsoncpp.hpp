@@ -1569,6 +1569,15 @@ namespace glasssix
 							jarray_strinfo.append(Json::Value(exposing::to_narrow_string(strinfo)));
 						}
 						jobj_box["strinfo"] = jarray_strinfo;
+						// messages
+						if (!box.messages().empty()) {
+							Json::Value jarray_message = Json::Value(Json::arrayValue);
+							for (auto message : box.messages())
+							{
+								jarray_message.append(Json::Value(exposing::to_narrow_string(message)));
+							}
+							jobj_box["messages"] = jarray_message;
+						}
 						// angle
 						jobj_box["angle"] = Json::Value(box.angle());
 
