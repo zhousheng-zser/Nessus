@@ -79,6 +79,11 @@ namespace glasssix::exposing::impl
 			return abi_safe_call([&] { *result = detach_abi(this->self().cache_directory()); });
 		}
 
+		virtual std::int32_t G6_ABI_CALL lsh_directory(abi_out_t<param_string> result) noexcept override
+		{
+			return abi_safe_call([&] { *result = detach_abi(this->self().lsh_directory()); });
+		}
+
 		virtual std::int32_t G6_ABI_CALL load_databases() noexcept override
 		{
 			return abi_safe_call([&] { this->self().load_databases(); });
@@ -199,6 +204,13 @@ namespace glasssix::exposing::impl
 				param_string result{ nullptr };
 
 				return (check_abi_result(this->self_abi().cache_directory(put_abi(result))), result);
+			}
+
+			param_string lsh_directory() const
+			{
+				param_string result{ nullptr };
+
+				return (check_abi_result(this->self_abi().lsh_directory(put_abi(result))), result);
 			}
 
 			void load_databases() const
