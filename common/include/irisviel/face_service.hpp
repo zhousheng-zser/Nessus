@@ -28,6 +28,7 @@ namespace glasssix::exposing::impl
 			virtual std::int32_t G6_ABI_CALL database_directory(abi_out_t<param_string> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL load_databases() noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL cache_directory(abi_out_t<param_string> result) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL lsh_directory(abi_out_t<param_string> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL record_count(abi_out_t<std::uint64_t> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL contains_key(abi_in_t<param_string> key, abi_out_t<bool> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL try_get_record(abi_in_t<param_string> key, abi_out_t<irisviel::record> result) noexcept = 0;
