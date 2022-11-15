@@ -529,7 +529,9 @@ namespace glasssix::exposing::nessus
 		protocol_map["plate.new"] = &Plate_new_json;
 		protocol_map["plate.delete"] = &Plate_delete_json;
 		protocol_map["plate.detect"] = &Plate_detect_json;
-		// protocol_map["plate.trace"] = &Plate_trace_json;
+		protocol_map["plate.trace_init"] = &Plate_trace_init_json;
+		protocol_map["plate.trace_update"] = &Plate_trace_update_json;
+		protocol_map["plate.recognize"] = &Plate_recognize_json;
 		protocol_map["ring.new"] = &Ring_new_json;
 		protocol_map["ring.delete"] = &Ring_delete_json;
 		protocol_map["ring.detect"] = &Ring_detect_json;

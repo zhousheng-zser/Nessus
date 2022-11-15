@@ -61,7 +61,9 @@ namespace glasssix::exposing::nessus
 		{
 			static constexpr utf8_string_view plate_new{ u8"plate.new" };
 			static constexpr utf8_string_view plate_detect{ u8"plate.detect" };
-			static constexpr utf8_string_view plate_trace{ u8"plate.trace" };
+			static constexpr utf8_string_view plate_trace_init{ u8"plate.trace_init" };
+			static constexpr utf8_string_view plate_trace_update{ u8"plate.trace_update" };
+			static constexpr utf8_string_view plate_recognize{ u8"plate.recognize" };
 			static constexpr utf8_string_view plate_delete{ u8"plate.delete" };
 			static constexpr utf8_string_view ring_new{ u8"ring.new" };
 			static constexpr utf8_string_view ring_detect{ u8"ring.detect" };
@@ -167,7 +169,9 @@ namespace glasssix::exposing::nessus
 
 			// Business
 			functions_.insert_or_assign(function_names::plate_detect, std::bind(&impl::plate_detect, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::plate_trace, std::bind(&impl::plate_trace, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::plate_trace_init, std::bind(&impl::plate_trace_init, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::plate_trace_update, std::bind(&impl::plate_trace_update, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::plate_recognize, std::bind(&impl::plate_recognize, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::ring_detect, std::bind(&impl::ring_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::damocles_spoofing_detect, std::bind(&impl::damocles_spoofing_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::damocles_presentation_attack_detect, std::bind(&impl::damocles_presentation_attack_detect, this, std::placeholders::_1));
@@ -416,21 +420,53 @@ namespace glasssix::exposing::nessus
 			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
 			return instance.detect(image, channels, height, width, order, x, y, roi_width, roi_height, params_map_abi);
+
 		}
 
-		unknown_object plate_trace(const param_hash_map<param_string, unknown_object>& params)
+		unknown_object plate_recognize(const param_hash_map<param_string, unknown_object>& params)
 		{
-				constexpr std::int32_t channels = 3;
-				auto instance = get_instance<plate::ocr_code >(params);
-				auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-				auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-				auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-				auto face = params.get_value(u8"plate").as<plate::box_info>();
-				auto order = unbox<std::int32_t>(params.get_value(u8"order"));
-				auto result = instance.trace(face, image, channels, height, width, order);
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<plate::ocr_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
 
-				return result;
+			return instance.recognize(image, channels, height, width, order);
+		}
+
+		unknown_object plate_trace_init(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<plate::ocr_code >(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_w = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_h = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
+			instance.trace_init(image, channels, height, width, order, roi_x, roi_y, roi_w, roi_h);
+
+			return unknown_object();
+		}
+
+		unknown_object plate_trace_update(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<plate::ocr_code >(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+			return instance.trace_update(image, channels, height, width, order);
+
 		}
 
 		unknown_object ring_detect(const param_hash_map<param_string, unknown_object>& params)
