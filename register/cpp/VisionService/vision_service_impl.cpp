@@ -360,7 +360,7 @@ namespace glasssix::exposing::nessus
 			auto dimension = unbox<std::int32_t>(params.get_value(u8"dimension"));
 			auto working_directory = unbox<param_string>(params.get_value(u8"working_directory"));
 
-			return add_instance(package_names::irisviel, make_exported_interface<face_service>(irisviel::face_service_implemention::brute_force, single_database_capacity, dimension, working_directory));
+			return add_instance(package_names::irisviel, make_exported_interface<face_service>(irisviel::face_service_implemention::lsh_algorithm, single_database_capacity, dimension, working_directory));
 		}
 
 		unknown_object gungnir_new(const param_hash_map<param_string, unknown_object>& params)
