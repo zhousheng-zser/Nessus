@@ -573,10 +573,7 @@ namespace glasssix::exposing::nessus
 		protocol_map["irisviel.remove_all"] = &Irisviel_remove_all_json;
 		protocol_map["irisviel.load_databases"] = &Irisviel_load_databases_json;
 		protocol_map["irisviel.remove_records"] = &Irisviel_remove_records_json;
-		protocol_map["irisviel.remove_record"] = &Irisviel_remove_record_json;
-		protocol_map["irisviel.add_record"] = &Irisviel_add_record_json;
 		protocol_map["irisviel.add_records"] = &Irisviel_add_records_json;
-		protocol_map["irisviel.update_record"] = &Irisviel_update_record_json;
 		protocol_map["irisviel.update_records"] = &Irisviel_update_records_json;
         protocol_map["gungnir.new"] = &Gungnir_new_json;
 		protocol_map["gungnir.delete"] = &Gungnir_delete_json;
