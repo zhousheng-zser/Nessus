@@ -55,6 +55,26 @@ namespace glasssix
 				bool is_heap_allocated_;
 			};
 
+			namespace
+			{
+                inline void parse_aud_operation_result(Json::Value& value, exposing::param_vector<bool> result, const std::string& failure_message)
+                {
+                    value["status"]["message"] = Json::Value("OK");
+                    value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+					
+					auto&& result_array = (value["result"] = Json::Value{Json::arrayValue});
+
+					for (auto&& item : result)
+					{
+						Json::Value json_item;
+						
+						json_item["success"] = item;
+						json_item["reason"] = item ? u8"操作成功。" : failure_message;
+						result_array.append(json_item);
+					}
+                }
+			}
+
 			inline void convert_to_bgr(std::shared_ptr<data_handler>& src, std::shared_ptr<data_handler>& dst, int width, int height)
 			{
 				switch (src->format_)
@@ -3865,9 +3885,9 @@ namespace glasssix
 						{ {u8"keys", keys},
 						 {u8"object_id", box(instance)} });
 
-					plugin.execute(u8"irisviel.remove_records", param);
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+					auto result = plugin.execute(u8"irisviel.remove_records", param).as<exposing::param_vector<bool>>();
+
+                    parse_aud_operation_result(value, result, u8"未找到 Key。");
 				}
 				catch (const parser_exception& ex)
 				{
@@ -3892,93 +3912,7 @@ namespace glasssix
 
 				return value;
 			}
-			inline Json::Value Irisviel_remove_record_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
-			{
-				Json::Value value;
-
-				try
-				{
-					std::string key = root["key"].asString();
-
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"key", box(std::string_view(key))},
-						 {u8"object_id", box(instance)} });
-
-					plugin.execute(u8"irisviel.remove_record", param);
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-				}
-				catch (const parser_exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
-				}
-				catch (const Json::Exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-				}
-				catch (const std::exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
-				}
-				catch (const abi_error& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what_to_narrow());
-					value["status"]["code"] = Json::Int(ex.result());
-				}
-
-				return value;
-			}
-			inline Json::Value Irisviel_add_record_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
-			{
-				Json::Value value;
-
-				try
-				{
-					param_vector<float> feature = make_param_vector<float>();
-					auto jarray_feature = root["data"]["feature"];
-					for (auto i : jarray_feature)
-						feature.push_back(i.asFloat());
-
-					int dimension = static_cast<int>(feature.size());
-
-					std::string key = root["data"]["key"].asString();
-
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"dimension", box(dimension)},
-						 {u8"key", box(std::string_view(key))},
-						 {u8"feature", feature},
-						 {u8"object_id", box(instance)} });
-
-					plugin.execute(u8"irisviel.add_record", param);
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-				}
-				catch (const parser_exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
-				}
-				catch (const Json::Exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-				}
-				catch (const std::exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
-				}
-				catch (const abi_error& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what_to_narrow());
-					value["status"]["code"] = Json::Int(ex.result());
-				}
-
-				return value;
-			}
+			
 			inline Json::Value Irisviel_add_records_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -4011,9 +3945,9 @@ namespace glasssix
 						{ {u8"records", vec},
 						 {u8"object_id", box(instance)} });
 
-					plugin.execute(u8"irisviel.add_records", param);
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+					auto result = plugin.execute(u8"irisviel.add_records", param).as<exposing::param_vector<bool>>();
+
+					parse_aud_operation_result(value, result, u8"Key 已经存在。");
 				}
 				catch (const parser_exception& ex)
 				{
@@ -4038,54 +3972,7 @@ namespace glasssix
 
 				return value;
 			}
-			inline Json::Value Irisviel_update_record_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
-			{
-				Json::Value value;
-
-				try
-				{
-					param_vector<float> feature = make_param_vector<float>();
-					auto jarray_feature = root["data"]["feature"];
-					for (auto i : jarray_feature)
-						feature.push_back(i.asFloat());
-
-					int dimension = static_cast<int>(feature.size());
-
-					std::string key = root["data"]["key"].asString();
-
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"dimension", box(dimension)},
-						 {u8"key", box(std::string_view(key))},
-						 {u8"feature", feature},
-						 {u8"object_id", box(instance)} });
-
-					plugin.execute(u8"irisviel.update_record", param);
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-				}
-				catch (const parser_exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
-				}
-				catch (const Json::Exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-				}
-				catch (const std::exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
-				}
-				catch (const abi_error& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what_to_narrow());
-					value["status"]["code"] = Json::Int(ex.result());
-				}
-
-				return value;
-			}
+			
 			inline Json::Value Irisviel_update_records_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -4118,9 +4005,9 @@ namespace glasssix
 						{ {u8"records", vec},
 						 {u8"object_id", box(instance)} });
 
-					plugin.execute(u8"irisviel.update_records", param);
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+					auto result = plugin.execute(u8"irisviel.update_records", param).as<exposing::param_vector<bool>>();
+					
+					parse_aud_operation_result(value, result, u8"未找到 Key。");
 				}
 				catch (const parser_exception& ex)
 				{

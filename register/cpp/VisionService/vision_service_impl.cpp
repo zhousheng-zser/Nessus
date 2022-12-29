@@ -199,12 +199,9 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::irisviel_record_count, std::bind(&impl::irisviel_record_count, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::irisviel_contains_key, std::bind(&impl::irisviel_contains_key, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::irisviel_try_get_record, std::bind(&impl::irisviel_try_get_record, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::irisviel_add_record, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_add_record, this, std::placeholders::_1)));
-			functions_.insert_or_assign(function_names::irisviel_add_records, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_add_records, this, std::placeholders::_1)));
-			functions_.insert_or_assign(function_names::irisviel_update_record, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_update_record, this, std::placeholders::_1)));
-			functions_.insert_or_assign(function_names::irisviel_update_records, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_update_records, this, std::placeholders::_1)));
-			functions_.insert_or_assign(function_names::irisviel_remove_record, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_record, this, std::placeholders::_1)));
-			functions_.insert_or_assign(function_names::irisviel_remove_records, meta::replace_return<unknown_object>(std::bind(&impl::irisviel_remove_records, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::irisviel_add_records, std::bind(&impl::irisviel_add_records, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::irisviel_update_records, std::bind(&impl::irisviel_update_records, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::irisviel_remove_records, std::bind(&impl::irisviel_remove_records, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::irisviel_search, std::bind(&impl::irisviel_search, this, std::placeholders::_1));
 		}
 
@@ -777,38 +774,21 @@ namespace glasssix::exposing::nessus
 			return get_instance<face_service>(params).try_get_record(key);
 		}
 
-		void irisviel_add_record(const param_hash_map<param_string, unknown_object>& params)
+		exposing::param_vector<bool> irisviel_add_records(const param_hash_map<param_string, unknown_object>& params)
 		{
-			irisviel_add_or_update_record_helper(params, false);
+			return irisviel_add_or_update_records_helper(params, false);
 		}
 
-		void irisviel_add_records(const param_hash_map<param_string, unknown_object>& params)
+		exposing::param_vector<bool> irisviel_update_records(const param_hash_map<param_string, unknown_object>& params)
 		{
-			irisviel_add_or_update_records_helper(params, false);
+			return irisviel_add_or_update_records_helper(params, true);
 		}
 
-		void irisviel_update_record(const param_hash_map<param_string, unknown_object>& params)
-		{
-			irisviel_add_or_update_record_helper(params, true);
-		}
-
-		void irisviel_update_records(const param_hash_map<param_string, unknown_object>& params)
-		{
-			irisviel_add_or_update_records_helper(params, true);
-		}
-
-		void irisviel_remove_record(const param_hash_map<param_string, unknown_object>& params)
-		{
-			auto key = unbox<param_string>(params.get_value(u8"key"));
-
-			get_instance<face_service>(params).remove_record(key);
-		}
-
-		void irisviel_remove_records(const param_hash_map<param_string, unknown_object>& params)
+		exposing::param_vector<bool> irisviel_remove_records(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto keys = params.get_value(u8"keys").as<param_vector<param_string>>();
 
-			get_instance<face_service>(params).remove_records(keys);
+			return get_instance<face_service>(params).remove_records(keys);
 		}
 
 		unknown_object irisviel_search(const param_hash_map<param_string, unknown_object>& params)
@@ -852,22 +832,7 @@ namespace glasssix::exposing::nessus
 			return result;
 		}
 
-		void irisviel_add_or_update_record_helper(const param_hash_map<param_string, unknown_object>& params, bool update)
-		{
-			auto instance = get_instance<face_service>(params);
-			auto record = irisviel_create_record_helper(params);
-
-			if (update)
-			{
-				instance.update_record(record);
-			}
-			else
-			{
-				instance.add_record(record);
-			}
-		}
-
-		void irisviel_add_or_update_records_helper(const param_hash_map<param_string, unknown_object>& params, bool update)
+		exposing::param_vector<bool> irisviel_add_or_update_records_helper(const param_hash_map<param_string, unknown_object>& params, bool update)
 		{
 			auto instance = get_instance<face_service>(params);
 			auto param_records = params.get_value(u8"records").as<param_vector<param_hash_map<param_string, unknown_object>>>();
@@ -880,11 +845,11 @@ namespace glasssix::exposing::nessus
 
 			if (update)
 			{
-				instance.update_records(records);
+				return instance.update_records(records);
 			}
 			else
 			{
-				instance.add_records(records);
+				return instance.add_records(records);
 			}
 		}
 
