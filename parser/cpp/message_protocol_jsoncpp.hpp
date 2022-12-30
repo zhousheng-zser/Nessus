@@ -69,7 +69,7 @@ namespace glasssix
 						Json::Value json_item;
 						
 						json_item["success"] = item;
-						json_item["reason"] = item ? u8"操作成功。" : failure_message;
+						json_item["reason"] = item ? u8"OK" : failure_message;
 						result_array.append(json_item);
 					}
                 }
@@ -3887,7 +3887,7 @@ namespace glasssix
 
 					auto result = plugin.execute(u8"irisviel.remove_records", param).as<exposing::param_vector<bool>>();
 
-                    parse_aud_operation_result(value, result, u8"未找到 Key。");
+                    parse_aud_operation_result(value, result, u8"Could not find the key.");
 				}
 				catch (const parser_exception& ex)
 				{
@@ -3947,7 +3947,7 @@ namespace glasssix
 
 					auto result = plugin.execute(u8"irisviel.add_records", param).as<exposing::param_vector<bool>>();
 
-					parse_aud_operation_result(value, result, u8"Key 已经存在。");
+					parse_aud_operation_result(value, result, u8"The key already exists.");
 				}
 				catch (const parser_exception& ex)
 				{
@@ -4007,7 +4007,7 @@ namespace glasssix
 
 					auto result = plugin.execute(u8"irisviel.update_records", param).as<exposing::param_vector<bool>>();
 					
-					parse_aud_operation_result(value, result, u8"未找到 Key。");
+					parse_aud_operation_result(value, result, u8"Could not find the key.");
 				}
 				catch (const parser_exception& ex)
 				{
