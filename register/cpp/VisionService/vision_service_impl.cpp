@@ -18,6 +18,7 @@
 #include <banshee/kcf_tracker.hpp>
 #include <ring/material_code.hpp>
 #include <plate/ocr_code.hpp>
+#include <rail/classify_code.hpp>
 
 #include <iostream>
 
@@ -34,6 +35,7 @@ using namespace glasssix::valklyrs;
 using namespace glasssix::heimdall;
 using namespace glasssix::banshee;
 using namespace glasssix::plate;
+using namespace glasssix::rail;
 
 namespace glasssix::exposing::nessus
 {
@@ -55,10 +57,14 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view banshee{ u8"banshee" };
 			static constexpr utf8_string_view ring{ u8"ring" };
 			static constexpr utf8_string_view plate{ u8"plate" };
+			static constexpr utf8_string_view rail{ u8"rail" };
 		};
 
 		struct function_names final
 		{
+			static constexpr utf8_string_view rail_new{ u8"rail.new" };
+			static constexpr utf8_string_view rail_detect{ u8"rail.detect" };
+			static constexpr utf8_string_view rail_delete{ u8"rail.delete" };
 			static constexpr utf8_string_view plate_new{ u8"plate.new" };
 			static constexpr utf8_string_view plate_detect{ u8"plate.detect" };
 			static constexpr utf8_string_view plate_trace_init{ u8"plate.trace_init" };
@@ -135,6 +141,7 @@ namespace glasssix::exposing::nessus
 		impl()
 		{
 			// New
+			functions_.insert_or_assign(function_names::rail_new, std::bind(&impl::rail_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::plate_new, std::bind(&impl::plate_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::ring_new, std::bind(&impl::ring_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gaius_new, std::bind(&impl::gaius_new, this, std::placeholders::_1));
@@ -152,6 +159,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
 
 			// Delete
+			functions_.insert_or_assign(function_names::rail_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::plate_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::ring_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::gaius_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -168,6 +176,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
+			functions_.insert_or_assign(function_names::rail_detect, std::bind(&impl::rail_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::plate_detect, std::bind(&impl::plate_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::plate_trace_init, std::bind(&impl::plate_trace_init, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::plate_trace_update, std::bind(&impl::plate_trace_update, this, std::placeholders::_1));
@@ -252,6 +261,15 @@ namespace glasssix::exposing::nessus
 		}
 
 	private:
+
+		unknown_object rail_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+
+			return add_instance(package_names::rail, make_exported_interface<rail::classify_code>(models_directory, device));
+		}
+
 		unknown_object plate_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
@@ -401,6 +419,19 @@ namespace glasssix::exposing::nessus
 		{
 
 			return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
+		}
+
+		unknown_object rail_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<rail::classify_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
+			return instance.detect(image, channels, height, width, params_map_abi);
 		}
 
 		unknown_object plate_detect(const param_hash_map<param_string, unknown_object>& params)
