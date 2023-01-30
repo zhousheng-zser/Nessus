@@ -566,6 +566,7 @@ namespace glasssix::exposing::nessus
 		protocol_map["irisviel.new"] = &Irisviel_new_json;
 		protocol_map["irisviel.delete"] = &Irisviel_delete_json;
 		protocol_map["irisviel.search"] = &Irisviel_search_json;
+		protocol_map["irisviel.search_nf"] = &Irisviel_search_nf_json;
 		protocol_map["irisviel.clear"] = &Irisviel_clear_json;
 		protocol_map["irisviel.record_count"] = &Irisviel_record_count_json;
 		protocol_map["irisviel.contains_key"] = &Irisviel_contains_key_json;

@@ -3691,7 +3691,73 @@ namespace glasssix
 
 				return value;
 			}
+			inline Json::Value Irisviel_search_nf_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					value["result"] = Json::Value(Json::arrayValue);
 
+					param_vector<float> feature = make_param_vector<float>();
+
+					auto jarray_feature = root["feature"];
+					for (auto i : jarray_feature)
+						feature.push_back(i.asFloat());
+					auto assuming_top = root.get("top", Json::nullValue);
+					auto assuming_min_similarity = root.get("min_similarity", Json::nullValue);
+					bool has_top = assuming_top.isIntegral();
+					bool has_min_similarity = assuming_min_similarity.isNumeric();
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"feature", feature},
+						 {u8"object_id", box(instance)} });
+					if (has_top)
+					{
+						param.add_or_update(u8"top", box(static_cast<std::uint32_t>(assuming_top.asUInt())));
+					}
+
+					if (has_min_similarity)
+					{
+						param.add_or_update(u8"min_similarity", box(assuming_min_similarity.asFloat()));
+					}
+
+					auto result = plugin.execute(u8"irisviel.search_nf", param).as<param_vector<irisviel::search_result>>();
+
+					for (const auto& item : result)
+					{
+						Json::Value jobj_result;
+						Json::Value jobj_data;
+						jobj_data["key"] = Json::Value(to_narrow_string(item.key()));
+						jobj_result["data"] = jobj_data;
+						jobj_result["similarity"] = Json::Value(item.similarity());
+						value["result"].append(jobj_result);
+					}
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+				return value;
+			}
 			inline Json::Value Irisviel_search_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
