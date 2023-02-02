@@ -137,6 +137,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view irisviel_remove_record{ u8"irisviel.remove_record" };
 			static constexpr utf8_string_view irisviel_remove_records{ u8"irisviel.remove_records" };
 			static constexpr utf8_string_view irisviel_search{ u8"irisviel.search" };
+			static constexpr utf8_string_view irisviel_search_nf{ u8"irisviel.search_nf" };
 			static constexpr utf8_string_view gungnir_detect{ u8"gungnir.detect" };
 			static constexpr utf8_string_view mjollner_detect{ u8"mjollner.detect" };
 			static constexpr utf8_string_view valklyrs_detect{ u8"valklyrs.detect" };
@@ -229,6 +230,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::irisviel_update_records, std::bind(&impl::irisviel_update_records, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::irisviel_remove_records, std::bind(&impl::irisviel_remove_records, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::irisviel_search, std::bind(&impl::irisviel_search, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::irisviel_search_nf, std::bind(&impl::irisviel_search_nf, this, std::placeholders::_1));
 		}
 
 		~impl()
@@ -905,6 +907,24 @@ namespace glasssix::exposing::nessus
 			}
 
 			throw abi_invalid_argument{ "Missing required parameters: top or min_similarity." };
+		}
+
+		unknown_object irisviel_search_nf(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<face_service>(params);
+			auto feature = params.get_value(u8"feature").as<param_vector<float>>();
+
+			unknown_object assuming_top{ nullptr };
+			unknown_object assuming_min_similarity{ nullptr };
+			bool has_top = params.try_get_value(u8"top", assuming_top) && assuming_top;
+			bool has_min_similarity = params.try_get_value(u8"min_similarity", assuming_min_similarity) && assuming_min_similarity;
+
+			if (has_top && has_min_similarity)
+			{
+				return instance.search_nf(feature, unbox<float>(assuming_min_similarity), unbox<std::uint32_t>(assuming_top));
+			}
+
+			throw abi_invalid_argument{ "Missing required parameters: top and min_similarity." };
 		}
 
 		record irisviel_create_record_helper(const param_hash_map<param_string, unknown_object>& params)
