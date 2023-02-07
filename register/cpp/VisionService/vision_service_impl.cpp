@@ -21,6 +21,7 @@
 #include <rail/classify_code.hpp>
 #include <refvest/classify_code.hpp>
 #include <firesmoke/detect_code.hpp>
+#include <trespass/detect_code.hpp>
 
 #include <iostream>
 
@@ -63,10 +64,14 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view rail{ u8"rail" };
 			static constexpr utf8_string_view refvest{ u8"refvest" };
 			static constexpr utf8_string_view firesmoke{ u8"firesmoke" };
+			static constexpr utf8_string_view trespass{ u8"trespass" };
 		};
 
 		struct function_names final
 		{
+			static constexpr utf8_string_view trespass_new{ u8"trespass.new" };
+			static constexpr utf8_string_view trespass_detect{ u8"trespass.detect" };
+			static constexpr utf8_string_view trespass_delete{ u8"trespass.delete" };
 			static constexpr utf8_string_view firesmoke_new{ u8"firesmoke.new" };
 			static constexpr utf8_string_view firesmoke_detect{ u8"firesmoke.detect" };
 			static constexpr utf8_string_view firesmoke_delete{ u8"firesmoke.delete" };
@@ -153,7 +158,8 @@ namespace glasssix::exposing::nessus
 		impl()
 		{
 			// New
-						functions_.insert_or_assign(function_names::firesmoke_new, std::bind(&impl::firesmoke_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::trespass_new, std::bind(&impl::trespass_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::firesmoke_new, std::bind(&impl::firesmoke_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::refvest_new, std::bind(&impl::refvest_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::rail_new, std::bind(&impl::rail_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::plate_new, std::bind(&impl::plate_new, this, std::placeholders::_1));
@@ -173,6 +179,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
 
 			// Delete
+			functions_.insert_or_assign(function_names::trespass_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::firesmoke_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::refvest_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::rail_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -192,7 +199,8 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
-						functions_.insert_or_assign(function_names::firesmoke_detect, std::bind(&impl::firesmoke_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::trespass_detect, std::bind(&impl::trespass_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::firesmoke_detect, std::bind(&impl::firesmoke_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::refvest_detect, std::bind(&impl::refvest_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::rail_detect, std::bind(&impl::rail_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::plate_detect, std::bind(&impl::plate_detect, this, std::placeholders::_1));
@@ -280,6 +288,14 @@ namespace glasssix::exposing::nessus
 		}
 
 	private:
+
+		unknown_object trespass_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+
+			return add_instance(package_names::trespass, make_exported_interface<trespass::detect_code>(models_directory, device));
+		}
 
 		unknown_object firesmoke_new(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -454,6 +470,17 @@ namespace glasssix::exposing::nessus
 		{
 
 			return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
+		}
+
+		unknown_object trespass_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<trespass::detect_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto channels = unbox<std::int32_t>(params.get_value(u8"channels"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+
+			return instance.detect(image, channels, height, width);
 		}
 
 		unknown_object firesmoke_detect(const param_hash_map<param_string, unknown_object>& params)
