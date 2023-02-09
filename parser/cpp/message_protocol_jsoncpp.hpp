@@ -248,7 +248,7 @@ namespace glasssix
 
 					Json::Value jarray_detected;
 
-					for (int i = 0; i < result.size(); i++)
+					for (size_t i = 0; i < result.size(); i++)
 					{
 						Json::Value jarray_box;
 						jarray_box["x1"] = Json::Int(result[i].x1());
@@ -259,7 +259,7 @@ namespace glasssix
 					}
 
 					Json::Value jarray_info;
-					jarray_info["box_num"] = result.size();
+					jarray_info["box_num"] = static_cast<int>(result.size());
 					jarray_info["box_list"]= jarray_detected;
 
 					value["detect_info"] = jarray_info;
