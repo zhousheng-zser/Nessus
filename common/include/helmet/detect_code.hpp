@@ -1,10 +1,10 @@
-#ifndef _FIRESMOKE_DETECT_CODE_HPP_
-#define _FIRESMOKE_DETECT_CODE_HPP_
+#ifndef _HELMET_DETECT_CODE_HPP_
+#define _HELMET_DETECT_CODE_HPP_
 
 #include "box_info.hpp"
 #include <abi/consumer.hpp>
 
-namespace glasssix::firesmoke
+namespace glasssix::helmet
 {
     struct detect_code;
 }
@@ -12,7 +12,7 @@ namespace glasssix::firesmoke
 namespace glasssix::exposing::impl
 {
     template <>
-    struct abi<firesmoke::detect_code>
+    struct abi<helmet::detect_code>
     {
         using identity_type = type_identity_interface;
 
@@ -30,14 +30,14 @@ namespace glasssix::exposing::impl
                 std::int32_t height,
                 std::int32_t width,
                 abi_in_t<exposing::param_hash_map<exposing::param_string, float>> param_map_abi,
-                abi_out_t<exposing::param_vector<firesmoke::box_info>> result) noexcept = 0;
+                abi_out_t<exposing::param_vector<helmet::box_info>> result) noexcept = 0;
 
             virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept = 0;
         };
     };
 
     template <typename Derived>
-    struct interface_vtable<Derived, firesmoke::detect_code> : interface_vtable_base<Derived, firesmoke::detect_code>
+    struct interface_vtable<Derived, helmet::detect_code> : interface_vtable_base<Derived, helmet::detect_code>
     {
 
         virtual std::int32_t G6_ABI_CALL init(
@@ -55,7 +55,7 @@ namespace glasssix::exposing::impl
             std::int32_t height,
             std::int32_t width,
             abi_in_t<exposing::param_hash_map<exposing::param_string, float>> param_map_abi,
-            abi_out_t<exposing::param_vector<firesmoke::box_info>> result) noexcept override
+            abi_out_t<exposing::param_vector<helmet::box_info>> result) noexcept override
         {
             return abi_safe_call([&]
                 { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width,
@@ -74,10 +74,10 @@ namespace glasssix::exposing::impl
     };
 
     template <>
-    struct abi_adapter<firesmoke::detect_code>
+    struct abi_adapter<helmet::detect_code>
     {
         template <typename Derived>
-        struct type : enable_self_abi_awareness<Derived, firesmoke::detect_code>
+        struct type : enable_self_abi_awareness<Derived, helmet::detect_code>
         {
             void init(
                 const param_string& model_directory,
@@ -88,14 +88,14 @@ namespace glasssix::exposing::impl
                     get_abi(device)));
             }
 
-            exposing::param_vector<firesmoke::box_info> detect(
+            exposing::param_vector<helmet::box_info> detect(
                 param_span<std::uint8_t> bitmap,
                 std::int32_t channels,
                 std::int32_t height,
                 std::int32_t width,
                 const exposing::param_hash_map<exposing::param_string, float>& param_map_abi) const
             {
-                exposing::param_vector<firesmoke::box_info> result{ nullptr };
+                exposing::param_vector<helmet::box_info> result{ nullptr };
 
                 return (check_abi_result(
                     this->self_abi().detect(
@@ -119,7 +119,7 @@ namespace glasssix::exposing::impl
     };
 }
 
-namespace glasssix::firesmoke
+namespace glasssix::helmet
 {
     struct detect_code : exposing::inherits<detect_code>
     {

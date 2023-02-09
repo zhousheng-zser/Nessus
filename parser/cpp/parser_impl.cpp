@@ -526,6 +526,9 @@ namespace glasssix::exposing::nessus
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> parser_impl::impl::basic_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> protocol_map;
 #endif
+		protocol_map["helmet.new"] = &Helmet_new_json;
+		protocol_map["helmet.delete"] = &Helmet_delete_json;
+		protocol_map["helmet.detect"] = &Helmet_detect_json;
 		protocol_map["trespass.new"] = &Trespass_new_json;
 		protocol_map["trespass.delete"] = &Trespass_delete_json;
 		protocol_map["trespass.detect"] = &Trespass_detect_json;
