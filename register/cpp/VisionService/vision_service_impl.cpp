@@ -23,6 +23,7 @@
 #include <firesmoke/detect_code.hpp>
 #include <trespass/detect_code.hpp>
 #include <helmet/detect_code.hpp>
+#include <ebike/detect_code.hpp>
 
 #include <iostream>
 
@@ -43,6 +44,7 @@ using namespace glasssix::rail;
 using namespace glasssix::firesmoke;
 using namespace glasssix::trespass;
 using namespace glasssix::helmet;
+using namespace glasssix::ebike;
 
 namespace glasssix::exposing::nessus
 {
@@ -69,10 +71,14 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view firesmoke{ u8"firesmoke" };
 			static constexpr utf8_string_view trespass{ u8"trespass" };
 			static constexpr utf8_string_view helmet{ u8"helmet" };
+			static constexpr utf8_string_view ebike{ u8"ebike" };
 		};
 
 		struct function_names final
 		{
+			static constexpr utf8_string_view ebike_new{ u8"ebike.new" };
+			static constexpr utf8_string_view ebike_detect{ u8"ebike.detect" };
+			static constexpr utf8_string_view ebike_delete{ u8"ebike.delete" };
 			static constexpr utf8_string_view helmet_new{ u8"helmet.new" };
 			static constexpr utf8_string_view helmet_detect{ u8"helmet.detect" };
 			static constexpr utf8_string_view helmet_delete{ u8"helmet.delete" };
@@ -165,6 +171,7 @@ namespace glasssix::exposing::nessus
 		impl()
 		{
 			// New
+			functions_.insert_or_assign(function_names::ebike_new, std::bind(&impl::ebike_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::helmet_new, std::bind(&impl::helmet_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::trespass_new, std::bind(&impl::trespass_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::firesmoke_new, std::bind(&impl::firesmoke_new, this, std::placeholders::_1));
@@ -187,6 +194,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
 
 			// Delete
+			functions_.insert_or_assign(function_names::ebike_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::helmet_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::trespass_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::firesmoke_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -208,6 +216,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
+			functions_.insert_or_assign(function_names::ebike_detect, std::bind(&impl::ebike_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::helmet_detect, std::bind(&impl::helmet_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::trespass_detect, std::bind(&impl::trespass_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::firesmoke_detect, std::bind(&impl::firesmoke_detect, this, std::placeholders::_1));
@@ -298,6 +307,14 @@ namespace glasssix::exposing::nessus
 		}
 
 	private:
+
+		unknown_object ebike_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+
+			return add_instance(package_names::helmet, make_exported_interface<ebike::detect_code>(models_directory, device));
+		}
 
 		unknown_object helmet_new(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -488,6 +505,19 @@ namespace glasssix::exposing::nessus
 		{
 
 			return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
+		}
+
+		unknown_object ebike_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<ebike::detect_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
+			return instance.detect(image, channels, height, width, params_map_abi);
 		}
 
 		unknown_object helmet_detect(const param_hash_map<param_string, unknown_object>& params)
