@@ -31,6 +31,8 @@
 #include "../../common/include/helmet/box_info.hpp"
 #include "../../common/include/ebike/detect_code.hpp"
 #include "../../common/include/ebike/box_info.hpp"
+#include "../../common/include/callsmoke/detect_code.hpp"
+#include "../../common/include/callsmoke/box_info.hpp"
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -176,6 +178,182 @@ namespace glasssix
 				return dst;
 			}
 
+			inline Json::Value Callsmoke_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+
+				try {
+					std::string models_directory = root["models_directory"].asString();
+					int device = root["device"].asInt();
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"device", box(device)}, {u8"models_directory", box(std::string_view(models_directory))} });
+
+					instance = unbox<guid>(plugin.execute(u8"callsmoke.new", param));
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Callsmoke_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+
+					Json::Value params = root.get("params", Json::Value());
+
+					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+
+					for (auto& param_name : params.getMemberNames()) {
+						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					}
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"image", box(image_span)},
+							{u8"height", box(height)},
+							{u8"width", box(width)},
+							{u8"object_id", box(instance)},
+							{u8"params", param_map_abi},
+						});
+
+					auto result = plugin.execute(u8"callsmoke.detect", param).as<exposing::param_vector<helmet::box_info>>();
+
+					int call_detected = 0;
+					int smoke_detected = 0;
+
+					Json::Value jarray_box;
+					Json::Value jarray_call_detected;
+					Json::Value jarray_smoke_detected;
+
+					for (int i = 0; i < result.size(); i++)
+					{
+						int category = Json::Int(result[i].category());
+
+						if (category == 0)
+						{
+							call_detected += 1;
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_call_detected.append(jarray_box);
+						}
+						else if (category == 1)
+						{
+							smoke_detected += 1;
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_smoke_detected.append(jarray_box);
+						}
+					}
+
+					Json::Value jarray_detected;
+					Json::Value jarray_cant_detected;
+
+					jarray_detected["call_num"] = call_detected;
+					jarray_detected["call_list"] = jarray_call_detected;
+					jarray_cant_detected["smoke_num"] = smoke_detected;
+					jarray_cant_detected["smoke_list"] = jarray_smoke_detected;
+
+					Json::Value jarray_info;
+					jarray_info.append(jarray_detected);
+					jarray_info.append(jarray_cant_detected);
+
+					value["detect_info"] = jarray_info;
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Callsmoke_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"object_id", box(instance)} });
+
+					plugin.execute(u8"callsmoke.delete", param);
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+				return value;
+			}
 
 			inline Json::Value Ebike_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
