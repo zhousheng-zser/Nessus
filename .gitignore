@@ -1,7 +1,4 @@
-build/
-build_v7/
-build_centos/
-build_ubuntu/
+build*/
 .vs/
 /cmake/ndk_cmake.bat
 .vscode
