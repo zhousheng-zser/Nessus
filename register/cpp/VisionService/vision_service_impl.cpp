@@ -74,14 +74,14 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view trespass{ u8"trespass" };
 			static constexpr utf8_string_view helmet{ u8"helmet" };
 			static constexpr utf8_string_view ebike{ u8"ebike" };
-			static constexpr utf8_string_view ebike{ u8"callsmoke" };
+			static constexpr utf8_string_view callsmoke{ u8"callsmoke" };
 		};
 
 		struct function_names final
 		{
-			static constexpr utf8_string_view ebike_new{ u8"callsmoke.new" };
-			static constexpr utf8_string_view ebike_detect{ u8"callsmoke.detect" };
-			static constexpr utf8_string_view ebike_delete{ u8"callsmoke.delete" };
+			static constexpr utf8_string_view callsmoke_new{ u8"callsmoke.new" };
+			static constexpr utf8_string_view callsmoke_detect{ u8"callsmoke.detect" };
+			static constexpr utf8_string_view callsmoke_delete{ u8"callsmoke.delete" };
 			static constexpr utf8_string_view ebike_new{ u8"ebike.new" };
 			static constexpr utf8_string_view ebike_detect{ u8"ebike.detect" };
 			static constexpr utf8_string_view ebike_delete{ u8"ebike.delete" };
