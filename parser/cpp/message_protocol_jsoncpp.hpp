@@ -1990,18 +1990,18 @@ namespace glasssix
 						// angle
 						jobj_box["angle"] = Json::Value(box.angle());
 						// cut_roi
-						jobj_box["cut_roi"] = Json::Value(Json::arrayValue);
-						auto cut_roi = box.cut_roi();
-						std::vector<std::uint8_t> temp(TB64ENCLEN(cut_roi.size()), 0);
-						std::uint8_t* ptr = temp.data();
-						std::vector<std::uint8_t> buffer(cut_roi.size());
-						cut_roi.copy_to(0, buffer);
-						size_t base64_len = tb64xenc(buffer.data(), buffer.size(), ptr);
-						jobj_box["cut_roi"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + base64_len));
-						// cut_roi_width
-						jobj_box["cut_roi_width"] = Json::Value(box.cut_roi_width());
-						// cut_roi_height
-						jobj_box["cut_roi_height"] = Json::Value(box.cut_roi_height());
+						//jobj_box["cut_roi"] = Json::Value(Json::arrayValue);
+						//auto cut_roi = box.cut_roi();
+						//std::vector<std::uint8_t> temp(TB64ENCLEN(cut_roi.size()), 0);
+						//std::uint8_t* ptr = temp.data();
+						//std::vector<std::uint8_t> buffer(cut_roi.size());
+						//cut_roi.copy_to(0, buffer);
+						//size_t base64_len = tb64xenc(buffer.data(), buffer.size(), ptr);
+						//jobj_box["cut_roi"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + base64_len));
+						//// cut_roi_width
+						//jobj_box["cut_roi_width"] = Json::Value(box.cut_roi_width());
+						//// cut_roi_height
+						//jobj_box["cut_roi_height"] = Json::Value(box.cut_roi_height());
 
 						jarray_boxes.append(jobj_box);
 					}
@@ -3038,20 +3038,20 @@ namespace glasssix
 						// angle
 						jobj_box["angle"] = Json::Value(box.angle());
 
-						jobj_box["cut_roi"] = Json::Value(Json::arrayValue);
-						
-						auto cut_roi = box.cut_roi();
-						std::vector<std::uint8_t> temp(TB64ENCLEN(cut_roi.size()), 0);
-						std::uint8_t* ptr = temp.data();
-						std::vector<std::uint8_t> buffer(cut_roi.size());
-						cut_roi.copy_to(0, buffer);
+						//jobj_box["cut_roi"] = Json::Value(Json::arrayValue);
+						//
+						//auto cut_roi = box.cut_roi();
+						//std::vector<std::uint8_t> temp(TB64ENCLEN(cut_roi.size()), 0);
+						//std::uint8_t* ptr = temp.data();
+						//std::vector<std::uint8_t> buffer(cut_roi.size());
+						//cut_roi.copy_to(0, buffer);
 
-						size_t base64_len = tb64xenc(buffer.data(), buffer.size(), ptr);
+						//size_t base64_len = tb64xenc(buffer.data(), buffer.size(), ptr);
 
-						jobj_box["cut_roi"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + base64_len));
+						//jobj_box["cut_roi"].append(Json::Value(reinterpret_cast<char*>(ptr), reinterpret_cast<char*>(ptr) + base64_len));
 
-						jobj_box["cut_roi_width"] = Json::Value(box.cut_roi_width());
-						jobj_box["cut_roi_height"] = Json::Value(box.cut_roi_height());
+						//jobj_box["cut_roi_width"] = Json::Value(box.cut_roi_width());
+						//jobj_box["cut_roi_height"] = Json::Value(box.cut_roi_height());
 
 						jarray_boxes.append(jobj_box);
 					}
