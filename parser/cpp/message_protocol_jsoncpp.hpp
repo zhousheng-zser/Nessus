@@ -4608,11 +4608,11 @@ namespace glasssix
 				try
 				{
 					int device = root["device"].asInt();
-					bool use_int8 = root["use_int8"].asBool();
+					int model_type = root["model_type"].asInt();
 					std::string models_directory = root["models_directory"].asString();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"device", box(device)},
-						 {u8"use_int8", box(use_int8 ? 1 : 0)},
+						 {u8"model_type", box(model_type)},
 						 {u8"models_directory", box(std::string_view(models_directory))} });
 
 					instance = unbox<guid>(plugin.execute(u8"damocles.new", param));
