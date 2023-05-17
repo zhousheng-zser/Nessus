@@ -579,7 +579,6 @@ namespace glasssix::exposing::nessus
 		protocol_map["cassius.delete"] = &Cassius_delete_json;
 		protocol_map["cassius.forward"] = &Cassius_forward_json;
 		protocol_map["selene.new"] = &Selene_new_json;
-		protocol_map["selene.new.test"] = &Selene_new_test_json;
 		protocol_map["selene.delete"] = &Selene_delete_json;
 		protocol_map["selene.forward"] = &Selene_forward_json;
 		protocol_map["selene.make_mask_forward"] = &Selene_make_mask_forward_json;

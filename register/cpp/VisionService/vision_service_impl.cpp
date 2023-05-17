@@ -122,7 +122,6 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view romancia_new{ u8"romancia.new" };
 			static constexpr utf8_string_view irisviel_new{ u8"irisviel.new" };
 			static constexpr utf8_string_view selene_new{ u8"selene.new" };
-			static constexpr utf8_string_view selene_new_test{ u8"selene.new.test" };
 			static constexpr utf8_string_view gungnir_new{ u8"gungnir.new" };
 			static constexpr utf8_string_view mjollner_new{ u8"mjollner.new" };
 			static constexpr utf8_string_view valklyrs_new{ u8"valklyrs.new" };
@@ -200,7 +199,6 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::romancia_new, std::bind(&impl::romancia_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::irisviel_new, std::bind(&impl::irisviel_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::selene_new, std::bind(&impl::selene_new, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::selene_new_test, std::bind(&impl::selene_new_test, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gungnir_new, std::bind(&impl::gungnir_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::mjollner_new, std::bind(&impl::mjollner_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::valklyrs_new, std::bind(&impl::valklyrs_new, this, std::placeholders::_1));
@@ -436,34 +434,7 @@ namespace glasssix::exposing::nessus
 			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			param_string model_name = u8"";
-			switch (model_type)
-			{
-			case 0:
-				model_name = u8"unicorn_light_universal";
-				break;
-			case 1:
-				model_name = u8"unicorn_light_id";
-				break;
-			case 2:
-				model_name = u8"unicorn_light_universal_mask";
-				break;
-			default:
-				throw abi_invalid_argument("Invalid model_type value. ");
-				break;
-			}
-
-			return add_instance(package_names::selene, make_exported_interface<selene::feature_extractor>(models_directory + u8"/" + model_name + (use_int8 ? +u8"_int8.racy" : u8".racy"), model_type, device, use_int8 ? true : false));
-		}
-
-		unknown_object selene_new_test(const param_hash_map<param_string, unknown_object>& params)
-		{
-			auto model_path = unbox<param_string>(params.get_value(u8"model_path"));
-			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
-			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
-
-			return add_instance(package_names::selene, make_exported_interface<selene::feature_extractor>(model_path, model_type, device, use_int8 ? true : false));
+			return add_instance(package_names::selene, make_exported_interface<selene::feature_extractor>(models_directory, model_type, device, use_int8 ? true : false));
 		}
 
 		unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
@@ -477,14 +448,11 @@ namespace glasssix::exposing::nessus
 
 		unknown_object damocles_new(const param_hash_map<param_string, unknown_object>& params)
 		{
+			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			auto FAMSV2_racy_path = models_directory + (use_int8 ? u8"/FASMV2_int8.racy" : u8"/FASMV2.racy");
-			auto land65_racy_path = models_directory + (use_int8 ? u8"/pfld11_landmark65_simp.racy" : u8"/pfld11_landmark65_simp.racy");
-
-			return add_instance(package_names::damocles, make_exported_interface<damocles::anti_spoofing>(FAMSV2_racy_path, land65_racy_path, device, use_int8 ? true : false));
+			return add_instance(package_names::damocles, make_exported_interface<damocles::anti_spoofing>(models_directory, model_type, device));
 		}
 
 		unknown_object romancia_new(const param_hash_map<param_string, unknown_object>& params)

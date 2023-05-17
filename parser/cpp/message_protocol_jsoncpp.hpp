@@ -4282,48 +4282,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Selene_new_test_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
-			{
-				Json::Value value;
-				try
-				{
-					int model_type = root["model_type"].asInt();
-					int device = root["device"].asInt();
-					bool use_int8 = root["use_int8"].asBool();
-					std::string model_path = root["model_path"].asString();
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"model_type", box(model_type)},
-						 {u8"device", box(device)},
-						 {u8"use_int8", box(use_int8 ? 1 : 0)},
-						 {u8"model_path", box(std::string_view(model_path))} });
-
-					instance = unbox<guid>(plugin.execute(u8"selene.new.test", param));
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-				}
-				catch (const parser_exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
-				}
-				catch (const Json::Exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-				}
-				catch (const std::exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
-				}
-				catch (const abi_error& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what_to_narrow());
-					value["status"]["code"] = Json::Int(ex.result());
-				}
-
-				return value;
-			}
+			
 			inline Json::Value Selene_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -4608,11 +4567,11 @@ namespace glasssix
 				try
 				{
 					int device = root["device"].asInt();
-					bool use_int8 = root["use_int8"].asBool();
+					int model_type = root["model_type"].asInt();
 					std::string models_directory = root["models_directory"].asString();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"device", box(device)},
-						 {u8"use_int8", box(use_int8 ? 1 : 0)},
+						 {u8"model_type", box(model_type)},
 						 {u8"models_directory", box(std::string_view(models_directory))} });
 
 					instance = unbox<guid>(plugin.execute(u8"damocles.new", param));
