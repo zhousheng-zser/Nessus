@@ -401,8 +401,8 @@ namespace glasssix::exposing::nessus
 						//fs::path plugin_directory = os_context::expand_enviroment_variables(config["plugin_directory"].get<std::string_view>().value());
 
 						for (auto lib_item : config["plugin_list"].get<simdjson::dom::array>().value())
-						{
-							//bool ret = get_component_loader().add_module(to_param_string((plugin_directory / lib_item.get<std::string_view>().value()).string()));
+						{	
+											
 							bool ret = get_component_loader().add_module_by_name(to_param_string(lib_item.get<std::string_view>().value()));
 							if (!ret)
 							{
@@ -541,9 +541,9 @@ namespace glasssix::exposing::nessus
 		protocol_map["trespass.new"] = &Trespass_new_json;
 		protocol_map["trespass.delete"] = &Trespass_delete_json;
 		protocol_map["trespass.detect"] = &Trespass_detect_json;
-		protocol_map["firesmoke.new"] = &Firesmoke_new_json;
-		protocol_map["firesmoke.delete"] = &Firesmoke_delete_json;
-		protocol_map["firesmoke.detect"] = &Firesmoke_detect_json;
+		protocol_map["flame.new"] = &Flame_new_json;
+		protocol_map["flame.delete"] = &Flame_delete_json;
+		protocol_map["flame.detect"] = &Flame_detect_json;
 		protocol_map["refvest.new"] = &Refvest_new_json;
 		protocol_map["refvest.delete"] = &Refvest_delete_json;
 		protocol_map["refvest.detect"] = &Refvest_detect_json;
