@@ -20,7 +20,7 @@
 #include <plate/ocr_code.hpp>
 #include <rail/classify_code.hpp>
 #include <refvest/classify_code.hpp>
-#include <firesmoke/detect_code.hpp>
+#include <flame/detect_code.hpp>
 #include <trespass/detect_code.hpp>
 #include <helmet/detect_code.hpp>
 #include <ebike/detect_code.hpp>
@@ -43,7 +43,7 @@ using namespace glasssix::heimdall;
 using namespace glasssix::banshee;
 using namespace glasssix::plate;
 using namespace glasssix::rail;
-using namespace glasssix::firesmoke;
+using namespace glasssix::flame;
 using namespace glasssix::trespass;
 using namespace glasssix::helmet;
 using namespace glasssix::ebike;
@@ -72,7 +72,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view plate{ u8"plate" };
 			static constexpr utf8_string_view rail{ u8"rail" };
 			static constexpr utf8_string_view refvest{ u8"refvest" };
-			static constexpr utf8_string_view firesmoke{ u8"firesmoke" };
+			static constexpr utf8_string_view flame{ u8"flame" };
 			static constexpr utf8_string_view trespass{ u8"trespass" };
 			static constexpr utf8_string_view helmet{ u8"helmet" };
 			static constexpr utf8_string_view ebike{ u8"ebike" };
@@ -97,9 +97,9 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view trespass_new{ u8"trespass.new" };
 			static constexpr utf8_string_view trespass_detect{ u8"trespass.detect" };
 			static constexpr utf8_string_view trespass_delete{ u8"trespass.delete" };
-			static constexpr utf8_string_view firesmoke_new{ u8"firesmoke.new" };
-			static constexpr utf8_string_view firesmoke_detect{ u8"firesmoke.detect" };
-			static constexpr utf8_string_view firesmoke_delete{ u8"firesmoke.delete" };
+			static constexpr utf8_string_view flame_new{ u8"flame.new" };
+			static constexpr utf8_string_view flame_detect{ u8"flame.detect" };
+			static constexpr utf8_string_view flame_delete{ u8"flame.delete" };
 			static constexpr utf8_string_view refvest_new{ u8"refvest.new" };
 			static constexpr utf8_string_view refvest_detect{ u8"refvest.detect" };
 			static constexpr utf8_string_view refvest_delete{ u8"refvest.delete" };
@@ -187,7 +187,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::ebike_new, std::bind(&impl::ebike_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::helmet_new, std::bind(&impl::helmet_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::trespass_new, std::bind(&impl::trespass_new, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::firesmoke_new, std::bind(&impl::firesmoke_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::flame_new, std::bind(&impl::flame_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::refvest_new, std::bind(&impl::refvest_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::rail_new, std::bind(&impl::rail_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::plate_new, std::bind(&impl::plate_new, this, std::placeholders::_1));
@@ -211,7 +211,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::ebike_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::helmet_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::trespass_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-			functions_.insert_or_assign(function_names::firesmoke_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::flame_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::refvest_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::rail_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::plate_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -235,7 +235,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::ebike_detect, std::bind(&impl::ebike_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::helmet_detect, std::bind(&impl::helmet_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::trespass_detect, std::bind(&impl::trespass_detect, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::firesmoke_detect, std::bind(&impl::firesmoke_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::flame_detect, std::bind(&impl::flame_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::refvest_detect, std::bind(&impl::refvest_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::rail_detect, std::bind(&impl::rail_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::plate_detect, std::bind(&impl::plate_detect, this, std::placeholders::_1));
@@ -349,6 +349,7 @@ namespace glasssix::exposing::nessus
 
 			return add_instance(package_names::ebike, make_exported_interface<ebike::detect_code>(models_directory, device));
 		}
+		
 
 		unknown_object helmet_new(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -366,12 +367,12 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::trespass, make_exported_interface<trespass::detect_code>(models_directory, device));
 		}
 
-		unknown_object firesmoke_new(const param_hash_map<param_string, unknown_object>& params)
+		unknown_object flame_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::firesmoke, make_exported_interface<firesmoke::detect_code>(models_directory, device));
+			return add_instance(package_names::flame, make_exported_interface<flame::detect_code>(models_directory, device));
 		}
 
 		unknown_object refvest_new(const param_hash_map<param_string, unknown_object>& params)
@@ -446,6 +447,7 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/longinus.racy", models_directory + u8"/pfld_land71_simp.racy", nms, device));
 		}
 
+
 		unknown_object damocles_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
@@ -454,6 +456,7 @@ namespace glasssix::exposing::nessus
 
 			return add_instance(package_names::damocles, make_exported_interface<damocles::anti_spoofing>(models_directory, model_type, device));
 		}
+
 
 		unknown_object romancia_new(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -555,15 +558,21 @@ namespace glasssix::exposing::nessus
 
 		unknown_object helmet_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
+
 			constexpr std::int32_t channels = 3;
 			auto instance = get_instance<helmet::detect_code>(params);
 			auto image  = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
 
-			return instance.detect(image, channels, height, width, params_map_abi);
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
 		unknown_object trespass_detect(const param_hash_map<param_string, unknown_object>& params)
@@ -577,17 +586,22 @@ namespace glasssix::exposing::nessus
 			return instance.detect(image, channels, height, width);
 		}
 
-		unknown_object firesmoke_detect(const param_hash_map<param_string, unknown_object>& params)
+		unknown_object flame_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<firesmoke::detect_code>(params);
+			auto instance = get_instance<flame::detect_code>(params);
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
 
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
 
-			return instance.detect(image, channels, height, width, params_map_abi);
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
 		unknown_object refvest_detect(const param_hash_map<param_string, unknown_object>& params)
@@ -598,7 +612,12 @@ namespace glasssix::exposing::nessus
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 
-			return instance.detect(image, channels, height, width);
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height);
 		}
 
 		unknown_object rail_detect(const param_hash_map<param_string, unknown_object>& params)
