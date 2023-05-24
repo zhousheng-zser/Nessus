@@ -798,18 +798,14 @@ namespace glasssix
 						}
 					}
 
-					Json::Value jarray_detected;
-					Json::Value jarray_cant_detected;
-
-					jarray_detected["detected_num"] = helmet_detected;
-					jarray_detected["detected_list"] = jarray_helmet_detected;
-					jarray_cant_detected["cant_detected_num"] = helmet_cant_detected;
-					jarray_cant_detected["cant_detected_list"] = jarray_helmet_cant_detected;
-
 					Json::Value jarray_info;
-					jarray_info.append(jarray_detected);
-					jarray_info.append(jarray_cant_detected);
 
+					jarray_info["detected_num"] = helmet_detected;
+					jarray_info["detected_list"] = jarray_helmet_detected;
+					jarray_info["cant_detected_num"] = helmet_cant_detected;
+					jarray_info["cant_detected_list"] = jarray_helmet_cant_detected;
+
+			
 					value["detect_info"] = jarray_info;
 
 					value["status"]["message"] = Json::Value("OK");
@@ -1124,7 +1120,7 @@ namespace glasssix
 					for (int i = 0; i < result.size(); i++)
 					{
 						int category = Json::Int(result[i].category());
-
+						// Json::Value jarray_box;
 						if (category == 0)
 						{
                             fire_detected += 1;
@@ -1145,20 +1141,14 @@ namespace glasssix
 						}
 					}
 
-					Json::Value jarray_fire;
-					Json::Value jarray_smoke;
-
-                    jarray_fire["fire_num"] = fire_detected;
-                    jarray_fire["fire_list"] = jarray_fire_detected;
-                    jarray_smoke["smoke_num"] = smoke_detected;
-                    jarray_smoke["smoke_list"] = jarray_smoke_detected;
-
 					Json::Value jarray_info;
-					jarray_info.append(jarray_fire);
-					jarray_info.append(jarray_smoke);
+
+					jarray_info["fire_num"] = fire_detected;
+					jarray_info["fire_list"] = jarray_fire_detected;
+					jarray_info["smoke_num"] = smoke_detected;
+					jarray_info["smoke_list"] = jarray_smoke_detected;
 
 					value["detect_info"] = jarray_info;
-
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
