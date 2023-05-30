@@ -1,22 +1,22 @@
-#ifndef _REFVEST_CLASSIFY_CODE_HPP_
-#define _REFVEST_CLASSIFY_CODE_HPP_
+#ifndef _FLAME_DETECT_CODE_HPP_
+#define _FLAME_DETECT_CODE_HPP_
 
 #include "box_info.hpp"
 #include <abi/consumer.hpp>
 
-namespace glasssix::refvest
+namespace glasssix::flame
 {
-    struct classify_code;
+    struct detect_code;
 }
 
 namespace glasssix::exposing::impl
 {
     template <>
-    struct abi<refvest::classify_code>
+    struct abi<flame::detect_code>
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{ "{79EEE110-883A-4A5D-BAC7-DE21EBF8FA31}" };
+        static constexpr guid id{ "{4E399FFA-49E0-41B4-B72E-A4EFC3204349}" };
 
         struct type : abi_unknown_object
         {
@@ -33,14 +33,15 @@ namespace glasssix::exposing::impl
                 std::int32_t roi_y,
                 std::int32_t roi_width,
                 std::int32_t roi_height,
-                abi_out_t<exposing::param_vector<refvest::box_info>> result) noexcept = 0;
+                abi_in_t<exposing::param_hash_map<exposing::param_string, float>> param_map_abi,
+                abi_out_t<exposing::param_vector<flame::box_info>> result) noexcept = 0;
 
             virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept = 0;
         };
     };
 
     template <typename Derived>
-    struct interface_vtable<Derived, refvest::classify_code> : interface_vtable_base<Derived, refvest::classify_code>
+    struct interface_vtable<Derived, flame::detect_code> : interface_vtable_base<Derived, flame::detect_code>
     {
 
         virtual std::int32_t G6_ABI_CALL init(
@@ -61,10 +62,12 @@ namespace glasssix::exposing::impl
             std::int32_t roi_y,
             std::int32_t roi_width,
             std::int32_t roi_height,
-            abi_out_t<exposing::param_vector<refvest::box_info>> result) noexcept override
+            abi_in_t<exposing::param_hash_map<exposing::param_string, float>> param_map_abi,
+            abi_out_t<exposing::param_vector<flame::box_info>> result) noexcept override
         {
             return abi_safe_call([&]
-                { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width, roi_x, roi_y, roi_width, roi_height)); });
+                { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width, roi_x, roi_y, roi_width, roi_height,
+                   create_from_abi<exposing::param_hash_map<exposing::param_string, float>>(param_map_abi))); });
         }
 
         virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept override
@@ -79,10 +82,10 @@ namespace glasssix::exposing::impl
     };
 
     template <>
-    struct abi_adapter<refvest::classify_code>
+    struct abi_adapter<flame::detect_code>
     {
         template <typename Derived>
-        struct type : enable_self_abi_awareness<Derived, refvest::classify_code>
+        struct type : enable_self_abi_awareness<Derived, flame::detect_code>
         {
             void init(
                 const param_string& model_directory,
@@ -93,7 +96,7 @@ namespace glasssix::exposing::impl
                     get_abi(device)));
             }
 
-            exposing::param_vector<refvest::box_info> detect(
+            exposing::param_vector<flame::box_info> detect(
                 param_span<std::uint8_t> bitmap,
                 std::int32_t channels,
                 std::int32_t height,
@@ -101,9 +104,10 @@ namespace glasssix::exposing::impl
                 std::int32_t roi_x,
                 std::int32_t roi_y,
                 std::int32_t roi_width,
-                std::int32_t roi_height) const
+                std::int32_t roi_height,
+                const exposing::param_hash_map<exposing::param_string, float>& param_map_abi) const
             {
-                exposing::param_vector<refvest::box_info> result{ nullptr };
+                exposing::param_vector<flame::box_info> result{ nullptr };
 
                 return (check_abi_result(
                     this->self_abi().detect(
@@ -115,6 +119,7 @@ namespace glasssix::exposing::impl
                         roi_y,
                         roi_width,
                         roi_height,
+                        get_abi(param_map_abi),
                         put_abi(result))
                 ),
                 result);
@@ -130,9 +135,9 @@ namespace glasssix::exposing::impl
     };
 }
 
-namespace glasssix::refvest
+namespace glasssix::flame
 {
-    struct classify_code : exposing::inherits<classify_code>
+    struct detect_code : exposing::inherits<detect_code>
     {
         using inherits::inherits;
     };
