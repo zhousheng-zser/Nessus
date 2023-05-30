@@ -29,6 +29,10 @@ namespace glasssix::exposing::impl
                 std::int32_t channels,
                 std::int32_t height,
                 std::int32_t width,
+                std::int32_t roi_x,
+                std::int32_t roi_y,
+                std::int32_t roi_width,
+                std::int32_t roi_height,
                 abi_in_t<exposing::param_hash_map<exposing::param_string, float>> param_map_abi,
                 abi_out_t<exposing::param_vector<helmet::box_info>> result) noexcept = 0;
 
@@ -54,11 +58,15 @@ namespace glasssix::exposing::impl
             std::int32_t channels,
             std::int32_t height,
             std::int32_t width,
+            std::int32_t roi_x,
+            std::int32_t roi_y,
+            std::int32_t roi_width,
+            std::int32_t roi_height,
             abi_in_t<exposing::param_hash_map<exposing::param_string, float>> param_map_abi,
             abi_out_t<exposing::param_vector<helmet::box_info>> result) noexcept override
         {
             return abi_safe_call([&]
-                { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width,
+                { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width, roi_x, roi_y, roi_width, roi_height,
                    create_from_abi<exposing::param_hash_map<exposing::param_string, float>>(param_map_abi))); });
         }
 
@@ -93,6 +101,10 @@ namespace glasssix::exposing::impl
                 std::int32_t channels,
                 std::int32_t height,
                 std::int32_t width,
+                std::int32_t roi_x,
+                std::int32_t roi_y,
+                std::int32_t roi_width,
+                std::int32_t roi_height,
                 const exposing::param_hash_map<exposing::param_string, float>& param_map_abi) const
             {
                 exposing::param_vector<helmet::box_info> result{ nullptr };
@@ -103,6 +115,10 @@ namespace glasssix::exposing::impl
                         channels,
                         height,
                         width,
+                        roi_x,
+                        roi_y,
+                        roi_width,
+                        roi_height,
                         get_abi(param_map_abi),
                         put_abi(result))
                 ),

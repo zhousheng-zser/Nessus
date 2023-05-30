@@ -23,8 +23,8 @@
 #include "../../common/include/rail/box_info.hpp"
 #include "../../common/include/refvest/classify_code.hpp"
 #include "../../common/include/refvest/box_info.hpp"
-#include "../../common/include/firesmoke/detect_code.hpp"
-#include "../../common/include/firesmoke/box_info.hpp"
+#include "../../common/include/flame/detect_code.hpp"
+#include "../../common/include/flame/box_info.hpp"
 #include "../../common/include/trespass/detect_code.hpp"
 #include "../../common/include/trespass/box_info.hpp"
 #include "../../common/include/helmet/detect_code.hpp"
@@ -426,7 +426,7 @@ namespace glasssix
 							{u8"params", param_map_abi},
 						});
 
-					auto result = plugin.execute(u8"callsmoke.detect", param).as<exposing::param_vector<helmet::box_info>>();
+					auto result = plugin.execute(u8"callsmoke.detect", param).as<exposing::param_vector<callsmoke::box_info>>();
 
 					int call_detected = 0;
 					int smoke_detected = 0;
@@ -691,14 +691,17 @@ namespace glasssix
 				Json::Value value;
 
 				try {
+
 					std::string models_directory = root["models_directory"].asString();
 					int device = root["device"].asInt();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"device", box(device)}, {u8"models_directory", box(std::string_view(models_directory))} });
 
+	
 					instance = unbox<guid>(plugin.execute(u8"helmet.new", param));
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+		
 				}
 				catch (const parser_exception& ex)
 				{
@@ -729,18 +732,23 @@ namespace glasssix
 				Json::Value value;
 				try
 				{
+			
 					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
-
+					int roi_x = root["roi_x"].asInt();
+					int roi_y = root["roi_y"].asInt();
+					int roi_width = root["roi_width"].asInt();
+					int roi_height = root["roi_height"].asInt();
+						
 					Json::Value params = root.get("params", Json::Value());
-
+				
 					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
 
 					for (auto& param_name : params.getMemberNames()) {
 						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
 					}
-
+		
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
@@ -749,6 +757,10 @@ namespace glasssix
 							{u8"image", box(image_span)},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
+							{u8"roi_x", box(roi_x)},
+							{u8"roi_y", box(roi_y)},
+							{u8"roi_width", box(roi_width)},
+							{u8"roi_height", box(roi_height)},
 							{u8"object_id", box(instance)},
 							{u8"params", param_map_abi},
 						});
@@ -786,18 +798,14 @@ namespace glasssix
 						}
 					}
 
-					Json::Value jarray_detected;
-					Json::Value jarray_cant_detected;
-
-					jarray_detected["detected_num"] = helmet_detected;
-					jarray_detected["detected_list"] = jarray_helmet_detected;
-					jarray_cant_detected["cant_detected_num"] = helmet_cant_detected;
-					jarray_cant_detected["cant_detected_list"] = jarray_helmet_cant_detected;
-
 					Json::Value jarray_info;
-					jarray_info.append(jarray_detected);
-					jarray_info.append(jarray_cant_detected);
 
+					jarray_info["detected_num"] = helmet_detected;
+					jarray_info["detected_list"] = jarray_helmet_detected;
+					jarray_info["cant_detected_num"] = helmet_cant_detected;
+					jarray_info["cant_detected_list"] = jarray_helmet_cant_detected;
+
+			
 					value["detect_info"] = jarray_info;
 
 					value["status"]["message"] = Json::Value("OK");
@@ -1018,7 +1026,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Firesmoke_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Flame_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 
@@ -1029,7 +1037,7 @@ namespace glasssix
 						{ {u8"device", box(device)},
 								{u8"models_directory", box(std::string_view(models_directory))} });
 
-					instance = unbox<guid>(plugin.execute(u8"firesmoke.new", param));
+					instance = unbox<guid>(plugin.execute(u8"flame.new", param));
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
@@ -1057,7 +1065,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Firesmoke_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Flame_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -1065,6 +1073,14 @@ namespace glasssix
 					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
+
+					int roi_x = root["roi_x"].asInt();
+					int roi_y = root["roi_y"].asInt();
+
+					int roi_width  = root["roi_width"].asInt();
+					int roi_height = root["roi_height"].asInt();
+
+		
 
 					Json::Value params = root.get("params", Json::Value());
 
@@ -1083,10 +1099,16 @@ namespace glasssix
 							{u8"height", box(height)},
 							{u8"width", box(width)},
 							{u8"object_id", box(instance)},
+
+							{u8"roi_x", box(roi_x)},
+							{u8"roi_y", box(roi_y)},
+
+							{u8"roi_width",  box(roi_width)},
+							{u8"roi_height", box(roi_height)},
 							{u8"params", param_map_abi},
 						});
 
-					auto result = plugin.execute(u8"firesmoke.detect", param).as<exposing::param_vector<firesmoke::box_info>>();
+					auto result = plugin.execute(u8"flame.detect", param).as<exposing::param_vector<flame::box_info>>();
 
 					int fire_detected = 0;
 					int smoke_detected = 0;
@@ -1098,7 +1120,7 @@ namespace glasssix
 					for (int i = 0; i < result.size(); i++)
 					{
 						int category = Json::Int(result[i].category());
-
+						// Json::Value jarray_box;
 						if (category == 0)
 						{
                             fire_detected += 1;
@@ -1119,20 +1141,14 @@ namespace glasssix
 						}
 					}
 
-					Json::Value jarray_fire;
-					Json::Value jarray_smoke;
-
-                    jarray_fire["fire_num"] = fire_detected;
-                    jarray_fire["fire_list"] = jarray_fire_detected;
-                    jarray_smoke["smoke_num"] = smoke_detected;
-                    jarray_smoke["smoke_list"] = jarray_smoke_detected;
-
 					Json::Value jarray_info;
-					jarray_info.append(jarray_fire);
-					jarray_info.append(jarray_smoke);
+
+					jarray_info["fire_num"] = fire_detected;
+					jarray_info["fire_list"] = jarray_fire_detected;
+					jarray_info["smoke_num"] = smoke_detected;
+					jarray_info["smoke_list"] = jarray_smoke_detected;
 
 					value["detect_info"] = jarray_info;
-
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
@@ -1160,7 +1176,7 @@ namespace glasssix
 				return value;
 			}
 			
-			inline Json::Value Firesmoke_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Flame_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -1168,7 +1184,7 @@ namespace glasssix
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"object_id", box(instance)} });
 
-					plugin.execute(u8"rail.delete", param);
+					plugin.execute(u8"flame.delete", param);
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -1239,42 +1255,55 @@ namespace glasssix
 				Json::Value value;
 				try
 				{
-					int channels = root["channels"].asInt();
+					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
 
-					int format = 1;
+					int roi_x = root["roi_x"].asInt();
+					int roi_y = root["roi_y"].asInt();
+
+					int roi_width = root["roi_width"].asInt();
+					int roi_height = root["roi_height"].asInt();
+					int channels =root["channels"].asInt();
+
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"image", box(image_span)},
-							{u8"channels", box(channels)},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
-							{u8"object_id", box(instance)},
+							{u8"roi_x", box(roi_x)},
+							{u8"roi_y", box(roi_y)},
+							{u8"roi_width", box(roi_width)},
+							{u8"roi_height", box(roi_height)},
+							{u8"channels", box(channels)},
+							{u8"object_id", box(instance)},						
 						});
 
 					auto result = plugin.execute(u8"refvest.detect", param).as<param_vector<refvest::box_info>>();
-					Json::Value jarray_boxes = Json::Value(Json::arrayValue);
+					Json::Value jarray_boxes;
 					for (auto box : result)
 					{
 						Json::Value jobj_box;
 						// location
 						Json::Value jarray_points;
+							
 						jarray_points["x1"] = Json::Int(box.x1());
 						jarray_points["y1"] = Json::Int(box.y1());
 						jarray_points["x2"] = Json::Int(box.x2());
 						jarray_points["y2"] = Json::Int(box.y2());
-
+				
 						jobj_box["location"] = jarray_points;
 						jobj_box["score"] = Json::Value(box.score());
 						jobj_box["category"] = Json::Int(box.category());
+
+		
 						jarray_boxes.append(jobj_box);
 					}
 
-					value["info_list"] = jarray_boxes;
+					value["detect_info"] = jarray_boxes;
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -4281,49 +4310,7 @@ namespace glasssix
 
 				return value;
 			}
-
-			inline Json::Value Selene_new_test_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
-			{
-				Json::Value value;
-				try
-				{
-					int model_type = root["model_type"].asInt();
-					int device = root["device"].asInt();
-					bool use_int8 = root["use_int8"].asBool();
-					std::string model_path = root["model_path"].asString();
-					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"model_type", box(model_type)},
-						 {u8"device", box(device)},
-						 {u8"use_int8", box(use_int8 ? 1 : 0)},
-						 {u8"model_path", box(std::string_view(model_path))} });
-
-					instance = unbox<guid>(plugin.execute(u8"selene.new.test", param));
-					value["status"]["message"] = Json::Value("OK");
-					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-				}
-				catch (const parser_exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
-				}
-				catch (const Json::Exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-				}
-				catch (const std::exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
-				}
-				catch (const abi_error& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what_to_narrow());
-					value["status"]["code"] = Json::Int(ex.result());
-				}
-
-				return value;
-			}
+						
 			inline Json::Value Selene_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -4608,11 +4595,13 @@ namespace glasssix
 				try
 				{
 					int device = root["device"].asInt();
-					bool use_int8 = root["use_int8"].asBool();
+					// bool use_int8 = root["use_int8"].asBool();
+					int model_type = root["model_type"].asInt();
+
 					std::string models_directory = root["models_directory"].asString();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"device", box(device)},
-						 {u8"use_int8", box(use_int8 ? 1 : 0)},
+					 	{u8"model_type", box(model_type)},
 						 {u8"models_directory", box(std::string_view(models_directory))} });
 
 					instance = unbox<guid>(plugin.execute(u8"damocles.new", param));
