@@ -526,6 +526,12 @@ namespace glasssix::exposing::nessus
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> parser_impl::impl::basic_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> protocol_map;
 #endif
+		protocol_map["valve.new"] = &Valve_new_json;
+		protocol_map["valve.delete"] = &Valve_delete_json;
+		protocol_map["valve.detect"] = &Valve_detect_json;
+		protocol_map["startorus.new"] = &Startorus_new_json;
+		protocol_map["startorus.delete"] = &Startorus_delete_json;
+		protocol_map["startorus.detect"] = &Startorus_detect_json;
 		protocol_map["genocr.new"] = &Genocr_new_json;
 		protocol_map["genocr.delete"] = &Genocr_delete_json;
 		protocol_map["genocr.detect"] = &Genocr_detect_json;

@@ -26,6 +26,8 @@
 #include <ebike/detect_code.hpp>
 #include <callsmoke/detect_code.hpp>
 #include <genocr/txt_code.hpp>
+#include <startorus/detect_code.hpp>
+#include <valve/detect_code.hpp>
 
 #include <iostream>
 
@@ -39,7 +41,6 @@ using namespace glasssix::selene;
 using namespace glasssix::gungnir;
 using namespace glasssix::mjollner;
 using namespace glasssix::valklyrs;
-using namespace glasssix::heimdall;
 using namespace glasssix::banshee;
 using namespace glasssix::plate;
 using namespace glasssix::rail;
@@ -48,7 +49,6 @@ using namespace glasssix::trespass;
 using namespace glasssix::helmet;
 using namespace glasssix::ebike;
 using namespace glasssix::callsmoke;
-//using namespace glasssix::genocr;
 
 namespace glasssix::exposing::nessus
 {
@@ -78,10 +78,18 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view ebike{ u8"ebike" };
 			static constexpr utf8_string_view callsmoke{ u8"callsmoke" };
 			static constexpr utf8_string_view genocr{ u8"genocr" };
+			static constexpr utf8_string_view startorus{ u8"startorus" };
+			static constexpr utf8_string_view valve{ u8"valve" };
 		};
 
 		struct function_names final
 		{
+			static constexpr utf8_string_view valve_new{ u8"valve.new" };
+			static constexpr utf8_string_view valve_detect{ u8"valve.detect" };
+			static constexpr utf8_string_view valve_delete{ u8"valve.delete" };
+			static constexpr utf8_string_view startorus_new{ u8"startorus.new" };
+			static constexpr utf8_string_view startorus_detect{ u8"startorus.detect" };
+			static constexpr utf8_string_view startorus_delete{ u8"startorus.delete" };
 			static constexpr utf8_string_view genocr_new{ u8"genocr.new" };
 			static constexpr utf8_string_view genocr_detect{ u8"genocr.detect" };
 			static constexpr utf8_string_view genocr_delete{ u8"genocr.delete" };
@@ -182,6 +190,8 @@ namespace glasssix::exposing::nessus
 		impl()
 		{
 			// New
+			functions_.insert_or_assign(function_names::valve_new, std::bind(&impl::valve_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::startorus_new, std::bind(&impl::startorus_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::genocr_new, std::bind(&impl::genocr_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::callsmoke_new, std::bind(&impl::ebike_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::ebike_new, std::bind(&impl::ebike_new, this, std::placeholders::_1));
@@ -206,6 +216,8 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
 
 			// Delete
+			functions_.insert_or_assign(function_names::valve_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::startorus_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::genocr_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::callsmoke_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::ebike_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -230,6 +242,8 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
+			functions_.insert_or_assign(function_names::valve_detect, std::bind(&impl::valve_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::startorus_detect, std::bind(&impl::startorus_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::genocr_detect, std::bind(&impl::genocr_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::callsmoke_detect, std::bind(&impl::ebike_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::ebike_detect, std::bind(&impl::ebike_detect, this, std::placeholders::_1));
@@ -323,6 +337,24 @@ namespace glasssix::exposing::nessus
 		}
 
 	private:
+
+		unknown_object valve_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto factory_type = unbox<std::int32_t>(params.get_value(u8"factory_type"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+			return add_instance(package_names::valve, make_exported_interface<valve::detect_code>(models_directory, factory_type, device, params_map_abi));
+		}
+
+		unknown_object startorus_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto factory_type = unbox<std::int32_t>(params.get_value(u8"factory_type"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+			return add_instance(package_names::startorus, make_exported_interface<startorus::detect_code>(models_directory, factory_type, device, params_map_abi));
+		}
 
 		unknown_object genocr_new(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -505,7 +537,7 @@ namespace glasssix::exposing::nessus
 			auto factory_type = unbox<std::int32_t>(params.get_value(u8"factory_type"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
-			return add_instance(package_names::heimdall, make_exported_interface<material_code>(models_directory, factory_type, device, params_map_abi));
+			return add_instance(package_names::heimdall, make_exported_interface<heimdall::material_code>(models_directory, factory_type, device, params_map_abi));
 		}
 
 		unknown_object banshee_new(const param_hash_map<param_string, unknown_object>& params)
@@ -514,10 +546,38 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
 		}
 
+		unknown_object valve_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<valve::detect_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+			auto rois_abi = params.get_value(u8"rois").as<param_vector<int>>();
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+			return instance.detect(image, channels, height, width, order, rois_abi, params_map_abi);
+		}
+
+		unknown_object startorus_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<startorus::detect_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+			auto rois_abi = params.get_value(u8"rois").as<param_vector<int>>();
+
+			return instance.detect(image, channels, height, width, order, rois_abi);
+		}
+
 		unknown_object genocr_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<material_code>(params);
+			auto instance = get_instance<genocr::txt_code>(params);
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
@@ -929,7 +989,7 @@ namespace glasssix::exposing::nessus
 		unknown_object heimdall_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<material_code>(params);
+			auto instance = get_instance<heimdall::material_code>(params);
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
