@@ -538,6 +538,9 @@ namespace glasssix::exposing::nessus
 		protocol_map["helmet.new"] = &Helmet_new_json;
 		protocol_map["helmet.delete"] = &Helmet_delete_json;
 		protocol_map["helmet.detect"] = &Helmet_detect_json;
+		protocol_map["eledash.new"] = &Eledash_new_json;
+		protocol_map["eledash.delete"] = &Eledash_delete_json;
+		protocol_map["eledash.detect"] = &Eledash_detect_json;
 		protocol_map["trespass.new"] = &Trespass_new_json;
 		protocol_map["trespass.delete"] = &Trespass_delete_json;
 		protocol_map["trespass.detect"] = &Trespass_detect_json;
