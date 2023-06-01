@@ -13,6 +13,7 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_definitions(${module_name} PRIVATE -DNOMINMAX -DNOGDI)
+	target_compile_options(${module_name} PRIVATE /bigobj)
 endif()
 target_compile_definitions(${module_name} PRIVATE -DPARSER_C_EXPORT -DJSON_DLL_BUILD)
 
