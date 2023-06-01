@@ -1656,7 +1656,7 @@ namespace glasssix
 					{
 						int category = Json::Int(result[i].category());
 						// Json::Value jarray_box;
-						if (category == 0)
+						if (category == 1)
 						{
                             fire_detected += 1;
 							jarray_box["x1"] = Json::Int(result[i].x1());
@@ -1665,7 +1665,7 @@ namespace glasssix
 							jarray_box["y2"] = Json::Int(result[i].y2());
                             jarray_fire_detected.append(jarray_box);
 						}
-						else if (category == 1)
+						else if (category == 0)
 						{
                             smoke_detected += 1;
 							jarray_box["x1"] = Json::Int(result[i].x1());
