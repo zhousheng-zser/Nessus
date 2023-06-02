@@ -27,10 +27,10 @@ namespace glasssix::exposing::impl
     struct interface_vtable<Derived, needledash::box_info> : interface_vtable_base<Derived, needledash::box_info>
     {
 
-        virtual std::int32_t G6_ABI_CALL inner(abi_out_t<exposing::param_string> result) noexcept override
+        virtual std::int32_t G6_ABI_CALL strinfo(abi_out_t<exposing::param_string> result) noexcept override
         {
             return abi_safe_call([&]
-                { *result = detach_abi(this->self().inner()); });
+                { *result = detach_abi(this->self().strinfo()); });
         }
     };
 
@@ -40,11 +40,11 @@ namespace glasssix::exposing::impl
         template <typename Derived>
         struct type : enable_self_abi_awareness<Derived, needledash::box_info>
         {
-            param_string inner() const
+            param_string strinfo() const
             {
                 param_string result;
 
-                return (check_abi_result(this->self_abi().inner(put_abi(result))), result);
+                return (check_abi_result(this->self_abi().strinfo(put_abi(result))), result);
             }
 			
         };
