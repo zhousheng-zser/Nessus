@@ -305,19 +305,34 @@ namespace glasssix
 							{u8"params", param_map_abi},
 						});
 
-					auto result = plugin.execute(u8"needledash.detect", param).as<exposing::param_vector<ptrmeter::box_info>>();
+					auto result = plugin.execute(u8"needledash.detect", param).as<exposing::param_vector<needledash::box_info>>();
 
 
 					Json::Value jobj_reco;
 
-					jobj_reco["title"] = "needledash";
+					// jobj_reco["title"] = "needledash";
 
-					jobj_reco["status"] = Json::Value(glasssix::exposing::to_narrow_string(result[0].strinfo()));
+					// jobj_reco["status"] = Json::Value(glasssix::exposing::to_narrow_string(result[0].strinfo()));
 
-					value["recognize_info"] = jobj_reco;
+					// value["recognize_info"] = jobj_reco;
+
+					// value["status"]["message"] = Json::Value("OK");
+					// value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+					Json::Value jarray_box;
+					Json::Value jarray_dash_detected;
+					for (int i = 0; i < result.size(); i++)
+					{
+						jarray_box["title"] = Json::Value("needledash");
+						jarray_box["status"] = Json::Value(glasssix::exposing::to_narrow_string(result[0].strinfo()));
+						jarray_dash_detected.append(jarray_box);
+					}
+
+					value["strinfo_list"] = jarray_dash_detected;
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+
+
 				}
 				catch (const parser_exception& ex)
 				{
@@ -1328,6 +1343,7 @@ namespace glasssix
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].score());
 							jarray_helmet_detected.append(jarray_box);
 						}
 						else if (category == 1)
@@ -1337,6 +1353,7 @@ namespace glasssix
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].score());
 							jarray_helmet_cant_detected.append(jarray_box);
 						}
 					}
@@ -1816,6 +1833,7 @@ namespace glasssix
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].score());
                             jarray_fire_detected.append(jarray_box);
 						}
 						else if (category == 0)
@@ -1825,6 +1843,7 @@ namespace glasssix
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].score());
                             jarray_smoke_detected.append(jarray_box);
 						}
 					}
