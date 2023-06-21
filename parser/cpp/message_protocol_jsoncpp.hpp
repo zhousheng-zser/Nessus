@@ -986,12 +986,9 @@ namespace glasssix
 
 					auto result = plugin.execute(u8"callsmoke.detect", param).as<exposing::param_vector<callsmoke::box_info>>();
 
-					int call_detected = 0;
-					int smoke_detected = 0;
-
 					Json::Value jarray_box;
-					Json::Value jarray_call_detected;
-					Json::Value jarray_smoke_detected;
+					Json::Value jarray_call_detected(Json::arrayValue);
+					Json::Value jarray_smoke_detected(Json::arrayValue);
 
 					for (int i = 0; i < result.size(); i++)
 					{
@@ -999,7 +996,6 @@ namespace glasssix
 
 						if (category == 0)
 						{
-							call_detected += 1;
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
@@ -1008,7 +1004,6 @@ namespace glasssix
 						}
 						else if (category == 1)
 						{
-							smoke_detected += 1;
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
@@ -1020,9 +1015,7 @@ namespace glasssix
 					Json::Value jarray_detected;
 					Json::Value jarray_cant_detected;
 
-					jarray_detected["call_num"] = call_detected;
 					jarray_detected["call_list"] = jarray_call_detected;
-					jarray_cant_detected["smoke_num"] = smoke_detected;
 					jarray_cant_detected["smoke_list"] = jarray_smoke_detected;
 
 					Json::Value jarray_info;
@@ -1176,7 +1169,6 @@ namespace glasssix
 					}
 
 					Json::Value jarray_info;
-					jarray_info["box_num"] = static_cast<int>(result.size());
 					jarray_info["box_list"]= jarray_detected;
 
 					value["detect_info"] = jarray_info;
@@ -1325,12 +1317,9 @@ namespace glasssix
 
 					auto result = plugin.execute(u8"helmet.detect", param).as<exposing::param_vector<helmet::box_info>>();
 
-					int helmet_detected = 0;
-					int helmet_cant_detected = 0;
-
 					Json::Value jarray_box;
-					Json::Value jarray_helmet_detected;
-					Json::Value jarray_helmet_cant_detected;
+					Json::Value jarray_helmet_detected(Json::arrayValue);
+					Json::Value jarray_helmet_cant_detected(Json::arrayValue);
 
 					for (int i = 0; i < result.size(); i++)
 					{
@@ -1338,7 +1327,6 @@ namespace glasssix
 
 						if (category == 0)
 						{
-							helmet_detected += 1;
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
@@ -1348,7 +1336,6 @@ namespace glasssix
 						}
 						else if (category == 1)
 						{
-							helmet_cant_detected += 1;
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
@@ -1360,9 +1347,7 @@ namespace glasssix
 
 					Json::Value jarray_info;
 
-					jarray_info["detected_num"] = helmet_detected;
 					jarray_info["detected_list"] = jarray_helmet_detected;
-					jarray_info["cant_detected_num"] = helmet_cant_detected;
 					jarray_info["cant_detected_list"] = jarray_helmet_cant_detected;
 
 			
@@ -1480,29 +1465,26 @@ namespace glasssix
 					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
+					Json::Value params = root.get("params", Json::Value());
 
-					int roi_x = root["roi"]["x"].asInt();
-					int roi_y = root["roi"]["y"].asInt();
-					int roi_width = root["roi"]["w"].asInt();
-					int roi_height = root["roi"]["h"].asInt();
+					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
 
-					int channels =root["channels"].asInt();
+					for (auto& param_name : params.getMemberNames()) {
+						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					}
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
-					{
-						{u8"image", box(image_span)},
-						{u8"height", box(height)},
-						{u8"width", box(width)},
-						{u8"roi_x", box(roi_x)},
-						{u8"roi_y", box(roi_y)},
-						{u8"roi_width", box(roi_width)},
-						{u8"roi_height", box(roi_height)},
-						{u8"channels", box(channels)},
-						{u8"object_id", box(instance)},						
-					});
+						{
+							{u8"image", box(image_span)},
+							{u8"height", box(height)},
+							{u8"width", box(width)},
+							{u8"object_id", box(instance)},
+							{u8"params", param_map_abi},
+						});
+
 					auto result = plugin.execute(u8"eledash.detect", param).as<exposing::param_vector<eledash::box_info>>();
 
 					Json::Value jarray_box;
@@ -1818,12 +1800,9 @@ namespace glasssix
 
 					auto result = plugin.execute(u8"flame.detect", param).as<exposing::param_vector<flame::box_info>>();
 
-					int fire_detected = 0;
-					int smoke_detected = 0;
-
 					Json::Value jarray_box;
-					Json::Value jarray_fire_detected;
-					Json::Value jarray_smoke_detected;
+					Json::Value jarray_fire_detected(Json::arrayValue);
+					Json::Value jarray_smoke_detected(Json::arrayValue);
 
 					for (int i = 0; i < result.size(); i++)
 					{
@@ -1831,7 +1810,6 @@ namespace glasssix
 						// Json::Value jarray_box;
 						if (category == 1)
 						{
-                            fire_detected += 1;
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
@@ -1841,7 +1819,6 @@ namespace glasssix
 						}
 						else if (category == 0)
 						{
-                            smoke_detected += 1;
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
@@ -1853,9 +1830,7 @@ namespace glasssix
 
 					Json::Value jarray_info;
 
-					jarray_info["fire_num"] = fire_detected;
 					jarray_info["fire_list"] = jarray_fire_detected;
-					jarray_info["smoke_num"] = smoke_detected;
 					jarray_info["smoke_list"] = jarray_smoke_detected;
 
 					value["detect_info"] = jarray_info;
@@ -1993,7 +1968,7 @@ namespace glasssix
 						});
 
 					auto result = plugin.execute(u8"refvest.detect", param).as<param_vector<refvest::box_info>>();
-					Json::Value jarray_boxes;
+					Json::Value jarray_boxes(Json::arrayValue);
 					for (auto box : result)
 					{
 						Json::Value jobj_box;
@@ -2009,7 +1984,6 @@ namespace glasssix
 						jobj_box["score"] = Json::Value(box.score());
 						jobj_box["category"] = Json::Int(box.category());
 
-		
 						jarray_boxes.append(jobj_box);
 					}
 
