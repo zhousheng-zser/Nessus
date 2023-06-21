@@ -24,15 +24,11 @@ namespace glasssix::exposing::impl
                 abi_in_t<param_string> model_directory,
                 std::int32_t device) noexcept = 0;
 
-            virtual std::int32_t G6_ABI_CALL  detect(
+            virtual std::int32_t G6_ABI_CALL detect(
                 abi_in_t<param_span<std::uint8_t>> bitmap,
                 std::int32_t channels,
                 std::int32_t height,
                 std::int32_t width,
-                std::int32_t roi_x,
-                std::int32_t roi_y,
-                std::int32_t roi_width,
-                std::int32_t roi_height,
                 abi_out_t<exposing::param_vector<eledash::box_info>> result) noexcept = 0;
 
             virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept = 0;
@@ -57,14 +53,10 @@ namespace glasssix::exposing::impl
             std::int32_t channels,
             std::int32_t height,
             std::int32_t width,
-            std::int32_t roi_x,
-            std::int32_t roi_y,
-            std::int32_t roi_width,
-            std::int32_t roi_height,
             abi_out_t<exposing::param_vector<eledash::box_info>> result) noexcept override
         {
             return abi_safe_call([&]
-                { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width, roi_x, roi_y, roi_width, roi_height));  });
+                { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width)); });
         }
 
         virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept override
@@ -93,15 +85,11 @@ namespace glasssix::exposing::impl
                     get_abi(device)));
             }
 
-                exposing::param_vector<eledash::box_info>detect(
+             exposing::param_vector<eledash::box_info> detect(
                 param_span<std::uint8_t> bitmap,
                 std::int32_t channels,
                 std::int32_t height,
-                std::int32_t width,
-                std::int32_t roi_x,
-                std::int32_t roi_y,
-                std::int32_t roi_width,
-                std::int32_t roi_height) const
+                std::int32_t width) const
             {
                 exposing::param_vector<eledash::box_info> result{ nullptr };
 
@@ -111,10 +99,6 @@ namespace glasssix::exposing::impl
                         channels,
                         height,
                         width,
-                        roi_x,
-                        roi_y,
-                        roi_width,
-                        roi_height,
                         put_abi(result))
                 ),
                 result);
