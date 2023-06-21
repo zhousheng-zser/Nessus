@@ -556,6 +556,9 @@ namespace glasssix::exposing::nessus
 		protocol_map["flame.new"] = &Flame_new_json;
 		protocol_map["flame.delete"] = &Flame_delete_json;
 		protocol_map["flame.detect"] = &Flame_detect_json;
+		protocol_map["sleep.new"] = &Sleep_new_json;
+		protocol_map["sleep.delete"] = &Sleep_delete_json;
+		protocol_map["sleep.detect"] = &Sleep_detect_json;
 		protocol_map["refvest.new"] = &Refvest_new_json;
 		protocol_map["refvest.delete"] = &Refvest_delete_json;
 		protocol_map["refvest.detect"] = &Refvest_detect_json;

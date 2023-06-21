@@ -15,7 +15,7 @@ namespace glasssix::exposing::impl
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{"{D7B27FB9-8C63-45ED-A236-AD644D3097F5}"};
+        static constexpr guid id{"85507728-84E1-47DC-BCC6-F6B842E2E84D"};
 
         struct type : abi_unknown_object
         {
@@ -25,11 +25,6 @@ namespace glasssix::exposing::impl
             virtual std::int32_t G6_ABI_CALL height(abi_out_t<float> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL prob(abi_out_t<float> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL label(abi_out_t<float> result) noexcept = 0;
-
-            // virtual std::int32_t G6_ABI_CALL set_x(abi_in_t<float> input) noexcept = 0;
-            // virtual std::int32_t G6_ABI_CALL set_y(abi_in_t<float> input) noexcept = 0;
-            // virtual std::int32_t G6_ABI_CALL set_width(abi_in_t<float> input) noexcept = 0;
-            // virtual std::int32_t G6_ABI_CALL set_height(abi_in_t<float> input) noexcept = 0;
         };
     };
 

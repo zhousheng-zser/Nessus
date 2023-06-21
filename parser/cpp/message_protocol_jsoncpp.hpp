@@ -8,6 +8,7 @@
 #include "plugin_interface.hpp"
 #include "parser_exception.hpp"
 #include "../../common/include/gungnir/hat_info.hpp"
+#include "../../common/include/gungnir/yolo_net.hpp"
 #include "../../common/include/mjollner/box_info.hpp"
 #include "../../common/include/heimdall/box_info.hpp"
 #include "../../common/include/valklyrs/result_info.hpp"
@@ -26,6 +27,8 @@
 #include "../../common/include/refvest/box_info.hpp"
 #include "../../common/include/flame/detect_code.hpp"
 #include "../../common/include/flame/box_info.hpp"
+#include "../../common/include/sleep/detect_code.hpp"
+#include "../../common/include/sleep/box_info.hpp"
 #include "../../common/include/trespass/detect_code.hpp"
 #include "../../common/include/trespass/box_info.hpp"
 #include "../../common/include/helmet/detect_code.hpp"
@@ -1897,6 +1900,214 @@ namespace glasssix
 				return value;
 			}
 
+			inline Json::Value Sleep_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+
+				try {
+					int device = root["device"].asInt();
+					std::string models_directory = root["models_directory"].asString();
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"device", box(device)},
+								{u8"models_directory", box(std::string_view(models_directory))} });
+
+					instance = unbox<guid>(plugin.execute(u8"sleep.new", param));
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Sleep_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+
+					int roi_x = root["roi_x"].asInt();
+					int roi_y = root["roi_y"].asInt();
+
+					int roi_width  = root["roi_width"].asInt();
+					int roi_height = root["roi_height"].asInt();
+
+					Json::Value params = root.get("params", Json::Value());
+
+					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+
+					for (auto& param_name : params.getMemberNames()) {
+						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					}
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"image", box(image_span)},
+							{u8"height", box(height)},
+							{u8"width", box(width)},
+							{u8"object_id", box(instance)},
+
+							{u8"roi_x", box(roi_x)},
+							{u8"roi_y", box(roi_y)},
+
+							{u8"roi_width",  box(roi_width)},
+							{u8"roi_height", box(roi_height)},
+							{u8"params", param_map_abi},
+						});
+
+					auto result = plugin.execute(u8"sleep.detect", param).as<exposing::param_vector<sleep::box_info>>();
+
+					int work_detected = 0;
+					int lying_detected = 0;
+					int desk_detected = 0;
+					int standing_detected = 0;
+
+					Json::Value jarray_box;
+					Json::Value jarray_work_detected;
+					Json::Value jarray_lying_detected;
+					Json::Value jarray_desk_detected;
+					Json::Value jarray_standing_detected;
+
+					for (int i = 0; i < result.size(); i++)
+					{
+						int category = Json::Int(result[i].category());
+						
+						// Json::Value jarray_box;
+						if (category == 0)
+						{
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+                            jarray_work_detected.append(jarray_box);
+						}
+						else if (category == 1)
+						{
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+                            jarray_lying_detected.append(jarray_box);
+						}
+						else if (category == 2)
+						{
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+                            jarray_desk_detected.append(jarray_box);
+						}
+						else if (category == 3)
+						{
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+                            jarray_standing_detected.append(jarray_box);
+						}
+					}
+
+					Json::Value jarray_info;
+
+
+					jarray_info["work_list"] = jarray_work_detected;
+
+					jarray_info["lying_list"] = jarray_lying_detected;
+
+					jarray_info["desk_list"] = jarray_desk_detected;
+					
+					jarray_info["standing_list"] = jarray_standing_detected;
+
+					value["detect_info"] = jarray_info;
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+			
+			inline Json::Value Sleep_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"object_id", box(instance)} });
+
+					plugin.execute(u8"sleep.delete", param);
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+				return value;
+			}
+
+
 			inline Json::Value Refvest_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -3122,16 +3333,20 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Gungnir_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		inline Json::Value Gungnir_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
-				{
+				{	
+
 					int device = root["device"].asInt();
+						printf("device:%d\n",device);
 					std::string models_directory = root["models_directory"].asString();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"device", box(device)},
 						 {u8"models_directory", box(std::string_view(models_directory))} });
+
+
 					instance = unbox<guid>(plugin.execute(u8"gungnir.new", param));
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -3198,6 +3413,7 @@ namespace glasssix
 
 			inline Json::Value Gungnir_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
+			
 				Json::Value value;
 				try
 				{
@@ -3205,15 +3421,28 @@ namespace glasssix
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
 
+					int roi_x = root["roi_x"].asInt();
+					int roi_y = root["roi_y"].asInt();
+
+					int roi_width = root["roi_width"].asInt();
+					int roi_height = root["roi_height"].asInt();
+					int channels =root["channels"].asInt();
+
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 					auto param = make_param_hash_map<param_string, unknown_object>(
-						{ {u8"image", box(image_span)},
-						 {u8"height", box(height)},
-						 {u8"width", box(width)},
-						 {u8"order", box(static_cast<int>(frame->format_))},
-						 {u8"object_id", box(instance)} });
+						{
+							{u8"image", box(image_span)},
+							{u8"height", box(height)},
+							{u8"width", box(width)},
+							{u8"roi_x", box(roi_x)},
+							{u8"roi_y", box(roi_y)},
+							{u8"roi_width", box(roi_width)},
+							{u8"roi_height", box(roi_height)},
+							{u8"channels", box(channels)},
+							{u8"object_id", box(instance)},						
+						});
 
 					auto result = plugin.execute(u8"gungnir.detect", param).as<param_vector<gungnir::hat_info>>();
 
@@ -3224,15 +3453,15 @@ namespace glasssix
 						Json::Value jobj_face;
 						jobj_face["x"] = Json::Int(obj.x());
 						jobj_face["y"] = Json::Int(obj.y());
+						jobj_face["label"] = Json::Int(obj.label());
 						jobj_face["width"] = Json::Int(obj.width());
 						jobj_face["height"] = Json::Int(obj.height());
 						jobj_face["prob"] = Json::Value(obj.prob());
-						jobj_face["label"] = Json::Int(obj.label());
 
 						jarray_rect.append(jobj_face);
 					}
 
-					value["hatrectwithhatinfo_list"] = jarray_rect;
+					value["detect_info"] = jarray_rect;
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
