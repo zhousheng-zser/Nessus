@@ -21,6 +21,7 @@
 #include <rail/classify_code.hpp>
 #include <refvest/classify_code.hpp>
 #include <flame/detect_code.hpp>
+#include <sleep/detect_code.hpp>
 #include <trespass/detect_code.hpp>
 #include <helmet/detect_code.hpp>
 #include <eledash/classify_code.hpp>
@@ -47,6 +48,7 @@ using namespace glasssix::banshee;
 using namespace glasssix::plate;
 using namespace glasssix::rail;
 using namespace glasssix::flame;
+using namespace glasssix::sleep;
 using namespace glasssix::trespass;
 using namespace glasssix::helmet;
 using namespace glasssix::eledash;
@@ -77,6 +79,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view rail{ u8"rail" };
 			static constexpr utf8_string_view refvest{ u8"refvest" };
 			static constexpr utf8_string_view flame{ u8"flame" };
+			static constexpr utf8_string_view sleep{ u8"sleep" };
 			static constexpr utf8_string_view trespass{ u8"trespass" };
 			static constexpr utf8_string_view helmet{ u8"helmet" };
 			static constexpr utf8_string_view eledash{ u8"eledash" };
@@ -120,6 +123,9 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view flame_new{ u8"flame.new" };
 			static constexpr utf8_string_view flame_detect{ u8"flame.detect" };
 			static constexpr utf8_string_view flame_delete{ u8"flame.delete" };
+			static constexpr utf8_string_view sleep_new{ u8"sleep.new" };
+			static constexpr utf8_string_view sleep_detect{ u8"sleep.detect" };
+			static constexpr utf8_string_view sleep_delete{ u8"sleep.delete" };
 			static constexpr utf8_string_view refvest_new{ u8"refvest.new" };
 			static constexpr utf8_string_view refvest_detect{ u8"refvest.detect" };
 			static constexpr utf8_string_view refvest_delete{ u8"refvest.delete" };
@@ -212,6 +218,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::eledash_new, std::bind(&impl::eledash_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::trespass_new, std::bind(&impl::trespass_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::flame_new, std::bind(&impl::flame_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::sleep_new, std::bind(&impl::sleep_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::refvest_new, std::bind(&impl::refvest_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::rail_new, std::bind(&impl::rail_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::plate_new, std::bind(&impl::plate_new, this, std::placeholders::_1));
@@ -240,6 +247,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::eledash_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::trespass_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::flame_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::sleep_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::refvest_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::rail_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::plate_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -266,6 +274,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::ebike_detect, std::bind(&impl::ebike_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::helmet_detect, std::bind(&impl::helmet_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::trespass_detect, std::bind(&impl::trespass_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::sleep_detect, std::bind(&impl::sleep_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::eledash_detect, std::bind(&impl::eledash_detect, this, std::placeholders::_1));	
 			functions_.insert_or_assign(function_names::flame_detect, std::bind(&impl::flame_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::refvest_detect, std::bind(&impl::refvest_detect, this, std::placeholders::_1));
@@ -425,6 +434,14 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::eledash, make_exported_interface<eledash::classify_code>(models_directory, device));
 		}
 
+		unknown_object sleep_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+
+			return add_instance(package_names::sleep, make_exported_interface<sleep::detect_code>(models_directory, device));
+		}
+	
 		unknown_object trespass_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
@@ -545,8 +562,8 @@ namespace glasssix::exposing::nessus
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
-
-			return add_instance(package_names::gungnir, make_exported_interface<yolo_net>(models_directory + u8"/gungnir.racy", device));
+			
+			return add_instance(package_names::gungnir, make_exported_interface<gungnir::yolo_net>(models_directory, device));
 		}
 
 		unknown_object mjollner_new(const param_hash_map<param_string, unknown_object>& params)
@@ -729,6 +746,23 @@ namespace glasssix::exposing::nessus
 
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
+
+		unknown_object sleep_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<sleep::detect_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
+		}
+
 
 		unknown_object refvest_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -1014,15 +1048,20 @@ namespace glasssix::exposing::nessus
 
         unknown_object gungnir_detect(const param_hash_map<param_string, unknown_object> &params)
         {
-            constexpr std::int32_t channels = 3;
-            auto instance = get_instance<yolo_net>(params);
-            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+            auto instance = get_instance<gungnir::yolo_net>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto channels = unbox<std::int32_t>(params.get_value(u8"channels"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 
-			return instance.detect(image, channels, height, width, order);
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height);
 		}
+
 
 		unknown_object mjollner_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
