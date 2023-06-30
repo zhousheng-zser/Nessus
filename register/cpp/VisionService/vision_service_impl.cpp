@@ -31,6 +31,7 @@
 #include <startorus/detect_code.hpp>
 #include <valve/detect_code.hpp>
 #include <needledash/ocr_code.hpp>
+#include <phone/detect_code.hpp>
 
 #include <iostream>
 
@@ -55,6 +56,7 @@ using namespace glasssix::eledash;
 using namespace glasssix::ebike;
 using namespace glasssix::callsmoke;
 using namespace glasssix::needledash;
+using namespace glasssix::phone;
 
 namespace glasssix::exposing::nessus
 {
@@ -89,10 +91,14 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view startorus{ u8"startorus" };
 			static constexpr utf8_string_view valve{ u8"valve" };
 			static constexpr utf8_string_view needledash{ u8"needledash" };
+			static constexpr utf8_string_view phone{ u8"phone" };
 		};
 
 		struct function_names final
 		{
+			static constexpr utf8_string_view phone_new{ u8"phone.new" };
+			static constexpr utf8_string_view phone_detect{ u8"phone.detect" };
+			static constexpr utf8_string_view phone_delete{ u8"phone.delete" };
 			static constexpr utf8_string_view needledash_new{ u8"needledash.new" };
 			static constexpr utf8_string_view needledash_detect{ u8"needledash.detect" };
 			static constexpr utf8_string_view needledash_delete{ u8"needledash.delete" };
@@ -208,6 +214,7 @@ namespace glasssix::exposing::nessus
 		impl()
 		{
 			// New
+			functions_.insert_or_assign(function_names::phone_new, std::bind(&impl::needledash_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::needledash_new, std::bind(&impl::needledash_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::valve_new, std::bind(&impl::valve_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::startorus_new, std::bind(&impl::startorus_new, this, std::placeholders::_1));
@@ -237,6 +244,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
 
 			// Delete
+			functions_.insert_or_assign(function_names::phone_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::needledash_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::valve_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::startorus_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -266,6 +274,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
+			functions_.insert_or_assign(function_names::phone_detect, std::bind(&impl::phone_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::needledash_detect, std::bind(&impl::needledash_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::valve_detect, std::bind(&impl::valve_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::startorus_detect, std::bind(&impl::startorus_detect, this, std::placeholders::_1));
@@ -364,6 +373,13 @@ namespace glasssix::exposing::nessus
 		}
 
 	private:
+
+		unknown_object phone_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+			return add_instance(package_names::phone, make_exported_interface<glasssix::phone::detect_code>(models_directory, device));
+		}
 
 		unknown_object needledash_new(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -540,7 +556,6 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::damocles, make_exported_interface<damocles::anti_spoofing>(models_directory, model_type, device));
 		}
 
-
 		unknown_object romancia_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
@@ -595,6 +610,25 @@ namespace glasssix::exposing::nessus
 		{
 
 			return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
+		}
+
+		unknown_object phone_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<phone::detect_code>(params);
+
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
+
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
 		unknown_object needledash_detect(const param_hash_map<param_string, unknown_object>& params)
