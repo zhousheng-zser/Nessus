@@ -13,7 +13,7 @@
       "variables": [
         {
           "name": "JNI_INCLUDE_DIRS",
-          "value": "C:/Program Files/Java/jdk1.8.0_251/include;C:/Program Files/Java/jdk1.8.0_251/include/win32",
+          "value": "C:/Program Files/Java/jdk-19/include;C:/Program Files/Java/jdk-19/include/win32",
           "type": "STRING"
         },
         {
@@ -23,7 +23,7 @@
         },
         {
           "name": "COMMON_LIBRARY_DIRS",
-          "value": "E:/Research/Source/Repos/Excalibur/cmake/out/build/x64-Debug/lib",
+          "value": "F:/aa/Excalibur/cmake/out/build/x64-Debug/lib",
           "type": "STRING"
         },
         {
@@ -45,7 +45,7 @@
       "variables": [
         {
           "name": "JNI_INCLUDE_DIRS",
-          "value": "C:/Program Files/Java/jdk1.8.0_251/include;C:/Program Files/Java/jdk1.8.0_251/include/win32",
+          "value": "C:/Program Files/Java/jdk-19/include;C:/Program Files/Java/jdk-19/include/win32",
           "type": "STRING"
         },
         {
@@ -55,7 +55,7 @@
         },
         {
           "name": "COMMON_LIBRARY_DIRS",
-          "value": "E:/Research/Source/Repos/Excalibur/cmake/out/build/x64-Release/lib",
+          "value": "F:/aa/Excalibur/cmake/out/build/x64-Release/lib",
           "type": "STRING"
         }
       ]

@@ -22,6 +22,7 @@
 #include <refvest/classify_code.hpp>
 #include <flame/detect_code.hpp>
 #include <sleep/detect_code.hpp>
+#include <smoke/detect_code.hpp>
 #include <trespass/detect_code.hpp>
 #include <helmet/detect_code.hpp>
 #include <eledash/classify_code.hpp>
@@ -50,6 +51,7 @@ using namespace glasssix::plate;
 using namespace glasssix::rail;
 using namespace glasssix::flame;
 using namespace glasssix::sleep;
+using namespace glasssix::smoke;
 using namespace glasssix::trespass;
 using namespace glasssix::helmet;
 using namespace glasssix::eledash;
@@ -82,6 +84,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view refvest{ u8"refvest" };
 			static constexpr utf8_string_view flame{ u8"flame" };
 			static constexpr utf8_string_view sleep{ u8"sleep" };
+			static constexpr utf8_string_view smoke{ u8"smoke" };
 			static constexpr utf8_string_view trespass{ u8"trespass" };
 			static constexpr utf8_string_view helmet{ u8"helmet" };
 			static constexpr utf8_string_view eledash{ u8"eledash" };
@@ -132,6 +135,9 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view sleep_new{ u8"sleep.new" };
 			static constexpr utf8_string_view sleep_detect{ u8"sleep.detect" };
 			static constexpr utf8_string_view sleep_delete{ u8"sleep.delete" };
+			static constexpr utf8_string_view smoke_new{ u8"smoke.new" };
+			static constexpr utf8_string_view smoke_detect{ u8"smoke.detect" };
+			static constexpr utf8_string_view smoke_delete{ u8"smoke.delete" };
 			static constexpr utf8_string_view refvest_new{ u8"refvest.new" };
 			static constexpr utf8_string_view refvest_detect{ u8"refvest.detect" };
 			static constexpr utf8_string_view refvest_delete{ u8"refvest.delete" };
@@ -242,8 +248,10 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::valklyrs_new, std::bind(&impl::valklyrs_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::heimdall_new, std::bind(&impl::heimdall_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
-
+			functions_.insert_or_assign(function_names::smoke_new, std::bind(&impl::smoke_new, this, std::placeholders::_1));
 			// Delete
+
+			functions_.insert_or_assign(function_names::smoke_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::phone_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::needledash_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::valve_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -274,6 +282,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
+			functions_.insert_or_assign(function_names::smoke_detect, std::bind(&impl::smoke_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::phone_detect, std::bind(&impl::phone_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::needledash_detect, std::bind(&impl::needledash_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::valve_detect, std::bind(&impl::valve_detect, this, std::placeholders::_1));
@@ -448,6 +457,14 @@ namespace glasssix::exposing::nessus
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
 			return add_instance(package_names::eledash, make_exported_interface<eledash::classify_code>(models_directory, device));
+		}
+
+		unknown_object smoke_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+
+			return add_instance(package_names::smoke, make_exported_interface<smoke::detect_code>(models_directory, device));
 		}
 
 		unknown_object sleep_new(const param_hash_map<param_string, unknown_object>& params)
@@ -733,6 +750,22 @@ namespace glasssix::exposing::nessus
 			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
 			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
+		}
+
+		unknown_object smoke_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<smoke::detect_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
 
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
