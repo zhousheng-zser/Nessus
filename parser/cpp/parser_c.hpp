@@ -48,13 +48,6 @@ extern "C" {
 	PARSER_C_EXPORT char* parser_init_plugin(void* instance, const char* config_file_path, const char* license_key);
 
 	/// <summary>
-	/// Get parser version.
-	/// </summary>
-	/// <param name="instance">The instance of a protocol parser</param>
-	/// <remarks>The return value must be disposed by calling praser_free function.</remarks>
-	PARSER_C_EXPORT char* parser_version(void* instance);
-
-	/// <summary>
 	/// Dispatches a protocol.
 	/// </summary>
 	/// <param name="instance">The instance of a protocol parser</param>
