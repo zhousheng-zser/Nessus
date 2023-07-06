@@ -12,6 +12,7 @@
 #include <damocles/anti_spoofing.hpp>
 #include <selene/feature_extractor.hpp>
 #include <gungnir/yolo_net.hpp>
+#include <leavepost/yolo_net.hpp>
 #include <mjollner/ocr_net.hpp>
 #include <valklyrs/yolov5s_net.hpp>
 #include <heimdall/material_code.hpp>
@@ -23,6 +24,7 @@
 #include <flame/detect_code.hpp>
 #include <sleep/detect_code.hpp>
 #include <smoke/detect_code.hpp>
+#include <onphone/detect_code.hpp>
 #include <trespass/detect_code.hpp>
 #include <helmet/detect_code.hpp>
 #include <eledash/classify_code.hpp>
@@ -44,6 +46,7 @@ using namespace glasssix::longinus;
 using namespace glasssix::damocles;
 using namespace glasssix::selene;
 using namespace glasssix::gungnir;
+using namespace glasssix::leavepost;
 using namespace glasssix::mjollner;
 using namespace glasssix::valklyrs;
 using namespace glasssix::banshee;
@@ -52,6 +55,7 @@ using namespace glasssix::rail;
 using namespace glasssix::flame;
 using namespace glasssix::sleep;
 using namespace glasssix::smoke;
+using namespace glasssix::onphone;
 using namespace glasssix::trespass;
 using namespace glasssix::helmet;
 using namespace glasssix::eledash;
@@ -74,6 +78,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view damocles{ u8"damocles" };
 			static constexpr utf8_string_view selene{ u8"selene" };
 			static constexpr utf8_string_view gungnir{ u8"gungnir" };
+			static constexpr utf8_string_view leavepost{ u8"leavepost" };
 			static constexpr utf8_string_view mjollner{ u8"mjollner" };
 			static constexpr utf8_string_view valklyrs{ u8"valklyrs" };
 			static constexpr utf8_string_view heimdall{ u8"heimdall" };
@@ -85,6 +90,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view flame{ u8"flame" };
 			static constexpr utf8_string_view sleep{ u8"sleep" };
 			static constexpr utf8_string_view smoke{ u8"smoke" };
+			static constexpr utf8_string_view onphone{ u8"onphone" };
 			static constexpr utf8_string_view trespass{ u8"trespass" };
 			static constexpr utf8_string_view helmet{ u8"helmet" };
 			static constexpr utf8_string_view eledash{ u8"eledash" };
@@ -118,6 +124,8 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view callsmoke_detect{ u8"callsmoke.detect" };
 			static constexpr utf8_string_view callsmoke_delete{ u8"callsmoke.delete" };
 			static constexpr utf8_string_view ebike_new{ u8"ebike.new" };
+			static constexpr utf8_string_view onphone_new{ u8"onphone.new" };
+			static constexpr utf8_string_view gungnir_new{ u8"gungnir.new" };
 			static constexpr utf8_string_view ebike_detect{ u8"ebike.detect" };
 			static constexpr utf8_string_view ebike_delete{ u8"ebike.delete" };
 			static constexpr utf8_string_view helmet_new{ u8"helmet.new" };
@@ -138,9 +146,15 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view smoke_new{ u8"smoke.new" };
 			static constexpr utf8_string_view smoke_detect{ u8"smoke.detect" };
 			static constexpr utf8_string_view smoke_delete{ u8"smoke.delete" };
+	
+			static constexpr utf8_string_view onphone_detect{ u8"onphone.detect" };
+			static constexpr utf8_string_view onphone_delete{ u8"onphone.delete" };
+			static constexpr utf8_string_view gungnir_delete{ u8"gungnir.delete" };
+			static constexpr utf8_string_view gungnir_detect{ u8"gungnir.detect" };
 			static constexpr utf8_string_view refvest_new{ u8"refvest.new" };
 			static constexpr utf8_string_view refvest_detect{ u8"refvest.detect" };
 			static constexpr utf8_string_view refvest_delete{ u8"refvest.delete" };
+
 			static constexpr utf8_string_view rail_new{ u8"rail.new" };
 			static constexpr utf8_string_view rail_detect{ u8"rail.detect" };
 			static constexpr utf8_string_view rail_delete{ u8"rail.delete" };
@@ -160,7 +174,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view romancia_new{ u8"romancia.new" };
 			static constexpr utf8_string_view irisviel_new{ u8"irisviel.new" };
 			static constexpr utf8_string_view selene_new{ u8"selene.new" };
-			static constexpr utf8_string_view gungnir_new{ u8"gungnir.new" };
+			static constexpr utf8_string_view leavepost_new{ u8"leavepost.new" };
 			static constexpr utf8_string_view mjollner_new{ u8"mjollner.new" };
 			static constexpr utf8_string_view valklyrs_new{ u8"valklyrs.new" };
 			static constexpr utf8_string_view heimdall_new{ u8"heimdall.new" };
@@ -172,7 +186,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view romancia_delete{ u8"romancia.delete" };
 			static constexpr utf8_string_view irisviel_delete{ u8"irisviel.delete" };
 			static constexpr utf8_string_view selene_delete{ u8"selene.delete" };
-			static constexpr utf8_string_view gungnir_delete{ u8"gungnir.delete" };
+			static constexpr utf8_string_view leavepost_delete{ u8"leavepost.delete" };
 			static constexpr utf8_string_view mjollner_delete{ u8"mjollner.delete" };
 			static constexpr utf8_string_view valklyrs_delete{ u8"valklyrs.delete" };
 			static constexpr utf8_string_view heimdall_delete{ u8"heimdall.delete" };
@@ -186,6 +200,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view longinus_center_scale_align_face{ u8"longinus.center_scale_alignFace" };
 			static constexpr utf8_string_view damocles_spoofing_detect{ u8"damocles.spoofing_detect" };
 			static constexpr utf8_string_view damocles_presentation_attack_detect{ u8"damocles.presentation_attack_detect" };
+		
 			static constexpr utf8_string_view romancia_align_face_128{ u8"romancia.alignFace128" };
 			static constexpr utf8_string_view romancia_align_face{ u8"romancia.alignFace" };
 			static constexpr utf8_string_view romancia_blur_detect{ u8"romancia.blur_detect" };
@@ -205,7 +220,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view irisviel_remove_records{ u8"irisviel.remove_records" };
 			static constexpr utf8_string_view irisviel_search{ u8"irisviel.search" };
 			static constexpr utf8_string_view irisviel_search_nf{ u8"irisviel.search_nf" };
-			static constexpr utf8_string_view gungnir_detect{ u8"gungnir.detect" };
+			static constexpr utf8_string_view leavepost_detect{ u8"leavepost.detect" };
 			static constexpr utf8_string_view mjollner_detect{ u8"mjollner.detect" };
 			static constexpr utf8_string_view valklyrs_detect{ u8"valklyrs.detect" };
 			static constexpr utf8_string_view heimdall_detect{ u8"heimdall.detect" };
@@ -220,6 +235,7 @@ namespace glasssix::exposing::nessus
 		impl()
 		{
 			// New
+			functions_.insert_or_assign(function_names::gungnir_new, std::bind(&impl::gungnir_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::phone_new, std::bind(&impl::needledash_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::needledash_new, std::bind(&impl::needledash_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::valve_new, std::bind(&impl::valve_new, this, std::placeholders::_1));
@@ -243,14 +259,17 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::romancia_new, std::bind(&impl::romancia_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::irisviel_new, std::bind(&impl::irisviel_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::selene_new, std::bind(&impl::selene_new, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::gungnir_new, std::bind(&impl::gungnir_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::leavepost_new, std::bind(&impl::leavepost_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::mjollner_new, std::bind(&impl::mjollner_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::valklyrs_new, std::bind(&impl::valklyrs_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::heimdall_new, std::bind(&impl::heimdall_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_new, std::bind(&impl::smoke_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::onphone_new, std::bind(&impl::onphone_new, this, std::placeholders::_1));
 			// Delete
-
+			
+			functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::onphone_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::smoke_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::phone_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::needledash_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -275,14 +294,16 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::damocles_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::romancia_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::selene_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-			functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::leavepost_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::mjollner_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::valklyrs_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::heimdall_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
+			functions_.insert_or_assign(function_names::gungnir_detect, std::bind(&impl::gungnir_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_detect, std::bind(&impl::smoke_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::onphone_detect, std::bind(&impl::onphone_detect, this, std::placeholders::_1));					
 			functions_.insert_or_assign(function_names::phone_detect, std::bind(&impl::phone_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::needledash_detect, std::bind(&impl::needledash_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::valve_detect, std::bind(&impl::valve_detect, this, std::placeholders::_1));
@@ -305,7 +326,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::damocles_spoofing_detect, std::bind(&impl::damocles_spoofing_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::damocles_presentation_attack_detect, std::bind(&impl::damocles_presentation_attack_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::longinus_detect, std::bind(&impl::longinus_detect, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::gungnir_detect, std::bind(&impl::gungnir_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::leavepost_detect, std::bind(&impl::leavepost_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::mjollner_detect, std::bind(&impl::mjollner_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::valklyrs_detect, std::bind(&impl::valklyrs_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::heimdall_detect, std::bind(&impl::heimdall_detect, this, std::placeholders::_1));
@@ -459,12 +480,28 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::eledash, make_exported_interface<eledash::classify_code>(models_directory, device));
 		}
 
+		unknown_object gungnir_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+
+			return add_instance(package_names::gungnir, make_exported_interface<gungnir::yolo_net>(models_directory, device));
+		}
+
 		unknown_object smoke_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
 			return add_instance(package_names::smoke, make_exported_interface<smoke::detect_code>(models_directory, device));
+		}
+
+		unknown_object onphone_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+
+			return add_instance(package_names::onphone, make_exported_interface<onphone::detect_code>(models_directory, device));
 		}
 
 		unknown_object sleep_new(const param_hash_map<param_string, unknown_object>& params)
@@ -590,12 +627,13 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::irisviel, make_exported_interface<face_service>(irisviel::face_service_implemention::lsh_algorithm, single_database_capacity, dimension, working_directory));
 		}
 
-		unknown_object gungnir_new(const param_hash_map<param_string, unknown_object>& params)
+
+			unknown_object leavepost_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 			
-			return add_instance(package_names::gungnir, make_exported_interface<gungnir::yolo_net>(models_directory, device));
+			return add_instance(package_names::leavepost, make_exported_interface<leavepost::yolo_net>(models_directory, device));
 		}
 
 		unknown_object mjollner_new(const param_hash_map<param_string, unknown_object>& params)
@@ -771,6 +809,22 @@ namespace glasssix::exposing::nessus
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
+		unknown_object onphone_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<onphone::detect_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
+		}
+
 		unknown_object eledash_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 
@@ -846,6 +900,21 @@ namespace glasssix::exposing::nessus
 
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height);
 		}
+		     
+		unknown_object gungnir_detect(const param_hash_map<param_string, unknown_object> &params)
+        {
+            constexpr std::int32_t channels = 3;
+            auto instance = get_instance<gungnir::yolo_net>(params);
+            auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+            auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+            auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+            auto order = unbox<std::int32_t>(params.get_value(u8"order"));
+
+			return instance.detect(image, channels, height, width, order);
+		}
+
+
+
 
 		unknown_object rail_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -1113,9 +1182,11 @@ namespace glasssix::exposing::nessus
             return instance.rotate(angle, image, channels, height, width, order);
         }
 
-        unknown_object gungnir_detect(const param_hash_map<param_string, unknown_object> &params)
+      
+	
+        unknown_object leavepost_detect(const param_hash_map<param_string, unknown_object> &params)
         {
-            auto instance = get_instance<gungnir::yolo_net>(params);
+            auto instance = get_instance<leavepost::yolo_net>(params);
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto channels = unbox<std::int32_t>(params.get_value(u8"channels"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));

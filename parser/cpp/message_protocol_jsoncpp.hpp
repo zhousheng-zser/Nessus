@@ -9,6 +9,8 @@
 #include "parser_exception.hpp"
 #include "../../common/include/gungnir/hat_info.hpp"
 #include "../../common/include/gungnir/yolo_net.hpp"
+#include "../../common/include/leavepost/box_info.hpp"
+#include "../../common/include/leavepost/yolo_net.hpp"
 #include "../../common/include/mjollner/box_info.hpp"
 #include "../../common/include/heimdall/box_info.hpp"
 #include "../../common/include/valklyrs/result_info.hpp"
@@ -31,6 +33,8 @@
 #include "../../common/include/sleep/box_info.hpp"
 #include "../../common/include/smoke/detect_code.hpp"
 #include "../../common/include/smoke/box_info.hpp"
+#include "../../common/include/onphone/detect_code.hpp"
+#include "../../common/include/onphone/box_info.hpp"
 #include "../../common/include/trespass/detect_code.hpp"
 #include "../../common/include/trespass/box_info.hpp"
 #include "../../common/include/helmet/detect_code.hpp"
@@ -1478,7 +1482,7 @@ namespace glasssix
 					int roi_y = root["roi_y"].asInt();
 					int roi_width = root["roi_width"].asInt();
 					int roi_height = root["roi_height"].asInt();
-						
+					
 					Json::Value params = root.get("params", Json::Value());
 				
 					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
@@ -2046,6 +2050,7 @@ namespace glasssix
 
 				return value;
 			}
+
 			
 			inline Json::Value Flame_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
@@ -2130,13 +2135,10 @@ namespace glasssix
 					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
-
 					int roi_x = root["roi_x"].asInt();
 					int roi_y = root["roi_y"].asInt();
-
 					int roi_width  = root["roi_width"].asInt();
 					int roi_height = root["roi_height"].asInt();
-
 					Json::Value params = root.get("params", Json::Value());
 
 					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
@@ -2157,7 +2159,6 @@ namespace glasssix
 
 							{u8"roi_x", box(roi_x)},
 							{u8"roi_y", box(roi_y)},
-
 							{u8"roi_width",  box(roi_width)},
 							{u8"roi_height", box(roi_height)},
 							{u8"params", param_map_abi},
@@ -2171,10 +2172,10 @@ namespace glasssix
 					int standing_detected = 0;
 
 					Json::Value jarray_box;
-					Json::Value jarray_work_detected;
-					Json::Value jarray_lying_detected;
-					Json::Value jarray_desk_detected;
-					Json::Value jarray_standing_detected;
+					Json::Value jarray_work_detected(Json::arrayValue);
+					Json::Value jarray_lying_detected(Json::arrayValue);
+					Json::Value jarray_desk_detected(Json::arrayValue);
+					Json::Value jarray_standing_detected(Json::arrayValue);
 
 					for (int i = 0; i < result.size(); i++)
 					{
@@ -2187,6 +2188,7 @@ namespace glasssix
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].confidence());
                             jarray_work_detected.append(jarray_box);
 						}
 						else if (category == 1)
@@ -2195,6 +2197,7 @@ namespace glasssix
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].confidence());
                             jarray_lying_detected.append(jarray_box);
 						}
 						else if (category == 2)
@@ -2203,6 +2206,7 @@ namespace glasssix
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].confidence());
                             jarray_desk_detected.append(jarray_box);
 						}
 						else if (category == 3)
@@ -2211,6 +2215,7 @@ namespace glasssix
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].confidence());
                             jarray_standing_detected.append(jarray_box);
 						}
 					}
@@ -2378,34 +2383,33 @@ namespace glasssix
 					int standing_detected = 0;
 
 					Json::Value jarray_box;
-					Json::Value jarray_normal_detected;
-					Json::Value jarray_smoke_detected;
 
+					Json::Value jarray_normal_detected(Json::arrayValue);
+					Json::Value jarray_smoke_detected(Json::arrayValue);
 					for (int i = 0; i < result.size(); i++)
 					{
 						int category = Json::Int(result[i].category());
 						
 						// Json::Value jarray_box;
-						if (category == 0)
+						if (category == 1)
 						{
-                            work_detected += 1;
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
-							jarray_box["label"] = Json::Int(result[i].category());
-							// jarray_box["confidence"] = Json::Value(result[i].confidence());
+							// jarray_box["label"] = Json::Int(result[i].category());
+							jarray_box["score"] = Json::Value(result[i].confidence());
                             jarray_normal_detected.append(jarray_box);
 						}
-						else if (category == 1)
+						else if (category == 0)
 						{
-                            lying_detected += 1;
+
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
-							jarray_box["label"] = Json::Int(result[i].category());
-							// jarray_box["confidence"] = Json::Int(result[i].confidence());
+							// jarray_box["label"] = Json::Int(result[i].category());
+							jarray_box["score"] = Json::Value(result[i].confidence());
                             jarray_smoke_detected.append(jarray_box);
 						}					
 					}
@@ -2479,6 +2483,333 @@ namespace glasssix
 				return value;
 			}
 
+			inline Json::Value Onphone_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+
+				try {
+					int device = root["device"].asInt();
+					std::string models_directory = root["models_directory"].asString();
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"device", box(device)},
+								{u8"models_directory", box(std::string_view(models_directory))} });
+
+					instance = unbox<guid>(plugin.execute(u8"onphone.new", param));
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Onphone_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+
+					int roi_x = root["roi_x"].asInt();
+					int roi_y = root["roi_y"].asInt();
+
+					int roi_width  = root["roi_width"].asInt();
+					int roi_height = root["roi_height"].asInt();
+
+					Json::Value params = root.get("params", Json::Value());
+
+					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+
+					for (auto& param_name : params.getMemberNames()) {
+						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					}
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+							{u8"image", box(image_span)},
+							{u8"height", box(height)},
+							{u8"width", box(width)},
+							{u8"object_id", box(instance)},
+
+							{u8"roi_x", box(roi_x)},
+							{u8"roi_y", box(roi_y)},
+
+							{u8"roi_width",  box(roi_width)},
+							{u8"roi_height", box(roi_height)},
+							{u8"params", param_map_abi},
+						});
+
+					auto result = plugin.execute(u8"onphone.detect", param).as<exposing::param_vector<onphone::box_info>>();
+
+					int work_detected = 0;
+					int lying_detected = 0;
+					int desk_detected = 0;
+					int standing_detected = 0;
+
+					Json::Value jarray_box;
+					Json::Value jarray_normal_detected;
+					Json::Value jarray_onphone_detected;
+
+					for (int i = 0; i < result.size(); i++)
+					{
+						int category = Json::Int(result[i].category());
+						
+						// Json::Value jarray_box;
+						if (category == 0)
+						{
+                            work_detected += 1;
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["label"] = Json::Int(result[i].category());
+							// jarray_box["confidence"] = Json::Value(result[i].confidence());
+                            jarray_normal_detected.append(jarray_box);
+						}
+						else if (category == 1)
+						{
+                            lying_detected += 1;
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["label"] = Json::Int(result[i].category());
+							// jarray_box["confidence"] = Json::Int(result[i].confidence());
+                            jarray_onphone_detected.append(jarray_box);
+						}					
+					}
+
+					Json::Value jarray_info;
+
+					jarray_info["norm_list"] = jarray_normal_detected;
+					jarray_info["onphone_list"] = jarray_onphone_detected;
+
+					value["detect_info"] = jarray_info;
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+			
+			inline Json::Value Onphone_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"object_id", box(instance)} });
+
+					plugin.execute(u8"onphone.delete", param);
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+				return value;
+			}
+
+			inline Json::Value Gungnir_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					int device = root["device"].asInt();
+					std::string models_directory = root["models_directory"].asString();
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"device", box(device)},
+						 {u8"models_directory", box(std::string_view(models_directory))} });
+					instance = unbox<guid>(plugin.execute(u8"gungnir.new", param));
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Gungnir_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"object_id", box(instance)} });
+
+					plugin.execute(u8"gungnir.delete", param);
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+				return value;
+			}
+
+			inline Json::Value Gungnir_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"image", box(image_span)},
+						 {u8"height", box(height)},
+						 {u8"width", box(width)},
+						 {u8"order", box(static_cast<int>(frame->format_))},
+						 {u8"object_id", box(instance)} });
+
+					auto result = plugin.execute(u8"gungnir.detect", param).as<param_vector<gungnir::hat_info>>();
+
+					Json::Value jarray_rect = Json::Value(Json::arrayValue);
+
+					for (auto obj : result)
+					{
+						Json::Value jobj_face;
+						jobj_face["x"] = Json::Int(obj.x());
+						jobj_face["y"] = Json::Int(obj.y());
+						jobj_face["width"] = Json::Int(obj.width());
+						jobj_face["height"] = Json::Int(obj.height());
+						jobj_face["prob"] = Json::Value(obj.prob());
+						jobj_face["label"] = Json::Int(obj.label());
+
+						jarray_rect.append(jobj_face);
+					}
+
+					value["hatrectwithhatinfo_list"] = jarray_rect;
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
 			inline Json::Value Refvest_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -2531,7 +2862,7 @@ namespace glasssix
 
 					int roi_width = root["roi_width"].asInt();
 					int roi_height = root["roi_height"].asInt();
-					int channels =root["channels"].asInt();
+					int channels =3;
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
@@ -3704,7 +4035,9 @@ namespace glasssix
 				return value;
 			}
 
-		inline Json::Value Gungnir_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		
+
+			inline Json::Value Leavepost_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -3718,7 +4051,7 @@ namespace glasssix
 						 {u8"models_directory", box(std::string_view(models_directory))} });
 
 
-					instance = unbox<guid>(plugin.execute(u8"gungnir.new", param));
+					instance = unbox<guid>(plugin.execute(u8"leavepost.new", param));
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
@@ -3746,7 +4079,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Gungnir_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Leavepost_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -3754,7 +4087,7 @@ namespace glasssix
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"object_id", box(instance)} });
 
-					plugin.execute(u8"gungnir.delete", param);
+					plugin.execute(u8"leavepost.delete", param);
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -3782,7 +4115,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Gungnir_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Leavepost_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 			
 				Json::Value value;
@@ -3797,7 +4130,7 @@ namespace glasssix
 
 					int roi_width = root["roi_width"].asInt();
 					int roi_height = root["roi_height"].asInt();
-					int channels =root["channels"].asInt();
+					int channels =3;
 
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
@@ -3815,24 +4148,28 @@ namespace glasssix
 							{u8"object_id", box(instance)},						
 						});
 
-					auto result = plugin.execute(u8"gungnir.detect", param).as<param_vector<gungnir::hat_info>>();
-
-					Json::Value jarray_rect = Json::Value(Json::arrayValue);
+					auto result = plugin.execute(u8"leavepost.detect", param).as<param_vector<leavepost::box_info>>();
+					Json::Value jarray_box;
+					Json::Value jarray_info;
+					Json::Value jarray_work = Json::Value(Json::arrayValue);
+					Json::Value jarray_leave = Json::Value(Json::arrayValue);
 
 					for (auto obj : result)
 					{
-						Json::Value jobj_face;
-						jobj_face["x"] = Json::Int(obj.x());
-						jobj_face["y"] = Json::Int(obj.y());
-						jobj_face["label"] = Json::Int(obj.label());
-						jobj_face["width"] = Json::Int(obj.width());
-						jobj_face["height"] = Json::Int(obj.height());
-						jobj_face["prob"] = Json::Value(obj.prob());
+						int category = Json::Int(obj.label());
 
-						jarray_rect.append(jobj_face);
+						jarray_box["x1"] = Json::Int(obj.x());
+						jarray_box["y1"] = Json::Int(obj.y());
+						jarray_box["x2"] = Json::Int(obj.x()+obj.width());
+						jarray_box["y2"] = Json::Int(obj.height()+obj.y());
+						jarray_box["label"] = Json::Int(obj.label());
+						jarray_box["score"] = Json::Value(obj.confidence());
+						jarray_work.append(jarray_box);
+
 					}
+					jarray_info["hat_list"] = jarray_work;
 
-					value["detect_info"] = jarray_rect;
+					value["detect_info"] = jarray_info;
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
