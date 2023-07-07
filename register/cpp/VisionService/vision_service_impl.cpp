@@ -35,6 +35,7 @@
 #include <valve/detect_code.hpp>
 #include <needledash/ocr_code.hpp>
 #include <phone/detect_code.hpp>
+#include <workcloth/classify_code.hpp>
 
 #include <iostream>
 
@@ -101,10 +102,15 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view valve{ u8"valve" };
 			static constexpr utf8_string_view needledash{ u8"needledash" };
 			static constexpr utf8_string_view phone{ u8"phone" };
+			static constexpr utf8_string_view workcloth{ u8"workcloth" };
+
 		};
 
 		struct function_names final
 		{
+			static constexpr utf8_string_view workcloth_new{ u8"workcloth.new" };
+			static constexpr utf8_string_view workcloth_detect{ u8"workcloth.detect" };
+			static constexpr utf8_string_view workcloth_delete{ u8"workcloth.delete" };
 			static constexpr utf8_string_view phone_new{ u8"phone.new" };
 			static constexpr utf8_string_view phone_detect{ u8"phone.detect" };
 			static constexpr utf8_string_view phone_delete{ u8"phone.delete" };
@@ -266,8 +272,10 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_new, std::bind(&impl::banshee_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_new, std::bind(&impl::smoke_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::onphone_new, std::bind(&impl::onphone_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::workcloth_new, std::bind(&impl::workcloth_new, this, std::placeholders::_1));
 			// Delete
-			
+
+			functions_.insert_or_assign(function_names::workcloth_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::onphone_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::smoke_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -301,6 +309,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
+			functions_.insert_or_assign(function_names::workcloth_detect, std::bind(&impl::workcloth_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gungnir_detect, std::bind(&impl::gungnir_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_detect, std::bind(&impl::smoke_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::onphone_detect, std::bind(&impl::onphone_detect, this, std::placeholders::_1));					
@@ -403,6 +412,13 @@ namespace glasssix::exposing::nessus
 		}
 
 	private:
+
+		unknown_object workcloth_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+			return add_instance(package_names::workcloth, make_exported_interface<glasssix::workcloth::classify_code>(models_directory, device));
+		}
 
 		unknown_object phone_new(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -665,6 +681,24 @@ namespace glasssix::exposing::nessus
 		{
 
 			return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
+		}
+
+		unknown_object workcloth_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<workcloth::classify_code>(params);
+
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
 		unknown_object phone_detect(const param_hash_map<param_string, unknown_object>& params)

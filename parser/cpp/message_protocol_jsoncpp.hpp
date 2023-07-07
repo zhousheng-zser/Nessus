@@ -55,6 +55,8 @@
 #include "../../common/include/needledash/box_info.hpp"
 #include "../../common/include/phone/detect_code.hpp"
 #include "../../common/include/phone/box_info.hpp"
+#include "../../common/include/workcloth/classify_code.hpp"
+#include "../../common/include/workcloth/box_info.hpp"
 
 #include <string>
 #include <memory>
@@ -200,6 +202,180 @@ namespace glasssix
 				convert_to_bgr(temp, dst, width, height);
 				return dst;
 			}
+
+
+			inline Json::Value Workcloth_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+
+				try {
+					int device = root["device"].asInt();
+					std::string models_directory = root["models_directory"].asString();
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"device", box(device)},
+						{u8"models_directory", box(std::string_view(models_directory))} });
+
+					instance = unbox<guid>(plugin.execute(u8"workcloth.new", param));
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
+			inline Json::Value Workcloth_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"object_id", box(instance)} });
+
+					plugin.execute(u8"workcloth.delete", param);
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+				return value;
+			}
+
+			inline Json::Value Workcloth_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					int format = root["format"].asInt();
+					int height = root["height"].asInt();
+					int width = root["width"].asInt();
+
+					int roi_x = root["roi_x"].asInt();
+					int roi_y = root["roi_y"].asInt();
+
+					int roi_width = root["roi_width"].asInt();
+					int roi_height = root["roi_height"].asInt();
+
+					Json::Value params = root.get("params", Json::Value());
+
+					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+
+					for (auto& param_name : params.getMemberNames()) {
+						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					}
+
+					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
+					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{
+						{u8"image", box(image_span)},
+						{u8"height", box(height)},
+						{u8"width", box(width)},
+						{u8"object_id", box(instance)},
+
+						{u8"roi_x", box(roi_x)},
+						{u8"roi_y", box(roi_y)},
+
+						{u8"roi_width",  box(roi_width)},
+						{u8"roi_height", box(roi_height)},
+						{u8"params", param_map_abi},
+						});
+
+					auto result = plugin.execute(u8"workcloth.detect", param).as<exposing::param_vector<workcloth::box_info>>();
+
+					Json::Value jarray_box;
+					Json::Value jarray_workcloth_detected(Json::arrayValue);
+
+					for (int i = 0; i < result.size(); i++)
+					{
+						jarray_box["x1"] = Json::Int(result[i].x1());
+						jarray_box["y1"] = Json::Int(result[i].y1());
+						jarray_box["x2"] = Json::Int(result[i].x2());
+						jarray_box["y2"] = Json::Int(result[i].y2());
+
+						// rgb
+						auto up_rgb = result[i].up_rgb();
+						auto lw_rgb = result[i].lw_rgb();
+						jarray_box["up_rgb"]["r"] = Json::Int(up_rgb[0]);
+						jarray_box["up_rgb"]["g"] = Json::Int(up_rgb[1]);
+						jarray_box["up_rgb"]["b"] = Json::Int(up_rgb[2]);
+						jarray_box["lw_rgb"]["r"] = Json::Int(lw_rgb[0]);
+						jarray_box["lw_rgb"]["g"] = Json::Int(lw_rgb[1]);
+						jarray_box["lw_rgb"]["b"] = Json::Int(lw_rgb[2]);;
+
+						jarray_box["score"] = Json::Value(result[i].score());
+						jarray_workcloth_detected.append(jarray_box);
+					}
+
+					value["detect_info"] = jarray_workcloth_detected;
+
+					value["status"]["message"] = Json::Value("OK");
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+				}
+
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+
 
 			inline Json::Value Phone_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
