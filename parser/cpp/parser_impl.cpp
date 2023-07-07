@@ -2,7 +2,6 @@
 #include "plugin_interface.hpp"
 #include "vision_service.hpp"
 #include "plugin_manager.hpp"
-#include <fmt/format.h>
 
 #if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
 #include "message_protocol.hpp"
@@ -279,7 +278,7 @@ namespace glasssix::exposing::nessus
 				}
 				catch (const std::exception&)
 				{
-					value["status"]["message"] = Json::Value(fmt::format("Topic {} not registed.", topic_str));
+					value["status"]["message"] = Json::Value("Topic \"" + topic_str + "\" not registed.");
 					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
 					return to_param_string(writer.write(value));
 				}
@@ -384,14 +383,12 @@ namespace glasssix::exposing::nessus
 			return to_param_string(writer.write(value));
 		}
 
-		const char* nessus_version = "1.0.0";
-
 #if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
 		param_string init_plugin(const param_string& config_file_path)
 		{
 			static std::once_flag flag;
 
-			std::string status = fmt::format(R"({{"status":{{"message":"Function 'init_plugin' has beed called and could be called one time","code":0}},"nessus_version":{}}})", nessus_version);
+			std::string status = "{\"status\":{\"message\":\"Function 'init_plugin' has beed called and could be called one time\",\"code\":0}}";
 			std::call_once(flag, [&]
 				{
 					std::ifstream f_config{ std::string(config_file_path.begin(), config_file_path.end()) };
@@ -410,7 +407,7 @@ namespace glasssix::exposing::nessus
 							if (!ret)
 							{
 								ready = false;
-								status = fmt::format(R"({{"status":{{"message":"load module '{}' failed","code":-1}},"nessus_version":{}}})", lib_item.get<std::string_view>().value(), nessus_version);
+								status = "{\"status\":{\"message\":\"load module '" + std::string(lib_item.get<std::string_view>().value()) + "' failed\",\"code\":-1}}";
 								return;
 							}
 						}
@@ -422,22 +419,22 @@ namespace glasssix::exposing::nessus
 						if (!plugin)
 						{
 							ready = false;
-							status = fmt::format(R"({{"status":{{"message":"Get a nullptr 'plugin_interface' instance","code":-1}},"nessus_version":{}}})", nessus_version);
+							status = "{\"status\":{\"message\":\"Get a nullptr 'plugin_interface' instance\",\"code\":-1}}";
 							return;
 						}
 
 						ready = true;
-						status = fmt::format(R"({{"status":{{"message":"OK","code":0}},"nessus_version":{}}})", nessus_version);
+						status = "{\"status\":{\"message\":\"OK\",\"code\":0}}";
 					}
 					catch (const std::exception& ex)
 					{
 						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}","code":-99}},"nessus_version":{}}})", ex.what(), nessus_version);
+						status = std::string("{\"status\":{\"message\":\"") + ex.what() + std::string("\",\"code\":-99}}");
 					}
 					catch (const abi_error& ex)
 					{
 						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}", "code":{}}},"nessus_version":{}}})", ex.what_to_narrow(), ex.result(), nessus_version);
+						status = std::string("{\"status\":{\"message\":\"") + ex.what_to_narrow() + std::string("\",\"code\":") + std::to_string(ex.result()) + "}}";
 					}
 				});
 
@@ -448,7 +445,7 @@ namespace glasssix::exposing::nessus
 		{
 			static std::once_flag flag;
 
-			std::string status = fmt::format(R"({{"status":{{"message":"Function 'init_plugin' has beed called and could be called one time","code":0}},"nessus_version":{}}})", nessus_version);
+			std::string status = "{\"status\":{\"message\":\"Function 'init_plugin' has beed called and could be called one time\",\"code\":0}}";
 			std::call_once(flag, [&]
 				{
 					std::ifstream f_config{ std::string(config_file_path.begin(), config_file_path.end()) };
@@ -467,7 +464,7 @@ namespace glasssix::exposing::nessus
 							if (!ret)
 							{
 								ready = false;
-								status = fmt::format(R"({"status":{"message":"load module '{}' failed","code":-1}},"nessus_version":{}}})", lib_item.asString(), nessus_version);
+								status = "{\"status\":{\"message\":\"load module '" + lib_item.asString() + "' failed\",\"code\":-1}}";
 								return;
 							}
 						}
@@ -479,22 +476,22 @@ namespace glasssix::exposing::nessus
 						if (!plugin)
 						{
 							ready = false;
-							status = fmt::format(R"({{"status":{{"message":"Get a nullptr 'plugin_interface' instance","code":-1}},"nessus_version":{}}})", nessus_version);
+							status = "{\"status\":{\"message\":\"Get a nullptr 'plugin_interface' instance\",\"code\":-1}}";
 							return;
 						}
 
 						ready = true;
-						status = fmt::format(R"({{"status":{{"message":"OK","code":0}},"nessus_version":{}}})", nessus_version);
+						status = "{\"status\":{\"message\":\"OK\",\"code\":0}}";
 					}
 					catch (const Json::Exception& ex)
 					{
 						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}","code":-98}},"nessus_version":{}}})", ex.what(), nessus_version);
+						status = std::string("{\"status\":{\"message\":\"") + ex.what() + std::string("\",\"code\":-98}}");
 					}
 					catch (const std::exception& ex)
 					{
 						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}","code":-99}},"nessus_version":{}}})", ex.what(), nessus_version);
+						status = std::string("{\"status\":{\"message\":\"") + ex.what() + std::string("\",\"code\":-99}}");
 					}
 				});
 
@@ -568,6 +565,11 @@ namespace glasssix::exposing::nessus
 		protocol_map["smoke.new"] = &Smoke_new_json;
 		protocol_map["smoke.delete"] = &Smoke_delete_json;
 		protocol_map["smoke.detect"] = &Smoke_detect_json;
+
+		protocol_map["onphone.new"] = &Onphone_new_json;
+		protocol_map["onphone.delete"] = &Onphone_delete_json;
+		protocol_map["onphone.detect"] = &Onphone_detect_json;
+		
 		protocol_map["refvest.new"] = &Refvest_new_json;
 		protocol_map["refvest.delete"] = &Refvest_delete_json;
 		protocol_map["refvest.detect"] = &Refvest_detect_json;
@@ -623,7 +625,10 @@ namespace glasssix::exposing::nessus
 		protocol_map["irisviel.remove_records"] = &Irisviel_remove_records_json;
 		protocol_map["irisviel.add_records"] = &Irisviel_add_records_json;
 		protocol_map["irisviel.update_records"] = &Irisviel_update_records_json;
-        protocol_map["gungnir.new"] = &Gungnir_new_json;
+		protocol_map["leavepost.new"] = &Leavepost_new_json;
+		protocol_map["leavepost.delete"] = &Leavepost_delete_json;
+		protocol_map["leavepost.detect"] = &Leavepost_detect_json;
+       	protocol_map["gungnir.new"] = &Gungnir_new_json;
 		protocol_map["gungnir.delete"] = &Gungnir_delete_json;
 		protocol_map["gungnir.detect"] = &Gungnir_detect_json;
         protocol_map["mjollner.new"] = &Mjollner_new_json;
