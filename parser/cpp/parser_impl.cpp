@@ -534,10 +534,10 @@ namespace glasssix::exposing::nessus
 		protocol_map["workcloth.delete"] = &Workcloth_delete_json;
 		protocol_map["workcloth.detect"] = &Workcloth_detect_json;
 		protocol_map["workcloth.version"] = &Workcloth_version_json;
-		protocol_map["phone.new"] = &Phone_new_json;
-		protocol_map["phone.delete"] = &Phone_delete_json;
-		protocol_map["phone.detect"] = &Phone_detect_json;
-		protocol_map["phone.version"] = &Phone_version_json;
+		protocol_map["playphone.new"] = &Playphone_new_json;
+		protocol_map["playphone.delete"] = &Playphone_delete_json;
+		protocol_map["playphone.detect"] = &Playphone_detect_json;
+		protocol_map["playphone.version"] = &Playphone_version_json;
 		protocol_map["needledash.new"] = &Needledash_new_json;
 		protocol_map["needledash.delete"] = &Needledash_delete_json;
 		protocol_map["needledash.detect"] = &Needledash_detect_json;

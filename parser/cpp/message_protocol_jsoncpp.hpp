@@ -53,8 +53,8 @@
 #include "../../common/include/valve/box_info.hpp"
 #include "../../common/include/needledash/ocr_code.hpp"
 #include "../../common/include/needledash/box_info.hpp"
-#include "../../common/include/phone/detect_code.hpp"
-#include "../../common/include/phone/box_info.hpp"
+#include "../../common/include/playphone/detect_code.hpp"
+#include "../../common/include/playphone/box_info.hpp"
 #include "../../common/include/workcloth/classify_code.hpp"
 #include "../../common/include/workcloth/box_info.hpp"
 
@@ -426,7 +426,7 @@ namespace glasssix
 						{ {u8"device", box(device)},
 								{u8"models_directory", box(std::string_view(models_directory))} });
 
-					instance = unbox<guid>(plugin.execute(u8"phone.new", param));
+					instance = unbox<guid>(plugin.execute(u8"playphone.new", param));
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
@@ -454,7 +454,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Phone_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Playphone_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -462,7 +462,7 @@ namespace glasssix
 					auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 					
-					auto version =plugin.execute(u8"phone.version", param) ;
+					auto version =plugin.execute(u8"playphone.version", param) ;
 
 					value["version"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
 
@@ -493,7 +493,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Phone_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Playphone_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -501,7 +501,7 @@ namespace glasssix
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"object_id", box(instance)} });
 
-					plugin.execute(u8"phone.delete", param);
+					plugin.execute(u8"playphone.delete", param);
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -529,7 +529,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Phone_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Playphone_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -570,7 +570,7 @@ namespace glasssix
 							{u8"params", param_map_abi},
 						});
 
-					auto result = plugin.execute(u8"phone.detect", param).as<exposing::param_vector<phone::box_info>>();
+					auto result = plugin.execute(u8"playphone.detect", param).as<exposing::param_vector<playphone::box_info>>();
 
 					Json::Value jarray_box;
 					Json::Value jarray_phone_detected(Json::arrayValue);

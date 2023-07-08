@@ -1,9 +1,9 @@
-#ifndef _PHONE_BOX_INFO_HPP_
-#define _PHONE_BOX_INFO_HPP_
+#ifndef _PLAYPHONE_BOX_INFO_HPP_
+#define _PLAYPHONE_BOX_INFO_HPP_
 
 #include <abi/consumer.hpp>
 
-namespace glasssix::phone
+namespace glasssix::playphone
 {
     struct box_info;
 }
@@ -11,7 +11,7 @@ namespace glasssix::phone
 namespace glasssix::exposing::impl
 {
     template<>
-    struct abi<phone::box_info>
+    struct abi<playphone::box_info>
     {
         using identity_type = type_identity_interface;
 
@@ -29,7 +29,7 @@ namespace glasssix::exposing::impl
     };
 
     template <typename Derived>
-    struct interface_vtable<Derived, phone::box_info> : interface_vtable_base<Derived, phone::box_info>
+    struct interface_vtable<Derived, playphone::box_info> : interface_vtable_base<Derived, playphone::box_info>
     {
 
         virtual std::int32_t G6_ABI_CALL x1(abi_out_t<int> result) noexcept override
@@ -70,10 +70,10 @@ namespace glasssix::exposing::impl
     };
 
     template <>
-    struct abi_adapter<phone::box_info>
+    struct abi_adapter<playphone::box_info>
     {
         template <typename Derived>
-        struct type : enable_self_abi_awareness<Derived, phone::box_info>
+        struct type : enable_self_abi_awareness<Derived, playphone::box_info>
         {
 
             int x1() const
@@ -116,7 +116,7 @@ namespace glasssix::exposing::impl
     };
 }
 
-namespace glasssix::phone
+namespace glasssix::playphone
 {
     struct box_info : exposing::inherits<box_info>
     {

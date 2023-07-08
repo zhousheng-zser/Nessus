@@ -34,7 +34,7 @@
 #include <startorus/detect_code.hpp>
 #include <valve/detect_code.hpp>
 #include <needledash/ocr_code.hpp>
-#include <phone/detect_code.hpp>
+#include <playphone/detect_code.hpp>
 #include <workcloth/classify_code.hpp>
 
 #include <iostream>
@@ -63,7 +63,7 @@ using namespace glasssix::eledash;
 using namespace glasssix::ebike;
 using namespace glasssix::callsmoke;
 using namespace glasssix::needledash;
-using namespace glasssix::phone;
+using namespace glasssix::playphone;
 using namespace glasssix::workcloth;
 
 namespace glasssix::exposing::nessus
@@ -102,7 +102,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view startorus{ u8"startorus" };
 			static constexpr utf8_string_view valve{ u8"valve" };
 			static constexpr utf8_string_view needledash{ u8"needledash" };
-			static constexpr utf8_string_view phone{ u8"phone" };
+			static constexpr utf8_string_view playphone{ u8"playphone" };
 			static constexpr utf8_string_view workcloth{ u8"workcloth" };
 		};
 
@@ -113,9 +113,9 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view workcloth_delete{ u8"workcloth.delete" };
 	
 
-			static constexpr utf8_string_view phone_new{ u8"phone.new" };
-			static constexpr utf8_string_view phone_detect{ u8"phone.detect" };
-			static constexpr utf8_string_view phone_delete{ u8"phone.delete" };
+			static constexpr utf8_string_view playphone_new{ u8"playphone.new" };
+			static constexpr utf8_string_view playphone_detect{ u8"playphone.detect" };
+			static constexpr utf8_string_view playphone_delete{ u8"playphone.delete" };
 
 			static constexpr utf8_string_view needledash_new{ u8"needledash.new" };
 			static constexpr utf8_string_view needledash_detect{ u8"needledash.detect" };
@@ -248,7 +248,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view leavepost_version{ u8"leavepost.version" };
 						static constexpr utf8_string_view onphone_version{ u8"onphone.version" };
 			static constexpr utf8_string_view workcloth_version{ u8"workcloth.version" };
-			static constexpr utf8_string_view phone_version{ u8"phone.version" };
+			static constexpr utf8_string_view playphone_version{ u8"playphone.version" };
 			static constexpr utf8_string_view helmet_version{ u8"helmet.version" };
 			static constexpr utf8_string_view flame_version{ u8"flame.version" };
 			static constexpr utf8_string_view refvest_version{ u8"refvest.version" };
@@ -303,7 +303,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::onphone_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::smoke_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-			functions_.insert_or_assign(function_names::phone_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::playphone_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::needledash_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::valve_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::startorus_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -342,7 +342,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::refvest_version, std::bind(&impl::refvest_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::sleep_version, std::bind(&impl::sleep_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::leavepost_version, std::bind(&impl::leavepost_version, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::phone_version, std::bind(&impl::phone_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::playphone_version, std::bind(&impl::playphone_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_version, std::bind(&impl::smoke_version, this, std::placeholders::_1));
 
 
@@ -350,7 +350,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::gungnir_detect, std::bind(&impl::gungnir_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_detect, std::bind(&impl::smoke_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::onphone_detect, std::bind(&impl::onphone_detect, this, std::placeholders::_1));					
-			functions_.insert_or_assign(function_names::phone_detect, std::bind(&impl::phone_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::playphone_detect, std::bind(&impl::playphone_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::needledash_detect, std::bind(&impl::needledash_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::valve_detect, std::bind(&impl::valve_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::startorus_detect, std::bind(&impl::startorus_detect, this, std::placeholders::_1));
@@ -457,11 +457,11 @@ namespace glasssix::exposing::nessus
 
 	private:
 
-		unknown_object phone_new(const param_hash_map<param_string, unknown_object>& params)
+		unknown_object playphone_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
-			return add_instance(package_names::phone, make_exported_interface<glasssix::phone::detect_code>(models_directory, device));
+			return add_instance(package_names::playphone, make_exported_interface<glasssix::playphone::detect_code>(models_directory, device));
 		}
 
 		unknown_object needledash_new(const param_hash_map<param_string, unknown_object>& params)
@@ -742,10 +742,10 @@ namespace glasssix::exposing::nessus
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
-		unknown_object phone_detect(const param_hash_map<param_string, unknown_object>& params)
+		unknown_object playphone_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<phone::detect_code>(params);
+			auto instance = get_instance<playphone::detect_code>(params);
 
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
@@ -918,9 +918,9 @@ namespace glasssix::exposing::nessus
 			return box(instance.version());
 		}
 
-		unknown_object phone_version(const param_hash_map<param_string, unknown_object>& params)
+		unknown_object playphone_version(const param_hash_map<param_string, unknown_object>& params)
 		{
-			auto instance = get_instance<phone::detect_code>(params);
+			auto instance = get_instance<playphone::detect_code>(params);
 			return box(instance.version());
 		}
 
