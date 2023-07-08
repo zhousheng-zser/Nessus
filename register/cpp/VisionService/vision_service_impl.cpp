@@ -64,6 +64,7 @@ using namespace glasssix::ebike;
 using namespace glasssix::callsmoke;
 using namespace glasssix::needledash;
 using namespace glasssix::phone;
+using namespace glasssix::workcloth;
 
 namespace glasssix::exposing::nessus
 {
@@ -103,7 +104,6 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view needledash{ u8"needledash" };
 			static constexpr utf8_string_view phone{ u8"phone" };
 			static constexpr utf8_string_view workcloth{ u8"workcloth" };
-
 		};
 
 		struct function_names final
@@ -111,9 +111,12 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view workcloth_new{ u8"workcloth.new" };
 			static constexpr utf8_string_view workcloth_detect{ u8"workcloth.detect" };
 			static constexpr utf8_string_view workcloth_delete{ u8"workcloth.delete" };
+	
+
 			static constexpr utf8_string_view phone_new{ u8"phone.new" };
 			static constexpr utf8_string_view phone_detect{ u8"phone.detect" };
 			static constexpr utf8_string_view phone_delete{ u8"phone.delete" };
+
 			static constexpr utf8_string_view needledash_new{ u8"needledash.new" };
 			static constexpr utf8_string_view needledash_detect{ u8"needledash.detect" };
 			static constexpr utf8_string_view needledash_delete{ u8"needledash.delete" };
@@ -131,10 +134,14 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view callsmoke_delete{ u8"callsmoke.delete" };
 			static constexpr utf8_string_view ebike_new{ u8"ebike.new" };
 			static constexpr utf8_string_view onphone_new{ u8"onphone.new" };
+
+
+
 			static constexpr utf8_string_view gungnir_new{ u8"gungnir.new" };
 			static constexpr utf8_string_view ebike_detect{ u8"ebike.detect" };
 			static constexpr utf8_string_view ebike_delete{ u8"ebike.delete" };
 			static constexpr utf8_string_view helmet_new{ u8"helmet.new" };
+
 			static constexpr utf8_string_view helmet_detect{ u8"helmet.detect" };
 			static constexpr utf8_string_view helmet_delete{ u8"helmet.delete" };
 			static constexpr utf8_string_view eledash_new{ u8"eledash.new" };
@@ -146,9 +153,12 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view flame_new{ u8"flame.new" };
 			static constexpr utf8_string_view flame_detect{ u8"flame.detect" };
 			static constexpr utf8_string_view flame_delete{ u8"flame.delete" };
+		
 			static constexpr utf8_string_view sleep_new{ u8"sleep.new" };
 			static constexpr utf8_string_view sleep_detect{ u8"sleep.detect" };
 			static constexpr utf8_string_view sleep_delete{ u8"sleep.delete" };
+			
+
 			static constexpr utf8_string_view smoke_new{ u8"smoke.new" };
 			static constexpr utf8_string_view smoke_detect{ u8"smoke.detect" };
 			static constexpr utf8_string_view smoke_delete{ u8"smoke.delete" };
@@ -160,6 +170,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view refvest_new{ u8"refvest.new" };
 			static constexpr utf8_string_view refvest_detect{ u8"refvest.detect" };
 			static constexpr utf8_string_view refvest_delete{ u8"refvest.delete" };
+
 
 			static constexpr utf8_string_view rail_new{ u8"rail.new" };
 			static constexpr utf8_string_view rail_detect{ u8"rail.detect" };
@@ -227,11 +238,24 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view irisviel_search{ u8"irisviel.search" };
 			static constexpr utf8_string_view irisviel_search_nf{ u8"irisviel.search_nf" };
 			static constexpr utf8_string_view leavepost_detect{ u8"leavepost.detect" };
+
 			static constexpr utf8_string_view mjollner_detect{ u8"mjollner.detect" };
 			static constexpr utf8_string_view valklyrs_detect{ u8"valklyrs.detect" };
 			static constexpr utf8_string_view heimdall_detect{ u8"heimdall.detect" };
 			static constexpr utf8_string_view banshee_init{ u8"banshee.init" };
 			static constexpr utf8_string_view banshee_update{ u8"banshee.update" };
+
+			static constexpr utf8_string_view leavepost_version{ u8"leavepost.version" };
+						static constexpr utf8_string_view onphone_version{ u8"onphone.version" };
+			static constexpr utf8_string_view workcloth_version{ u8"workcloth.version" };
+			static constexpr utf8_string_view phone_version{ u8"phone.version" };
+			static constexpr utf8_string_view helmet_version{ u8"helmet.version" };
+			static constexpr utf8_string_view flame_version{ u8"flame.version" };
+			static constexpr utf8_string_view refvest_version{ u8"refvest.version" };
+			static constexpr utf8_string_view sleep_version{ u8"sleep.version" };
+			static constexpr utf8_string_view smoke_version{ u8"smoke.version" };
+
+
 		};
 	}
 
@@ -273,8 +297,8 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::smoke_new, std::bind(&impl::smoke_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::onphone_new, std::bind(&impl::onphone_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::workcloth_new, std::bind(&impl::workcloth_new, this, std::placeholders::_1));
-			// Delete
 
+			// Delete
 			functions_.insert_or_assign(function_names::workcloth_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::onphone_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -309,6 +333,19 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
+		
+			functions_.insert_or_assign(function_names::onphone_version, std::bind(&impl::onphone_version, this, std::placeholders::_1));
+
+			functions_.insert_or_assign(function_names::workcloth_version, std::bind(&impl::workcloth_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::flame_version, std::bind(&impl::flame_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::helmet_version, std::bind(&impl::helmet_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::refvest_version, std::bind(&impl::refvest_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::sleep_version, std::bind(&impl::sleep_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::leavepost_version, std::bind(&impl::leavepost_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::phone_version, std::bind(&impl::phone_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::smoke_version, std::bind(&impl::smoke_version, this, std::placeholders::_1));
+
+
 			functions_.insert_or_assign(function_names::workcloth_detect, std::bind(&impl::workcloth_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gungnir_detect, std::bind(&impl::gungnir_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_detect, std::bind(&impl::smoke_detect, this, std::placeholders::_1));
@@ -404,6 +441,13 @@ namespace glasssix::exposing::nessus
 			return result;
 		}
 
+		unknown_object workcloth_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+			return add_instance(package_names::workcloth, make_exported_interface<glasssix::workcloth::classify_code>(models_directory, device));
+		}
+
 		unknown_object execute(const param_string& function_name, const param_hash_map<param_string, unknown_object>& params) const
 		{
 			auto iter = functions_.find(function_name);
@@ -412,13 +456,6 @@ namespace glasssix::exposing::nessus
 		}
 
 	private:
-
-		unknown_object workcloth_new(const param_hash_map<param_string, unknown_object>& params)
-		{
-			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
-			return add_instance(package_names::workcloth, make_exported_interface<glasssix::workcloth::classify_code>(models_directory, device));
-		}
 
 		unknown_object phone_new(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -519,6 +556,10 @@ namespace glasssix::exposing::nessus
 
 			return add_instance(package_names::onphone, make_exported_interface<onphone::detect_code>(models_directory, device));
 		}
+
+
+
+
 
 		unknown_object sleep_new(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -859,6 +900,60 @@ namespace glasssix::exposing::nessus
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
+		unknown_object onphone_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<onphone::detect_code>(params);
+			return box(instance.version());
+		}
+
+		unknown_object leavepost_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<leavepost::yolo_net>(params);
+			return box(instance.version());
+		}
+
+		unknown_object sleep_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<sleep::detect_code>(params);
+			return box(instance.version());
+		}
+
+		unknown_object phone_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<phone::detect_code>(params);
+			return box(instance.version());
+		}
+
+		unknown_object smoke_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<smoke::detect_code>(params);
+			return box(instance.version());
+		}
+
+		unknown_object helmet_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<helmet::detect_code>(params);
+			return box(instance.version());
+		}
+
+		unknown_object refvest_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<refvest::classify_code>(params);
+			return box(instance.version());
+		}
+
+		unknown_object flame_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<flame::detect_code>(params);
+			return box(instance.version());
+		}
+
+		unknown_object workcloth_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<workcloth::classify_code>(params);
+			return box(instance.version());
+		}
+		
 		unknown_object eledash_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 
