@@ -1715,8 +1715,8 @@ namespace glasssix
 
 					Json::Value jarray_info;
 
-					jarray_info["detected_list"] = jarray_helmet_detected;
-					jarray_info["cant_detected_list"] = jarray_helmet_cant_detected;
+					jarray_info["with_helmet_list"] = jarray_helmet_detected;
+					jarray_info["without_helmet_list"] = jarray_helmet_cant_detected;
 
 			
 					value["detect_info"] = jarray_info;
@@ -2762,8 +2762,7 @@ namespace glasssix
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
-							jarray_box["label"] = Json::Int(result[i].category());
-							// jarray_box["confidence"] = Json::Value(result[i].confidence());
+							jarray_box["score"] = Json::Value(result[i].confidence());
                             jarray_normal_detected.append(jarray_box);
 						}
 						else if (category == 1)
@@ -2773,8 +2772,7 @@ namespace glasssix
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
-							jarray_box["label"] = Json::Int(result[i].category());
-							// jarray_box["confidence"] = Json::Int(result[i].confidence());
+							jarray_box["score"] = Json::Value(result[i].confidence());
                             jarray_onphone_detected.append(jarray_box);
 						}					
 					}
@@ -3057,26 +3055,38 @@ namespace glasssix
 						});
 
 					auto result = plugin.execute(u8"refvest.detect", param).as<param_vector<refvest::box_info>>();
-					Json::Value jarray_boxes(Json::arrayValue);
-					for (auto box : result)
+					Json::Value jarray_box;
+					Json::Value jarray_offvest_detected(Json::arrayValue);
+					Json::Value jarray_withvest_detected(Json::arrayValue);
+
+					for (int i = 0; i < result.size(); i++)
 					{
-						Json::Value jobj_box;
-						// location
-						Json::Value jarray_points;
-							
-						jarray_points["x1"] = Json::Int(box.x1());
-						jarray_points["y1"] = Json::Int(box.y1());
-						jarray_points["x2"] = Json::Int(box.x2());
-						jarray_points["y2"] = Json::Int(box.y2());
-				
-						jobj_box["location"] = jarray_points;
-						jobj_box["score"] = Json::Value(box.score());
-						jobj_box["category"] = Json::Int(box.category());
-
-						jarray_boxes.append(jobj_box);
+						int category = Json::Int(result[i].category());
+						// Json::Value jarray_box;
+						if (category == 1)
+						{
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].score());
+                            jarray_withvest_detected.append(jarray_box);
+						}
+						else if (category == 0)
+						{
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].score());
+                            jarray_offvest_detected.append(jarray_box);
+						}
 					}
+					Json::Value jarray_info;
+					jarray_info["with_refvtst_list"] = jarray_withvest_detected;
+					jarray_info["without_refvtst_list"] = jarray_offvest_detected;
 
-					value["detect_info"] = jarray_boxes;
+					value["detect_info"] = jarray_info;
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -4334,13 +4344,15 @@ namespace glasssix
 					{
 						int category = Json::Int(obj.label());
 
-						jarray_box["x1"] = Json::Int(obj.x());
-						jarray_box["y1"] = Json::Int(obj.y());
-						jarray_box["x2"] = Json::Int(obj.x()+obj.width());
-						jarray_box["y2"] = Json::Int(obj.height()+obj.y());
-						jarray_box["label"] = Json::Int(obj.label());
-						jarray_box["score"] = Json::Value(obj.confidence());
-						jarray_work.append(jarray_box);
+						if(category==1)
+						{
+							jarray_box["x1"] = Json::Int(obj.x());
+							jarray_box["y1"] = Json::Int(obj.y());
+							jarray_box["x2"] = Json::Int(obj.x()+obj.width());
+							jarray_box["y2"] = Json::Int(obj.height()+obj.y());
+							jarray_box["score"] = Json::Value(obj.confidence());
+							jarray_work.append(jarray_box);
+						}
 
 					}
 					jarray_info["hat_list"] = jarray_work;
