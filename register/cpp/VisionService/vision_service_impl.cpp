@@ -266,7 +266,7 @@ namespace glasssix::exposing::nessus
 		{
 			// New
 			functions_.insert_or_assign(function_names::gungnir_new, std::bind(&impl::gungnir_new, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::phone_new, std::bind(&impl::needledash_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::playphone_new, std::bind(&impl::playphone_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::needledash_new, std::bind(&impl::needledash_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::valve_new, std::bind(&impl::valve_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::startorus_new, std::bind(&impl::startorus_new, this, std::placeholders::_1));
