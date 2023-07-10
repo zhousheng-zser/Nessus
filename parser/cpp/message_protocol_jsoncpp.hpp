@@ -2951,20 +2951,18 @@ namespace glasssix
 						int category = Json::Int(result[i].category());
 						
 						// Json::Value jarray_box;
-						if (category == 0)
-						{
-                            work_detected += 1;
+						if (category == 1)
+						{                  
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
-							//jarray_box["label"] = Json::Int(result[i].category());
+	
 							jarray_box["score"] = Json::Value(result[i].confidence());
                             jarray_normal_detected.append(jarray_box);
 						}
-						else if (category == 1)
-						{
-                            lying_detected += 1;
+						else if (category == 0)
+						{  
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
