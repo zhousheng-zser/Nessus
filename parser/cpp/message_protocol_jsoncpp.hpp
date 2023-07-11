@@ -57,8 +57,8 @@
 #include "../../common/include/playphone/box_info.hpp"
 #include "../../common/include/workcloth/classify_code.hpp"
 #include "../../common/include/workcloth/box_info.hpp"
-#include "../../common/include/pedestrian_mgg/classify_code.hpp"
-#include "../../common/include/pedestrian_mgg/box_info.hpp"
+#include "../../common/include/pedestrian_labor/classify_code.hpp"
+#include "../../common/include/pedestrian_labor/box_info.hpp"
 
 #include <string>
 #include <memory>
@@ -205,7 +205,7 @@ namespace glasssix
 				return dst;
 			}
 
-			inline Json::Value Pedestrian_mgg_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Pedestrian_labor_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 
@@ -216,7 +216,7 @@ namespace glasssix
 						{ {u8"device", box(device)},
 								{u8"models_directory", box(std::string_view(models_directory))} });
 
-					instance = unbox<guid>(plugin.execute(u8"pedestrian_mgg.new", param));
+					instance = unbox<guid>(plugin.execute(u8"pedestrian_labor.new", param));
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
@@ -244,7 +244,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Pedestrian_mgg_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Pedestrian_labor_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -252,7 +252,7 @@ namespace glasssix
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"object_id", box(instance)} });
 
-					auto version = plugin.execute(u8"pedestrian_mgg.version", param);
+					auto version = plugin.execute(u8"pedestrian_labor.version", param);
 
 					value["version"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
 
@@ -283,7 +283,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Pedestrian_mgg_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Pedestrian_labor_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -291,7 +291,7 @@ namespace glasssix
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"object_id", box(instance)} });
 
-					plugin.execute(u8"pedestrian_mgg.delete", param);
+					plugin.execute(u8"pedestrian_labor.delete", param);
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -319,7 +319,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Pedestrian_mgg_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Pedestrian_labor_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -360,7 +360,7 @@ namespace glasssix
 							{u8"params", param_map_abi},
 						});
 
-					auto result = plugin.execute(u8"pedestrian_mgg.detect", param).as<exposing::param_vector<pedestrian_mgg::box_info>>();
+					auto result = plugin.execute(u8"pedestrian_labor.detect", param).as<exposing::param_vector<pedestrian_labor::box_info>>();
 
 					Json::Value jarray_info(Json::arrayValue);
 					Json::Value jarray_box;

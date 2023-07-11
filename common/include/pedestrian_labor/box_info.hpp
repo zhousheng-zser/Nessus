@@ -1,9 +1,9 @@
-#ifndef _PEDESTRIAN_MGG_BOX_INFO_HPP_
-#define _PEDESTRIAN_MGG_BOX_INFO_HPP_
+#ifndef _PEDESTRIAN_LABOR_BOX_INFO_HPP_
+#define _PEDESTRIAN_LABOR_BOX_INFO_HPP_
 
 #include <abi/consumer.hpp>
 
-namespace glasssix::pedestrian_mgg
+namespace glasssix::pedestrian_labor
 {
     struct box_info;
 }
@@ -11,7 +11,7 @@ namespace glasssix::pedestrian_mgg
 namespace glasssix::exposing::impl
 {
     template<>
-    struct abi<pedestrian_mgg::box_info>
+    struct abi<pedestrian_labor::box_info>
     {
         using identity_type = type_identity_interface;
 
@@ -29,7 +29,7 @@ namespace glasssix::exposing::impl
     };
 
     template <typename Derived>
-    struct interface_vtable<Derived, pedestrian_mgg::box_info> : interface_vtable_base<Derived, pedestrian_mgg::box_info>
+    struct interface_vtable<Derived, pedestrian_labor::box_info> : interface_vtable_base<Derived, pedestrian_labor::box_info>
     {
 
         virtual std::int32_t G6_ABI_CALL x1(abi_out_t<int> result) noexcept override
@@ -70,10 +70,10 @@ namespace glasssix::exposing::impl
     };
 
     template <>
-    struct abi_adapter<pedestrian_mgg::box_info>
+    struct abi_adapter<pedestrian_labor::box_info>
     {
         template <typename Derived>
-        struct type : enable_self_abi_awareness<Derived, pedestrian_mgg::box_info>
+        struct type : enable_self_abi_awareness<Derived, pedestrian_labor::box_info>
         {
 
             int x1() const
@@ -116,7 +116,7 @@ namespace glasssix::exposing::impl
     };
 }
 
-namespace glasssix::pedestrian_mgg
+namespace glasssix::pedestrian_labor
 {
     struct box_info : exposing::inherits<box_info>
     {
