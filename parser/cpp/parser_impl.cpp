@@ -391,7 +391,7 @@ namespace glasssix::exposing::nessus
 		{
 			static std::once_flag flag;
 
-			std::string status = fmt::format(R"({{"status":{{"message":"Function 'init_plugin' has beed called and could be called one time","code":0}},"nessus_version":{}}})", nessus_version);
+			std::string status = fmt::format(R"({{"status":{{"message":"Function 'init_plugin' has beed called and could be called one time","code":0}},"nessus_version":"{}"}})", nessus_version);
 			std::call_once(flag, [&]
 				{
 					std::ifstream f_config{ std::string(config_file_path.begin(), config_file_path.end()) };
@@ -410,7 +410,7 @@ namespace glasssix::exposing::nessus
 							if (!ret)
 							{
 								ready = false;
-								status = fmt::format(R"({{"status":{{"message":"load module '{}' failed","code":-1}},"nessus_version":{}}})", lib_item.get<std::string_view>().value(), nessus_version);
+								status = fmt::format(R"({{"status":{{"message":"load module '{}' failed","code":-1}},"nessus_version":"{}"}})", lib_item.get<std::string_view>().value(), nessus_version);
 								return;
 							}
 						}
@@ -422,22 +422,22 @@ namespace glasssix::exposing::nessus
 						if (!plugin)
 						{
 							ready = false;
-							status = fmt::format(R"({{"status":{{"message":"Get a nullptr 'plugin_interface' instance","code":-1}},"nessus_version":{}}})", nessus_version);
+							status = fmt::format(R"({{"status":{{"message":"Get a nullptr 'plugin_interface' instance","code":-1}},"nessus_version":"{}"}})", nessus_version);
 							return;
 						}
 
 						ready = true;
-						status = fmt::format(R"({{"status":{{"message":"OK","code":0}},"nessus_version":{}}})", nessus_version);
+						status = fmt::format(R"({{"status":{{"message":"OK","code":0}},"nessus_version":"{}"}})", nessus_version);
 					}
 					catch (const std::exception& ex)
 					{
 						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}","code":-99}},"nessus_version":{}}})", ex.what(), nessus_version);
+						status = fmt::format(R"({{"status":{{"message":"{}","code":-99}},"nessus_version":"{}"}})", ex.what(), nessus_version);
 					}
 					catch (const abi_error& ex)
 					{
 						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}", "code":{}}},"nessus_version":{}}})", ex.what_to_narrow(), ex.result(), nessus_version);
+						status = fmt::format(R"({{"status":{{"message":"{}", "code":{}}},"nessus_version":"{}"}})", ex.what_to_narrow(), ex.result(), nessus_version);
 					}
 				});
 
@@ -448,7 +448,7 @@ namespace glasssix::exposing::nessus
 		{
 			static std::once_flag flag;
 
-			std::string status = fmt::format(R"({{"status":{{"message":"Function 'init_plugin' has beed called and could be called one time","code":0}},"nessus_version":{}}})", nessus_version);
+			std::string status = fmt::format(R"({{"status":{{"message":"Function 'init_plugin' has beed called and could be called one time","code":0}},"nessus_version":"{}"}})", nessus_version);
 			std::call_once(flag, [&]
 				{
 					std::ifstream f_config{ std::string(config_file_path.begin(), config_file_path.end()) };
@@ -467,7 +467,7 @@ namespace glasssix::exposing::nessus
 							if (!ret)
 							{
 								ready = false;
-								status = fmt::format(R"({"status":{"message":"load module '{}' failed","code":-1}},"nessus_version":{}}})", lib_item.asString(), nessus_version);
+								status = fmt::format(R"({"status":{"message":"load module '{}' failed","code":-1}},"nessus_version":"{}"}})", lib_item.asString(), nessus_version);
 								return;
 							}
 						}
@@ -479,22 +479,22 @@ namespace glasssix::exposing::nessus
 						if (!plugin)
 						{
 							ready = false;
-							status = fmt::format(R"({{"status":{{"message":"Get a nullptr 'plugin_interface' instance","code":-1}},"nessus_version":{}}})", nessus_version);
+							status = fmt::format(R"({{"status":{{"message":"Get a nullptr 'plugin_interface' instance","code":-1}},"nessus_version":"{}"}})", nessus_version);
 							return;
 						}
 
 						ready = true;
-						status = fmt::format(R"({{"status":{{"message":"OK","code":0}},"nessus_version":{}}})", nessus_version);
+						status = fmt::format(R"({{"status":{{"message":"OK","code":0}},"nessus_version":"{}"}})", nessus_version);
 					}
 					catch (const Json::Exception& ex)
 					{
 						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}","code":-98}},"nessus_version":{}}})", ex.what(), nessus_version);
+						status = fmt::format(R"({{"status":{{"message":"{}","code":-98}},"nessus_version":"{}"}})", ex.what(), nessus_version);
 					}
 					catch (const std::exception& ex)
 					{
 						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}","code":-99}},"nessus_version":{}}})", ex.what(), nessus_version);
+						status = fmt::format(R"({{"status":{{"message":"{}","code":-99}},"nessus_version":"{}"}})", ex.what(), nessus_version);
 					}
 				});
 
