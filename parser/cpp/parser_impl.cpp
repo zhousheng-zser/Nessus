@@ -530,10 +530,10 @@ namespace glasssix::exposing::nessus
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> parser_impl::impl::basic_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> protocol_map;
 #endif	
-		protocol_map["pedestrian.new"] = &Pedestrian_new_json;
-		protocol_map["pedestrian.delete"] = &Pedestrian_delete_json;
-		protocol_map["pedestrian.detect"] = &Pedestrian_detect_json;
-		protocol_map["pedestrian.version"] = &Pedestrian_version_json;
+		protocol_map["pedestrian_mgg.new"] = &Pedestrian_labor_new_json;
+		protocol_map["pedestrian_mgg.delete"] = &Pedestrian_labor_delete_json;
+		protocol_map["pedestrian_mgg.detect"] = &Pedestrian_labor_detect_json;
+		protocol_map["pedestrian_mgg.version"] = &Pedestrian_labor_version_json;
 		protocol_map["workcloth.new"] = &Workcloth_new_json;
 		protocol_map["workcloth.delete"] = &Workcloth_delete_json;
 		protocol_map["workcloth.detect"] = &Workcloth_detect_json;

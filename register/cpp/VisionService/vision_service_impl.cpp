@@ -36,7 +36,7 @@
 #include <needledash/ocr_code.hpp>
 #include <playphone/detect_code.hpp>
 #include <workcloth/classify_code.hpp>
-#include <pedestrian/classify_code.hpp>
+#include <pedestrian_labor/classify_code.hpp>
 
 #include <iostream>
 
@@ -66,7 +66,7 @@ using namespace glasssix::callsmoke;
 using namespace glasssix::needledash;
 using namespace glasssix::playphone;
 using namespace glasssix::workcloth;
-using namespace glasssix::pedestrian;
+using namespace glasssix::pedestrian_labor;
 
 namespace glasssix::exposing::nessus
 {
@@ -106,14 +106,14 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view needledash{ u8"needledash" };
 			static constexpr utf8_string_view playphone{ u8"playphone" };
 			static constexpr utf8_string_view workcloth{ u8"workcloth" };
-			static constexpr utf8_string_view pedestrian{ u8"pedestrian" };
+			static constexpr utf8_string_view pedestrian_labor{ u8"pedestrian_labor" };
 		};
 
 		struct function_names final
 		{
-			static constexpr utf8_string_view pedestrian_new{ u8"pedestrian.new" };
-			static constexpr utf8_string_view pedestrian_detect{ u8"pedestrian.detect" };
-			static constexpr utf8_string_view pedestrian_delete{ u8"pedestrian.delete" };
+			static constexpr utf8_string_view pedestrian_labor_new{ u8"pedestrian_labor.new" };
+			static constexpr utf8_string_view pedestrian_labor_detect{ u8"pedestrian_labor.detect" };
+			static constexpr utf8_string_view pedestrian_labor_delete{ u8"pedestrian_labor.delete" };
 
 			static constexpr utf8_string_view workcloth_new{ u8"workcloth.new" };
 			static constexpr utf8_string_view workcloth_detect{ u8"workcloth.detect" };
@@ -261,7 +261,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view refvest_version{ u8"refvest.version" };
 			static constexpr utf8_string_view sleep_version{ u8"sleep.version" };
 			static constexpr utf8_string_view smoke_version{ u8"smoke.version" };
-			static constexpr utf8_string_view pedestrian_version{ u8"pedestrian.version" };
+			static constexpr utf8_string_view pedestrian_labor_version{ u8"pedestrian_labor.version" };
 
 		};
 	}
@@ -304,10 +304,10 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::smoke_new, std::bind(&impl::smoke_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::onphone_new, std::bind(&impl::onphone_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::workcloth_new, std::bind(&impl::workcloth_new, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::pedestrian_new, std::bind(&impl::pedestrian_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::pedestrian_labor_new, std::bind(&impl::pedestrian_labor_new, this, std::placeholders::_1));
 
 			// Delete
-			functions_.insert_or_assign(function_names::pedestrian_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::pedestrian_labor_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::workcloth_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::onphone_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -342,7 +342,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Business
-			functions_.insert_or_assign(function_names::pedestrian_version, std::bind(&impl::pedestrian_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::pedestrian_labor_version, std::bind(&impl::pedestrian_labor_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::onphone_version, std::bind(&impl::onphone_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::workcloth_version, std::bind(&impl::workcloth_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::flame_version, std::bind(&impl::flame_version, this, std::placeholders::_1));
@@ -353,7 +353,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::playphone_version, std::bind(&impl::playphone_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_version, std::bind(&impl::smoke_version, this, std::placeholders::_1));
 
-			functions_.insert_or_assign(function_names::pedestrian_detect, std::bind(&impl::pedestrian_detect, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::pedestrian_labor_detect, std::bind(&impl::pedestrian_labor_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::workcloth_detect, std::bind(&impl::workcloth_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gungnir_detect, std::bind(&impl::gungnir_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_detect, std::bind(&impl::smoke_detect, this, std::placeholders::_1));
@@ -465,11 +465,11 @@ namespace glasssix::exposing::nessus
 
 	private:
 
-		unknown_object pedestrian_new(const param_hash_map<param_string, unknown_object>& params)
+		unknown_object pedestrian_labor_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
-			return add_instance(package_names::playphone, make_exported_interface<glasssix::pedestrian::detect_code>(models_directory, device));
+			return add_instance(package_names::playphone, make_exported_interface<glasssix::pedestrian_labor::detect_code>(models_directory, device));
 		}
 
 		unknown_object playphone_new(const param_hash_map<param_string, unknown_object>& params)
@@ -739,10 +739,10 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::banshee, make_exported_interface<kcf_tracker>());
 		}
 
-		unknown_object pedestrian_detect(const param_hash_map<param_string, unknown_object>& params)
+		unknown_object pedestrian_labor_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<pedestrian::detect_code>(params);
+			auto instance = get_instance<pedestrian_labor::detect_code>(params);
 
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
@@ -933,9 +933,9 @@ namespace glasssix::exposing::nessus
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
-		unknown_object pedestrian_version(const param_hash_map<param_string, unknown_object>& params)
+		unknown_object pedestrian_labor_version(const param_hash_map<param_string, unknown_object>& params)
 		{
-			auto instance = get_instance<pedestrian::detect_code>(params);
+			auto instance = get_instance<pedestrian_labor::detect_code>(params);
 			return box(instance.version());
 		}
 
