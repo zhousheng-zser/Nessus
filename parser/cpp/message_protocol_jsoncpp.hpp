@@ -3556,6 +3556,14 @@ namespace glasssix
 					int roi_height = root["roi_height"].asInt();
 					int channels =3;
 
+					Json::Value params = root.get("params", Json::Value());
+
+					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+
+					for (auto& param_name : params.getMemberNames()) {
+						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					}
+
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
@@ -3569,7 +3577,9 @@ namespace glasssix
 							{u8"roi_width", box(roi_width)},
 							{u8"roi_height", box(roi_height)},
 							{u8"channels", box(channels)},
-							{u8"object_id", box(instance)},						
+							{u8"object_id", box(instance)},		
+							{u8"params", param_map_abi},
+
 						});
 
 					auto result = plugin.execute(u8"refvest.detect", param).as<param_vector<refvest::box_info>>();
@@ -3603,8 +3613,8 @@ namespace glasssix
 
 					Json::Value jarray_info;
 
-					jarray_info["with_refvtst_list"] = jarray_withvest_detected;
-					jarray_info["without_refvtst_list"] = jarray_offvest_detected;
+					jarray_info["with_refvest_list"] = jarray_withvest_detected;
+					jarray_info["without_refvest_list"] = jarray_offvest_detected;
 
 					value["detect_info"] = jarray_info;
 
@@ -4878,6 +4888,14 @@ namespace glasssix
 					int roi_height = root["roi_height"].asInt();
 					int channels =3;
 
+					Json::Value params = root.get("params", Json::Value());
+
+					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+
+					for (auto& param_name : params.getMemberNames()) {
+						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					}
+
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
@@ -4891,7 +4909,8 @@ namespace glasssix
 							{u8"roi_width", box(roi_width)},
 							{u8"roi_height", box(roi_height)},
 							{u8"channels", box(channels)},
-							{u8"object_id", box(instance)},						
+							{u8"object_id", box(instance)},	
+							{u8"params", param_map_abi},					
 						});
 
 					auto result = plugin.execute(u8"leavepost.detect", param).as<param_vector<leavepost::box_info>>();
