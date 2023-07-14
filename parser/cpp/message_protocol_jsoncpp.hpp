@@ -372,11 +372,30 @@ namespace glasssix
 						jarray_box["x2"] = Json::Int(result[i].x2());
 						jarray_box["y2"] = Json::Int(result[i].y2());
 						jarray_box["score"] = Json::Value(result[i].score());
-						jarray_box["category"] = Json::Int(result[i].category());
+
+						int category = Json::Int(result[i].category());
+
+						if (category & 001 != 0)
+							jarray_category.append("true");
+						else
+							jarray_category.append("false");
+
+						if (category & 010 != 0)
+							jarray_category.append("true");
+						else
+							jarray_category.append("false");
+
+						if (category & 100 != 0)
+							jarray_category.append("true");
+						else
+							jarray_category.append("false");
+
 						jarray_info.append(jarray_box);
+						jarray_info.append(jarray_category);
+						jarray_pedestrian_list.append(jarray_info);
 					}
 
-					value["detect_info"] = jarray_info;
+					value["detect_info"]["pedestrian_list"] = jarray_pedestrian_list;
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -564,6 +583,7 @@ namespace glasssix
 					auto result = plugin.execute(u8"workcloth.detect", param).as<exposing::param_vector<workcloth::box_info>>();
 
 					Json::Value jarray_box;
+					Json::Value jarray_workcloth_list(Json::arrayValue);
 					Json::Value jarray_workcloth_detected(Json::arrayValue);
 
 					for (int i = 0; i < result.size(); i++)
@@ -586,8 +606,9 @@ namespace glasssix
 						jarray_box["score"] = Json::Value(result[i].score());
 						jarray_workcloth_detected.append(jarray_box);
 					}
-
-					value["detect_info"] = jarray_workcloth_detected;
+					
+					jarray_workcloth_list.append(jarray_workcloth_detected);
+					value["detect_info"]["workcloth_list"] = jarray_workcloth_list;
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -3143,10 +3164,9 @@ namespace glasssix
 					int lying_detected = 0;
 					int desk_detected = 0;
 					int standing_detected = 0;
-
 					Json::Value jarray_box;
-					Json::Value jarray_normal_detected;
-					Json::Value jarray_onphone_detected;
+					Json::Value jarray_normal_detected(Json::arrayValue);
+					Json::Value jarray_onphone_detected(Json::arrayValue);
 
 					for (int i = 0; i < result.size(); i++)
 					{
