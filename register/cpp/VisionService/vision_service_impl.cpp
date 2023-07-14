@@ -1065,8 +1065,8 @@ namespace glasssix::exposing::nessus
 			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
 			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
 			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
-
-			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height);
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height,params_map_abi);
 		}
 		     
 		unknown_object gungnir_detect(const param_hash_map<param_string, unknown_object> &params)
@@ -1364,8 +1364,9 @@ namespace glasssix::exposing::nessus
 			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
 			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
 			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
 
-			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height);
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height,params_map_abi);
 		}
 
 
