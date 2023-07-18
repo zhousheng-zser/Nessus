@@ -565,7 +565,9 @@ namespace glasssix
 					auto result = plugin.execute(u8"pedestrian_labor.detect", param).as<exposing::param_vector<pedestrian_labor::box_info>>();
 
 					Json::Value jarray_info(Json::arrayValue);
-					Json::Value jarray_box;
+					Json::Value jarray_box(Json::arrayValue);
+					Json::Value jarray_category(Json::arrayValue);
+					Json::Value jarray_pedestrian_list(Json::arrayValue);
 
 					for (int i = 0; i < result.size(); i++)
 					{
