@@ -467,7 +467,7 @@ namespace glasssix::exposing::nessus
 							if (!ret)
 							{
 								ready = false;
-								status = fmt::format(R"({"status":{"message":"load module '{}' failed","code":-1}},"nessus_version":"{}"}})", lib_item.asString(), nessus_version);
+								status = fmt::format(R"({{"status":{{"message":"load module '{}' failed","code":-1}},"nessus_version":"{}"}})", lib_item.asString(), nessus_version);
 								return;
 							}
 						}
