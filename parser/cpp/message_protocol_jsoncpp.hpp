@@ -789,7 +789,7 @@ namespace glasssix
 					auto result = plugin.execute(u8"workcloth.detect", param).as<exposing::param_vector<workcloth::box_info>>();
 
 					Json::Value jarray_box;
-					Json::Value jarray_workcloth_list(Json::arrayValue);
+		
 					Json::Value jarray_workcloth_detected(Json::arrayValue);
 
 					for (int i = 0; i < result.size(); i++)
@@ -813,8 +813,8 @@ namespace glasssix
 						jarray_workcloth_detected.append(jarray_box);
 					}
 					
-					jarray_workcloth_list.append(jarray_workcloth_detected);
-					value["detect_info"]["workcloth_list"] = jarray_workcloth_list;
+		
+					value["detect_info"]["workcloth_list"] = jarray_workcloth_detected;
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -5365,7 +5365,7 @@ inline Json::Value Posture_new_json(plugin_interface& plugin, Json::Value& root,
 					for (auto obj : result)
 					{
 						int category = Json::Int(obj.label());
-						if(category==1)
+						if(category==0)
 						{
 							jarray_box["x1"] = Json::Int(obj.x());
 							jarray_box["y1"] = Json::Int(obj.y());
