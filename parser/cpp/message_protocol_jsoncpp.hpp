@@ -789,7 +789,7 @@ namespace glasssix
 					auto result = plugin.execute(u8"workcloth.detect", param).as<exposing::param_vector<workcloth::box_info>>();
 
 					Json::Value jarray_box;
-					Json::Value jarray_workcloth_list(Json::arrayValue);
+		
 					Json::Value jarray_workcloth_detected(Json::arrayValue);
 
 					for (int i = 0; i < result.size(); i++)
@@ -813,8 +813,8 @@ namespace glasssix
 						jarray_workcloth_detected.append(jarray_box);
 					}
 					
-					jarray_workcloth_list.append(jarray_workcloth_detected);
-					value["detect_info"]["workcloth_list"] = jarray_workcloth_list;
+		
+					value["detect_info"]["workcloth_list"] = jarray_workcloth_detected;
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -2790,7 +2790,7 @@ inline Json::Value Posture_new_json(plugin_interface& plugin, Json::Value& root,
 						});
 					auto result = plugin.execute(u8"posture.detect", param).as<param_vector<posture::box_info>>();
 					
-					printf("out detect\n");
+			
 
 					Json::Value jarray_boxes = Json::Value(Json::arrayValue);
 					for (auto box : result)
@@ -5365,6 +5365,16 @@ inline Json::Value Posture_new_json(plugin_interface& plugin, Json::Value& root,
 					for (auto obj : result)
 					{
 						int category = Json::Int(obj.label());
+						if(category==0)
+						{
+							jarray_box["x1"] = Json::Int(obj.x());
+							jarray_box["y1"] = Json::Int(obj.y());
+							jarray_box["x2"] = Json::Int(obj.x()+obj.width());
+							jarray_box["y2"] = Json::Int(obj.height()+obj.y());
+							jarray_box["score"] = Json::Value(obj.confidence());
+							jarray_box["label"] = Json::Value(obj.label());
+							jarray_work.append(jarray_box);
+						}
 						if(category==1)
 						{
 							jarray_box["x1"] = Json::Int(obj.x());
@@ -5372,11 +5382,13 @@ inline Json::Value Posture_new_json(plugin_interface& plugin, Json::Value& root,
 							jarray_box["x2"] = Json::Int(obj.x()+obj.width());
 							jarray_box["y2"] = Json::Int(obj.height()+obj.y());
 							jarray_box["score"] = Json::Value(obj.confidence());
-							jarray_work.append(jarray_box);
+							jarray_box["label"] = Json::Value(obj.label());
+							jarray_leave.append(jarray_box);
 						}
 
 					}
-					jarray_info["hat_list"] = jarray_work;
+					jarray_info["work_list"] = jarray_work;
+					jarray_info["leave_list"] = jarray_leave;
 
 					value["detect_info"] = jarray_info;
 					value["status"]["message"] = Json::Value("OK");
