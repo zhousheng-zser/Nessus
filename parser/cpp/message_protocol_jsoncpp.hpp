@@ -2790,7 +2790,7 @@ inline Json::Value Posture_new_json(plugin_interface& plugin, Json::Value& root,
 						});
 					auto result = plugin.execute(u8"posture.detect", param).as<param_vector<posture::box_info>>();
 					
-					printf("out detect\n");
+			
 
 					Json::Value jarray_boxes = Json::Value(Json::arrayValue);
 					for (auto box : result)
