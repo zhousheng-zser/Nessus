@@ -582,6 +582,10 @@ namespace glasssix::exposing::nessus
 		protocol_map["sleep.delete"] = &Sleep_delete_json;
 		protocol_map["sleep.detect"] = &Sleep_detect_json;
 		protocol_map["sleep.version"] = &Sleep_version_json;
+		protocol_map["posture.new"] = &Posture_new_json;
+		protocol_map["posture.delete"] = &Posture_delete_json;
+		protocol_map["posture.detect"] = &Posture_detect_json;
+		protocol_map["posture.version"] = &Posture_version_json;
 		protocol_map["smoke.new"] = &Smoke_new_json;
 		protocol_map["smoke.delete"] = &Smoke_delete_json;
 		protocol_map["smoke.detect"] = &Smoke_detect_json;

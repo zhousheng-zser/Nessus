@@ -26,6 +26,7 @@
 #include <smoke/detect_code.hpp>
 #include <onphone/detect_code.hpp>
 #include <trespass/detect_code.hpp>
+#include <posture/detect_code.hpp>
 #include <helmet/detect_code.hpp>
 #include <eledash/classify_code.hpp>
 #include <ebike/detect_code.hpp>
@@ -60,6 +61,7 @@ using namespace glasssix::sleep;
 using namespace glasssix::smoke;
 using namespace glasssix::onphone;
 using namespace glasssix::trespass;
+using namespace glasssix::posture;
 using namespace glasssix::helmet;
 using namespace glasssix::eledash;
 using namespace glasssix::ebike;
@@ -91,6 +93,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view banshee{ u8"banshee" };
 			static constexpr utf8_string_view ring{ u8"ring" };
 			static constexpr utf8_string_view plate{ u8"plate" };
+			static constexpr utf8_string_view posture{ u8"posture" };
 			static constexpr utf8_string_view rail{ u8"rail" };
 			static constexpr utf8_string_view refvest{ u8"refvest" };
 			static constexpr utf8_string_view flame{ u8"flame" };
@@ -159,6 +162,11 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view sleep_new{ u8"sleep.new" };
 			static constexpr utf8_string_view sleep_detect{ u8"sleep.detect" };
 			static constexpr utf8_string_view sleep_delete{ u8"sleep.delete" };
+			
+			static constexpr utf8_string_view posture_new{ u8"posture.new" };
+			static constexpr utf8_string_view posture_detect{ u8"posture.detect" };
+			static constexpr utf8_string_view posture_delete{ u8"posture.delete" };
+
 			static constexpr utf8_string_view smoke_new{ u8"smoke.new" };
 			static constexpr utf8_string_view smoke_detect{ u8"smoke.detect" };
 			static constexpr utf8_string_view smoke_delete{ u8"smoke.delete" };
@@ -244,7 +252,8 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view heimdall_detect{ u8"heimdall.detect" };
 			static constexpr utf8_string_view banshee_init{ u8"banshee.init" };
 			static constexpr utf8_string_view banshee_update{ u8"banshee.update" };
-
+			static constexpr utf8_string_view posture_version{ u8"posture.version" };
+			
 			static constexpr utf8_string_view leavepost_version{ u8"leavepost.version" };
 			static constexpr utf8_string_view onphone_version{ u8"onphone.version" };
 			static constexpr utf8_string_view workcloth_version{ u8"workcloth.version" };
@@ -265,6 +274,7 @@ namespace glasssix::exposing::nessus
 		impl()
 		{
 			// New
+			functions_.insert_or_assign(function_names::posture_new, std::bind(&impl::posture_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gungnir_new, std::bind(&impl::gungnir_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::playphone_new, std::bind(&impl::playphone_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::needledash_new, std::bind(&impl::needledash_new, this, std::placeholders::_1));
@@ -301,7 +311,10 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::pedestrian_new, std::bind(&impl::pedestrian_new, this, std::placeholders::_1));
 
 			// Delete
+
 			functions_.insert_or_assign(function_names::pedestrian_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+			functions_.insert_or_assign(function_names::posture_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
+	
 			functions_.insert_or_assign(function_names::pedestrian_labor_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::workcloth_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -338,6 +351,7 @@ namespace glasssix::exposing::nessus
 
 			// Version
 			functions_.insert_or_assign(function_names::pedestrian_version, std::bind(&impl::pedestrian_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::posture_version, std::bind(&impl::posture_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_labor_version, std::bind(&impl::pedestrian_labor_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::onphone_version, std::bind(&impl::onphone_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::workcloth_version, std::bind(&impl::workcloth_version, this, std::placeholders::_1));
@@ -348,8 +362,8 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::leavepost_version, std::bind(&impl::leavepost_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::playphone_version, std::bind(&impl::playphone_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_version, std::bind(&impl::smoke_version, this, std::placeholders::_1));
-			
 			// Business
+			functions_.insert_or_assign(function_names::posture_detect, std::bind(&impl::posture_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_detect, std::bind(&impl::pedestrian_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_labor_detect, std::bind(&impl::pedestrian_labor_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::workcloth_detect, std::bind(&impl::workcloth_detect, this, std::placeholders::_1));
@@ -499,6 +513,14 @@ namespace glasssix::exposing::nessus
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
 			return add_instance(package_names::valve, make_exported_interface<valve::detect_code>(models_directory, factory_type, device, params_map_abi));
+		}
+
+		unknown_object posture_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+
+			return add_instance(package_names::posture, make_exported_interface<posture::detect_code>(models_directory, device));
 		}
 
 		unknown_object startorus_new(const param_hash_map<param_string, unknown_object>& params)
@@ -816,6 +838,29 @@ namespace glasssix::exposing::nessus
 
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
+
+		unknown_object posture_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<posture::detect_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto channels = unbox<std::int32_t>(params.get_value(u8"channels"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
+		}
+
+		unknown_object posture_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<posture::detect_code>(params);
+			return box(instance.version());
+		}
+		
 
 		unknown_object needledash_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
