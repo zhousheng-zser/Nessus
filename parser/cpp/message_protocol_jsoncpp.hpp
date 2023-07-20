@@ -5371,7 +5371,7 @@ inline Json::Value Posture_new_json(plugin_interface& plugin, Json::Value& root,
 							jarray_box["x2"] = Json::Int(obj.x()+obj.width());
 							jarray_box["y2"] = Json::Int(obj.height()+obj.y());
 							jarray_box["score"] = Json::Value(obj.confidence());
-							#jarray_box["label"] = Json::Value(obj.label());
+							// jarray_box["label"] = Json::Value(obj.label());
 							jarray_work.append(jarray_box);
 						}
 
