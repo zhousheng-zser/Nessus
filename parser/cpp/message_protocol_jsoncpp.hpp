@@ -5360,35 +5360,24 @@ inline Json::Value Posture_new_json(plugin_interface& plugin, Json::Value& root,
 					Json::Value jarray_box;
 					Json::Value jarray_info;
 					Json::Value jarray_work = Json::Value(Json::arrayValue);
-					Json::Value jarray_leave = Json::Value(Json::arrayValue);
 
 					for (auto obj : result)
 					{
 						int category = Json::Int(obj.label());
-						if(category==0)
+						if(category==0 || category==1)
 						{
 							jarray_box["x1"] = Json::Int(obj.x());
 							jarray_box["y1"] = Json::Int(obj.y());
 							jarray_box["x2"] = Json::Int(obj.x()+obj.width());
 							jarray_box["y2"] = Json::Int(obj.height()+obj.y());
 							jarray_box["score"] = Json::Value(obj.confidence());
-							jarray_box["label"] = Json::Value(obj.label());
+							#jarray_box["label"] = Json::Value(obj.label());
 							jarray_work.append(jarray_box);
 						}
-						if(category==1)
-						{
-							jarray_box["x1"] = Json::Int(obj.x());
-							jarray_box["y1"] = Json::Int(obj.y());
-							jarray_box["x2"] = Json::Int(obj.x()+obj.width());
-							jarray_box["y2"] = Json::Int(obj.height()+obj.y());
-							jarray_box["score"] = Json::Value(obj.confidence());
-							jarray_box["label"] = Json::Value(obj.label());
-							jarray_leave.append(jarray_box);
-						}
+
 
 					}
-					jarray_info["work_list"] = jarray_work;
-					jarray_info["leave_list"] = jarray_leave;
+					jarray_info["hat_list"] = jarray_work;			
 
 					value["detect_info"] = jarray_info;
 					value["status"]["message"] = Json::Value("OK");
