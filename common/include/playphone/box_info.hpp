@@ -15,7 +15,7 @@ namespace glasssix::exposing::impl
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{ "AC7F961E-99D8-4BD8-86E9-47C574603B55" };
+        static constexpr guid id{ "5279883F-E76C-024C-A2CE-1F033963C933" };
 
         struct type : abi_unknown_object
         {
@@ -25,6 +25,7 @@ namespace glasssix::exposing::impl
             virtual std::int32_t G6_ABI_CALL y2(abi_out_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL score(abi_out_t<float> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL category(abi_out_t<int> result) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept = 0;
         };
     };
 
@@ -66,6 +67,11 @@ namespace glasssix::exposing::impl
         {
             return abi_safe_call([&]
                                  { *result = detach_abi(this->self().category()); });
+        }
+
+        virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept override
+        {
+            return abi_safe_call([&] { *result = detach_abi(this->self().version()); });
         }
     };
 
@@ -111,6 +117,12 @@ namespace glasssix::exposing::impl
                 int result = 0;
 
                 return (check_abi_result(this->self_abi().category(put_abi(result))), result);
+            }
+            param_string version() const
+            {
+                param_string result{ nullptr };
+
+                return (check_abi_result(this->self_abi().version(put_abi(result))), result);
             }
         };
     };
