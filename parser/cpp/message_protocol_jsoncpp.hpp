@@ -814,7 +814,7 @@ namespace glasssix
 					}
 					
 		
-					value["detect_info"]["workcloth_list"] = jarray_workcloth_detected;
+					value["detect_info"]["cloth_list"] = jarray_workcloth_detected;
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
