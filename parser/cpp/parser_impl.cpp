@@ -572,9 +572,6 @@ namespace glasssix::exposing::nessus
 		protocol_map["helmet.delete"] = &Helmet_delete_json;
 		protocol_map["helmet.detect"] = &Helmet_detect_json;
 		protocol_map["helmet.version"] = &Helmet_version_json;
-		protocol_map["eledash.new"] = &Eledash_new_json;
-		protocol_map["eledash.delete"] = &Eledash_delete_json;
-		protocol_map["eledash.detect"] = &Eledash_detect_json;
 		protocol_map["trespass.new"] = &Trespass_new_json;
 		protocol_map["trespass.delete"] = &Trespass_delete_json;
 		protocol_map["trespass.detect"] = &Trespass_detect_json;
@@ -586,6 +583,10 @@ namespace glasssix::exposing::nessus
 		protocol_map["sleep.delete"] = &Sleep_delete_json;
 		protocol_map["sleep.detect"] = &Sleep_detect_json;
 		protocol_map["sleep.version"] = &Sleep_version_json;
+		protocol_map["brionac.new"] = &Brionac_new_json;
+		protocol_map["brionac.delete"] = &Brionac_delete_json;
+		protocol_map["brionac.detect"] = &Brionac_detect_json;
+		protocol_map["brionac.version"] = &Brionac_version_json;
 		protocol_map["posture.new"] = &Posture_new_json;
 		protocol_map["posture.delete"] = &Posture_delete_json;
 		protocol_map["posture.detect"] = &Posture_detect_json;

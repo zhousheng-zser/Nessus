@@ -31,6 +31,8 @@
 #include "../../common/include/flame/box_info.hpp"
 #include "../../common/include/posture/detect_code.hpp"
 #include "../../common/include/posture/box_info.hpp"
+#include "../../common/include/brionac/classify_code.hpp"
+#include "../../common/include/brionac/box_info.hpp"
 #include "../../common/include/sleep/detect_code.hpp"
 #include "../../common/include/sleep/box_info.hpp"
 #include "../../common/include/smoke/detect_code.hpp"
@@ -41,8 +43,6 @@
 #include "../../common/include/trespass/box_info.hpp"
 #include "../../common/include/helmet/detect_code.hpp"
 #include "../../common/include/helmet/box_info.hpp"
-#include "../../common/include/eledash/box_info.hpp"
-#include "../../common/include/eledash/classify_code.hpp"
 #include "../../common/include/ebike/detect_code.hpp"
 #include "../../common/include/ebike/box_info.hpp"
 #include "../../common/include/callsmoke/detect_code.hpp"
@@ -2534,8 +2534,7 @@ namespace glasssix
 				}
 				return value;
 			}
-
-			inline Json::Value Eledash_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Brionac_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 
@@ -2546,11 +2545,11 @@ namespace glasssix
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"device", box(device)}, {u8"models_directory", box(std::string_view(models_directory))} });
 
-	
-					instance = unbox<guid>(plugin.execute(u8"eledash.new", param));
+
+					instance = unbox<guid>(plugin.execute(u8"brionac.new", param));
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-		
+
 				}
 				catch (const parser_exception& ex)
 				{
@@ -2576,7 +2575,7 @@ namespace glasssix
 				return value;
 			}
 
-			inline Json::Value Eledash_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Brionac_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -2584,14 +2583,20 @@ namespace glasssix
 					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
-					Json::Value params = root.get("params", Json::Value());
 
+					int roi_x = root["roi_x"].asInt();
+					int roi_y = root["roi_y"].asInt();
+					int roi_width = root["roi_width"].asInt();
+					int roi_height = root["roi_height"].asInt();
+
+					Json::Value params = root.get("params", Json::Value());
 					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
 
 					for (auto& param_name : params.getMemberNames()) {
 						param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
 					}
 
+					int channels = 3;
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
@@ -2600,17 +2605,23 @@ namespace glasssix
 							{u8"image", box(image_span)},
 							{u8"height", box(height)},
 							{u8"width", box(width)},
+							{u8"roi_x", box(roi_x)},
+							{u8"roi_y", box(roi_y)},
+							{u8"roi_width", box(roi_width)},
+							{u8"roi_height", box(roi_height)},
+							{u8"channels", box(channels)},
 							{u8"object_id", box(instance)},
 							{u8"params", param_map_abi},
 						});
+					auto result = plugin.execute(u8"brionac.detect", param).as<exposing::param_vector<brionac::box_info>>();
 
-					auto result = plugin.execute(u8"eledash.detect", param).as<exposing::param_vector<eledash::box_info>>();
 
 					Json::Value jarray_box;
 					Json::Value jarray_dash_detected;
 					for (int i = 0; i < result.size(); i++)
 					{
-						jarray_box["title"] = Json::Value("eledash");
+						jarray_box["title"] = Json::Value("brionac");
+						std::cout << "dsdsa " << result[0].strinfos() << "df\n";
 						jarray_box["status"] = Json::Value(glasssix::exposing::to_narrow_string(result[0].strinfos()));
 						jarray_dash_detected.append(jarray_box);
 					}
@@ -2642,9 +2653,10 @@ namespace glasssix
 				}
 
 				return value;
+
 			}
 
-			inline Json::Value Eledash_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			inline Json::Value Brionac_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
 				try
@@ -2652,7 +2664,7 @@ namespace glasssix
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"object_id", box(instance)} });
 
-					plugin.execute(u8"eledash.delete", param);
+					plugin.execute(u8"brionac.delete", param);
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -2679,6 +2691,48 @@ namespace glasssix
 				}
 				return value;
 			}
+
+			inline Json::Value Brionac_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+			{
+				Json::Value value;
+				try
+				{
+					auto param = make_param_hash_map<param_string, unknown_object>(
+						{ {u8"object_id", box(instance)} });
+
+					auto version = plugin.execute(u8"brionac.version", param);
+
+					value["version"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
+
+					// Json::Value(ex.what_to_narrow())
+
+					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+
+				}
+				catch (const parser_exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+				}
+				catch (const Json::Exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+				}
+				catch (const std::exception& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what());
+					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+				}
+				catch (const abi_error& ex)
+				{
+					value["status"]["message"] = Json::Value(ex.what_to_narrow());
+					value["status"]["code"] = Json::Int(ex.result());
+				}
+
+				return value;
+			}
+		
 
 			inline Json::Value Trespass_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
