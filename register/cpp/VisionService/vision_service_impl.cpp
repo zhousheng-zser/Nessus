@@ -39,6 +39,7 @@
 #include <workcloth/classify_code.hpp>
 #include <pedestrian_labor/classify_code.hpp>
 #include <pedestrian/detect_code.hpp>
+#include <cthulhu/classify_code.hpp>
 
 #include <iostream>
 
@@ -113,10 +114,14 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view workcloth{ u8"workcloth" };
 			static constexpr utf8_string_view pedestrian_labor{ u8"pedestrian_labor" };
 			static constexpr utf8_string_view pedestrian{ u8"pedestrian" };
+			static constexpr utf8_string_view cthulhu{ u8"cthulhu" };
 		};
 
 		struct function_names final
 		{
+			static constexpr utf8_string_view cthulhu_new{ u8"cthulhu.new" };
+			static constexpr utf8_string_view cthulhu_detect{ u8"cthulhu.detect" };
+			static constexpr utf8_string_view cthulhu_delete{ u8"cthulhu.delete" };
 			static constexpr utf8_string_view pedestrian_new{ u8"pedestrian.new" };
 			static constexpr utf8_string_view pedestrian_detect{ u8"pedestrian.detect" };
 			static constexpr utf8_string_view pedestrian_delete{ u8"pedestrian.delete" };
@@ -265,6 +270,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view smoke_version{ u8"smoke.version" };
 			static constexpr utf8_string_view pedestrian_labor_version{ u8"pedestrian_labor.version" };
 			static constexpr utf8_string_view pedestrian_version{ u8"pedestrian.version" };
+			static constexpr utf8_string_view cthulhu_version{ u8"cthulhu.version" };
 		};
 	}
 
@@ -309,12 +315,14 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::workcloth_new, std::bind(&impl::workcloth_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_labor_new, std::bind(&impl::pedestrian_labor_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_new, std::bind(&impl::pedestrian_new, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::cthulhu_new, std::bind(&impl::cthulhu_new, this, std::placeholders::_1));
 
 			// Delete
 
 			functions_.insert_or_assign(function_names::pedestrian_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::posture_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-	
+
+			functions_.insert_or_assign(function_names::cthulhu_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::pedestrian_labor_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::workcloth_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::gungnir_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -350,6 +358,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 
 			// Version
+			functions_.insert_or_assign(function_names::cthulhu_version, std::bind(&impl::cthulhu_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_version, std::bind(&impl::pedestrian_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::posture_version, std::bind(&impl::posture_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_labor_version, std::bind(&impl::pedestrian_labor_version, this, std::placeholders::_1));
@@ -363,6 +372,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::playphone_version, std::bind(&impl::playphone_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_version, std::bind(&impl::smoke_version, this, std::placeholders::_1));
 			// Business
+			functions_.insert_or_assign(function_names::cthulhu_detect, std::bind(&impl::cthulhu_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::posture_detect, std::bind(&impl::posture_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_detect, std::bind(&impl::pedestrian_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_labor_detect, std::bind(&impl::pedestrian_labor_detect, this, std::placeholders::_1));
@@ -459,6 +469,13 @@ namespace glasssix::exposing::nessus
 			}
 
 			return result;
+		}
+
+		unknown_object cthulhu_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+			return add_instance(package_names::cthulhu, make_exported_interface<glasssix::cthulhu::classify_code>(models_directory, device));
 		}
 
 		unknown_object workcloth_new(const param_hash_map<param_string, unknown_object>& params)
@@ -802,6 +819,24 @@ namespace glasssix::exposing::nessus
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
+		unknown_object cthulhu_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+			constexpr std::int32_t channels = 3;
+			auto instance = get_instance<cthulhu::classify_code>(params);
+
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
+		}
+
 		unknown_object workcloth_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
@@ -1058,6 +1093,12 @@ namespace glasssix::exposing::nessus
 		unknown_object flame_version(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto instance = get_instance<flame::detect_code>(params);
+			return box(instance.version());
+		}
+
+		unknown_object cthulhu_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<cthulhu::classify_code>(params);
 			return box(instance.version());
 		}
 
