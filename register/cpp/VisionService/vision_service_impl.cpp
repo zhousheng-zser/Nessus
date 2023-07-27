@@ -14,6 +14,7 @@
 #include <gungnir/yolo_net.hpp>
 #include <leavepost/yolo_net.hpp>
 #include <mjollner/ocr_net.hpp>
+#include <brionac/classify_code.hpp>
 #include <valklyrs/yolov5s_net.hpp>
 #include <heimdall/material_code.hpp>
 #include <banshee/kcf_tracker.hpp>
@@ -28,7 +29,6 @@
 #include <trespass/detect_code.hpp>
 #include <posture/detect_code.hpp>
 #include <helmet/detect_code.hpp>
-#include <eledash/classify_code.hpp>
 #include <ebike/detect_code.hpp>
 #include <callsmoke/detect_code.hpp>
 #include <genocr/txt_code.hpp>
@@ -63,8 +63,8 @@ using namespace glasssix::smoke;
 using namespace glasssix::onphone;
 using namespace glasssix::trespass;
 using namespace glasssix::posture;
+using namespace glasssix::brionac;
 using namespace glasssix::helmet;
-using namespace glasssix::eledash;
 using namespace glasssix::ebike;
 using namespace glasssix::callsmoke;
 using namespace glasssix::needledash;
@@ -96,6 +96,7 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view plate{ u8"plate" };
 			static constexpr utf8_string_view posture{ u8"posture" };
 			static constexpr utf8_string_view rail{ u8"rail" };
+			static constexpr utf8_string_view brionac{ u8"brionac" };
 			static constexpr utf8_string_view refvest{ u8"refvest" };
 			static constexpr utf8_string_view flame{ u8"flame" };
 			static constexpr utf8_string_view sleep{ u8"sleep" };
@@ -103,7 +104,6 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view onphone{ u8"onphone" };
 			static constexpr utf8_string_view trespass{ u8"trespass" };
 			static constexpr utf8_string_view helmet{ u8"helmet" };
-			static constexpr utf8_string_view eledash{ u8"eledash" };
 			static constexpr utf8_string_view ebike{ u8"ebike" };
 			static constexpr utf8_string_view callsmoke{ u8"callsmoke" };
 			static constexpr utf8_string_view genocr{ u8"genocr" };
@@ -149,15 +149,15 @@ namespace glasssix::exposing::nessus
 			static constexpr utf8_string_view callsmoke_new{ u8"callsmoke.new" };
 			static constexpr utf8_string_view callsmoke_detect{ u8"callsmoke.detect" };
 			static constexpr utf8_string_view callsmoke_delete{ u8"callsmoke.delete" };
+			static constexpr utf8_string_view brionac_new{ u8"brionac.new" };
+			static constexpr utf8_string_view brionac_detect{ u8"brionac.detect" };
+			static constexpr utf8_string_view brionac_delete{ u8"brionac.delete" };
 			static constexpr utf8_string_view ebike_new{ u8"ebike.new" };
 			static constexpr utf8_string_view ebike_detect{ u8"ebike.detect" };
 			static constexpr utf8_string_view ebike_delete{ u8"ebike.delete" };
 			static constexpr utf8_string_view helmet_new{ u8"helmet.new" };
 			static constexpr utf8_string_view helmet_detect{ u8"helmet.detect" };
 			static constexpr utf8_string_view helmet_delete{ u8"helmet.delete" };
-			static constexpr utf8_string_view eledash_new{ u8"eledash.new" };
-			static constexpr utf8_string_view eledash_detect{ u8"eledash.detect" };
-			static constexpr utf8_string_view eledash_delete{ u8"eledash.delete" };
 			static constexpr utf8_string_view trespass_new{ u8"trespass.new" };
 			static constexpr utf8_string_view trespass_detect{ u8"trespass.detect" };
 			static constexpr utf8_string_view trespass_delete{ u8"trespass.delete" };
@@ -254,6 +254,7 @@ namespace glasssix::exposing::nessus
 
 			static constexpr utf8_string_view mjollner_detect{ u8"mjollner.detect" };
 			static constexpr utf8_string_view valklyrs_detect{ u8"valklyrs.detect" };
+			static constexpr utf8_string_view brionac_version{ u8"brionac.version" };
 			static constexpr utf8_string_view heimdall_detect{ u8"heimdall.detect" };
 			static constexpr utf8_string_view banshee_init{ u8"banshee.init" };
 			static constexpr utf8_string_view banshee_update{ u8"banshee.update" };
@@ -280,6 +281,7 @@ namespace glasssix::exposing::nessus
 		impl()
 		{
 			// New
+			functions_.insert_or_assign(function_names::brionac_new, std::bind(&impl::brionac_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::posture_new, std::bind(&impl::posture_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::gungnir_new, std::bind(&impl::gungnir_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::playphone_new, std::bind(&impl::playphone_new, this, std::placeholders::_1));
@@ -290,7 +292,6 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::callsmoke_new, std::bind(&impl::ebike_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::ebike_new, std::bind(&impl::ebike_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::helmet_new, std::bind(&impl::helmet_new, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::eledash_new, std::bind(&impl::eledash_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::trespass_new, std::bind(&impl::trespass_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::flame_new, std::bind(&impl::flame_new, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::sleep_new, std::bind(&impl::sleep_new, this, std::placeholders::_1));
@@ -321,7 +322,7 @@ namespace glasssix::exposing::nessus
 
 			functions_.insert_or_assign(function_names::pedestrian_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::posture_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-
+			functions_.insert_or_assign(function_names::brionac_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::cthulhu_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::pedestrian_labor_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::workcloth_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -336,7 +337,6 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::callsmoke_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::ebike_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::helmet_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-			functions_.insert_or_assign(function_names::eledash_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::trespass_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::flame_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::sleep_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
@@ -356,7 +356,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::valklyrs_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::heimdall_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
 			functions_.insert_or_assign(function_names::banshee_delete, meta::replace_return<unknown_object>(std::bind(&impl::delete_instance, this, std::placeholders::_1)));
-
+			functions_.insert_or_assign(function_names::brionac_version, std::bind(&impl::brionac_version, this, std::placeholders::_1));
 			// Version
 			functions_.insert_or_assign(function_names::cthulhu_version, std::bind(&impl::cthulhu_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_version, std::bind(&impl::pedestrian_version, this, std::placeholders::_1));
@@ -371,6 +371,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::leavepost_version, std::bind(&impl::leavepost_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::playphone_version, std::bind(&impl::playphone_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::smoke_version, std::bind(&impl::smoke_version, this, std::placeholders::_1));
+			functions_.insert_or_assign(function_names::brionac_version, std::bind(&impl::brionac_version, this, std::placeholders::_1));
 			// Business
 			functions_.insert_or_assign(function_names::cthulhu_detect, std::bind(&impl::cthulhu_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::posture_detect, std::bind(&impl::posture_detect, this, std::placeholders::_1));
@@ -390,7 +391,6 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::helmet_detect, std::bind(&impl::helmet_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::trespass_detect, std::bind(&impl::trespass_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::sleep_detect, std::bind(&impl::sleep_detect, this, std::placeholders::_1));
-			functions_.insert_or_assign(function_names::eledash_detect, std::bind(&impl::eledash_detect, this, std::placeholders::_1));	
 			functions_.insert_or_assign(function_names::flame_detect, std::bind(&impl::flame_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::refvest_detect, std::bind(&impl::refvest_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::rail_detect, std::bind(&impl::rail_detect, this, std::placeholders::_1));
@@ -567,6 +567,15 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::callsmoke, make_exported_interface<callsmoke::detect_code>(models_directory, device));
 		}
 
+		unknown_object brionac_new(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+
+			return add_instance(package_names::brionac, make_exported_interface<brionac::classify_code>(models_directory, device));
+		}
+
+
 		unknown_object ebike_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
@@ -582,14 +591,6 @@ namespace glasssix::exposing::nessus
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
 			return add_instance(package_names::helmet, make_exported_interface<helmet::detect_code>(models_directory, device));
-		}
-
-		unknown_object eledash_new(const param_hash_map<param_string, unknown_object>& params)
-		{
-			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
-			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
-
-			return add_instance(package_names::eledash, make_exported_interface<eledash::classify_code>(models_directory, device));
 		}
 
 		unknown_object gungnir_new(const param_hash_map<param_string, unknown_object>& params)
@@ -1035,6 +1036,30 @@ namespace glasssix::exposing::nessus
 
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
+		
+		unknown_object brionac_detect(const param_hash_map<param_string, unknown_object>& params)
+		{
+
+			auto instance = get_instance<brionac::classify_code>(params);
+			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
+			auto channels = unbox<std::int32_t>(params.get_value(u8"channels"));
+			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
+			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
+			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
+			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
+
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
+
+		}
+
+		unknown_object brionac_version(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = get_instance<brionac::classify_code>(params);
+			return box(instance.version());
+		}
 
 		unknown_object pedestrian_version(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -1108,19 +1133,7 @@ namespace glasssix::exposing::nessus
 			return box(instance.version());
 		}
 		
-		unknown_object eledash_detect(const param_hash_map<param_string, unknown_object>& params)
-		{
 
-			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<eledash::classify_code>(params);
-			auto image  = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
-			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
-			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
-
-			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
-
-			return instance.detect(image, channels, height, width);
-		}
 		
 		unknown_object trespass_detect(const param_hash_map<param_string, unknown_object>& params)
 		{

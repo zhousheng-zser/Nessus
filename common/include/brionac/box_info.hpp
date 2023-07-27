@@ -1,9 +1,9 @@
-#ifndef _ELEDASH_BOX_INFO_HPP_
-#define _ELEDASH_BOX_INFO_HPP_
+#ifndef _BRIONAC_BOX_INFO_HPP_
+#define _BRIONAC_BOX_INFO_HPP_
 
 #include <abi/consumer.hpp>
 
-namespace glasssix::eledash
+namespace glasssix::brionac
 {
     struct box_info;
 }
@@ -11,11 +11,11 @@ namespace glasssix::eledash
 namespace glasssix::exposing::impl
 {
     template<>
-    struct abi<eledash::box_info>
+    struct abi<brionac::box_info>
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{ "8537BAB0-A3B4-4F85-9F75-DF50B839A617" };
+        static constexpr guid id{ "233CFD1C-362B-DF6F-17D1-9A9D78F3C097" };
 
         struct type : abi_unknown_object
         {
@@ -30,7 +30,7 @@ namespace glasssix::exposing::impl
     };
 
     template <typename Derived>
-    struct interface_vtable<Derived, eledash::box_info> : interface_vtable_base<Derived, eledash::box_info>
+    struct interface_vtable<Derived, brionac::box_info> : interface_vtable_base<Derived, brionac::box_info>
     {
 
         virtual std::int32_t G6_ABI_CALL x1(abi_out_t<int> result) noexcept override
@@ -77,10 +77,10 @@ namespace glasssix::exposing::impl
     };
 
     template <>
-    struct abi_adapter<eledash::box_info>
+    struct abi_adapter<brionac::box_info>
     {
         template <typename Derived>
-        struct type : enable_self_abi_awareness<Derived, eledash::box_info>
+        struct type : enable_self_abi_awareness<Derived, brionac::box_info>
         {
 
             int x1() const
@@ -132,7 +132,7 @@ namespace glasssix::exposing::impl
     };
 }
 
-namespace glasssix::eledash
+namespace glasssix::brionac
 {
     struct box_info : exposing::inherits<box_info>
     {
