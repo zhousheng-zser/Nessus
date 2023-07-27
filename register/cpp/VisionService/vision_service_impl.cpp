@@ -373,6 +373,7 @@ namespace glasssix::exposing::nessus
 			functions_.insert_or_assign(function_names::smoke_version, std::bind(&impl::smoke_version, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::brionac_version, std::bind(&impl::brionac_version, this, std::placeholders::_1));
 			// Business
+			functions_.insert_or_assign(function_names::brionac_detect, std::bind(&impl::brionac_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::cthulhu_detect, std::bind(&impl::cthulhu_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::posture_detect, std::bind(&impl::posture_detect, this, std::placeholders::_1));
 			functions_.insert_or_assign(function_names::pedestrian_detect, std::bind(&impl::pedestrian_detect, this, std::placeholders::_1));
@@ -1039,7 +1040,6 @@ namespace glasssix::exposing::nessus
 		
 		unknown_object brionac_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
-
 			auto instance = get_instance<brionac::classify_code>(params);
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto channels = unbox<std::int32_t>(params.get_value(u8"channels"));
@@ -1050,7 +1050,6 @@ namespace glasssix::exposing::nessus
 			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
 			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
-
 			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 
 		}
