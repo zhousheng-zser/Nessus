@@ -2613,16 +2613,23 @@ namespace glasssix
 							{u8"object_id", box(instance)},
 							{u8"params", param_map_abi},
 						});
+
 					auto result = plugin.execute(u8"brionac.detect", param).as<exposing::param_vector<brionac::box_info>>();
-
-
+			
 					Json::Value jarray_box;
+					Json::Value jarray_location;
 					Json::Value jarray_dash_detected;
 					for (int i = 0; i < result.size(); i++)
 					{
 						jarray_box["title"] = Json::Value("brionac");
-						std::cout << "dsdsa " << result[0].strinfos() << "df\n";
 						jarray_box["status"] = Json::Value(glasssix::exposing::to_narrow_string(result[0].strinfos()));
+
+						jarray_location["x1"]=  Json::Int(result[i].x1());
+						jarray_location["y1"] = Json::Int(result[i].y1());
+						jarray_location["x2"] = Json::Int(result[i].x2());
+						jarray_location["y2"] = Json::Int(result[i].y2());
+
+						jarray_box["location"] = jarray_location;
 						jarray_dash_detected.append(jarray_box);
 					}
 
