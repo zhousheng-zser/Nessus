@@ -2582,10 +2582,10 @@ namespace glasssix
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
 
-					int roi_x = root["roi_x"].asInt();
-					int roi_y = root["roi_y"].asInt();
-					int roi_width = root["roi_width"].asInt();
-					int roi_height = root["roi_height"].asInt();
+					int roi_x = root["roi"]["roi_x"].asInt();
+					int roi_y = root["roi"]["roi_y"].asInt();
+					int roi_width = root["roi"]["roi_width"].asInt();
+					int roi_height = root["roi"]["roi_height"].asInt();
 
 					Json::Value params = root.get("params", Json::Value());
 					auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
