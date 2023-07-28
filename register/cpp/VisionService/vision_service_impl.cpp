@@ -907,14 +907,14 @@ namespace glasssix::exposing::nessus
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
 			auto type = unbox<std::int32_t>(params.get_value(u8"type"));
-			auto x = unbox<std::int32_t>(params.get_value(u8"x"));
-			auto y = unbox<std::int32_t>(params.get_value(u8"y"));
+			auto roi_x = unbox<std::int32_t>(params.get_value(u8"roi_x"));
+			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
 			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
 			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
 
-			return instance.detect(image, channels, height, width, type, x, y, roi_width, roi_height, params_map_abi);
+			return instance.detect(image, channels, height, width, type, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
 		unknown_object valve_detect(const param_hash_map<param_string, unknown_object>& params)

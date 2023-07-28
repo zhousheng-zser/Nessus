@@ -1358,7 +1358,7 @@ namespace glasssix
 					int x = root["roi"]["roi_x"].asInt();
 					int y = root["roi"]["roi_y"].asInt();
 					int roi_width = root["roi"]["roi_width"].asInt();
-					int roi_height = root["roi"]["roi_hight"].asInt();
+					int roi_height = root["roi"]["roi_height"].asInt();
 
 					Json::Value params = root.get("params", Json::Value());
 
@@ -1378,8 +1378,8 @@ namespace glasssix
 							{u8"width", box(width)},
 							{u8"type", box(type)},
 							{u8"object_id", box(instance)},
-							{u8"x", box(x)},
-							{u8"y", box(y)},
+							{u8"roi_x", box(x)},
+							{u8"roi_y", box(y)},
 							{u8"roi_width", box(roi_width)},
 							{u8"roi_height", box(roi_height)},
 							{u8"params", param_map_abi},
