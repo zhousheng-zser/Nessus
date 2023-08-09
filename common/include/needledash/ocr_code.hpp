@@ -69,7 +69,7 @@ namespace glasssix::exposing::impl
         {
             return abi_safe_call([&]
                 { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width, type,
-                    x, y, roi_width, roi_height, create_from_abi<exposing::param_hash_map<exposing::param_string, float>>(param_map_abi))); });
+                    roi_x, roi_y, roi_width, roi_height, create_from_abi<exposing::param_hash_map<exposing::param_string, float>>(param_map_abi))); });
         }
 
         virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept override
