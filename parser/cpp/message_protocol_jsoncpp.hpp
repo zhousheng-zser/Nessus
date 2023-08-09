@@ -585,9 +585,11 @@ namespace glasssix
 						jarray_box["up_rgb"]["r"] = Json::Int(up_rgb[0]);
 						jarray_box["up_rgb"]["g"] = Json::Int(up_rgb[1]);
 						jarray_box["up_rgb"]["b"] = Json::Int(up_rgb[2]);
+						jarray_box["up_rgb"]["strange"] = Json::Value(result[i].up_strange());
 						jarray_box["lw_rgb"]["r"] = Json::Int(lw_rgb[0]);
 						jarray_box["lw_rgb"]["g"] = Json::Int(lw_rgb[1]);
 						jarray_box["lw_rgb"]["b"] = Json::Int(lw_rgb[2]);;
+						jarray_box["lw_rgb"]["strange"] = Json::Value(result[i].lw_strange());
 
 						jarray_box["score"] = Json::Value(result[i].score());
 						jarray_workcloth_detected.append(jarray_box);
