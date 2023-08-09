@@ -1,22 +1,22 @@
-#ifndef _PEDESTRIAN_DETECT_CODE_HPP_
-#define _PEDESTRIAN_DETECT_CODE_HPP_
+#ifndef _PEDESTRIAN_CLASSIFY_CODE_HPP_
+#define _PEDESTRIAN_CLASSIFY_CODE_HPP_
 
 #include "box_info.hpp"
 #include <abi/consumer.hpp>
 
 namespace glasssix::pedestrian
 {
-    struct detect_code;
+    struct classify_code;
 }
 
 namespace glasssix::exposing::impl
 {
     template <>
-    struct abi<pedestrian::detect_code>
+    struct abi<pedestrian::classify_code>
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{ "{D14F4290-FAEB-4A0F-A616-105FA7953B2C}" };
+        static constexpr guid id{ "{25455959-A263-45CF-AE90-FC25ACEEC4AA}" };
 
         struct type : abi_unknown_object
         {
@@ -29,7 +29,7 @@ namespace glasssix::exposing::impl
                 std::int32_t channels,
                 std::int32_t height,
                 std::int32_t width,
-				std::int32_t roi_x,
+                std::int32_t roi_x,
                 std::int32_t roi_y,
                 std::int32_t roi_width,
                 std::int32_t roi_height,
@@ -41,7 +41,7 @@ namespace glasssix::exposing::impl
     };
 
     template <typename Derived>
-    struct interface_vtable<Derived, pedestrian::detect_code> : interface_vtable_base<Derived, pedestrian::detect_code>
+    struct interface_vtable<Derived, pedestrian::classify_code> : interface_vtable_base<Derived, pedestrian::classify_code>
     {
 
         virtual std::int32_t G6_ABI_CALL init(
@@ -58,7 +58,7 @@ namespace glasssix::exposing::impl
             std::int32_t channels,
             std::int32_t height,
             std::int32_t width,
-			std::int32_t roi_x,
+            std::int32_t roi_x,
             std::int32_t roi_y,
             std::int32_t roi_width,
             std::int32_t roi_height,
@@ -66,25 +66,22 @@ namespace glasssix::exposing::impl
             abi_out_t<exposing::param_vector<pedestrian::box_info>> result) noexcept override
         {
             return abi_safe_call([&]
-                { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width)); });
+                { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width, roi_x, roi_y, roi_width, roi_height,
+                    create_from_abi<exposing::param_hash_map<exposing::param_string, float>>(param_map_abi))); });
         }
+
 
         virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept override
         {
-            return abi_safe_call(
-                [&]
-                {
-                    *result = detach_abi(this->self().version());
-                }
-                );
+            return abi_safe_call([&] { *result = detach_abi(this->self().version()); });
         }
     };
 
     template <>
-    struct abi_adapter<pedestrian::detect_code>
+    struct abi_adapter<pedestrian::classify_code>
     {
         template <typename Derived>
-        struct type : enable_self_abi_awareness<Derived, pedestrian::detect_code>
+        struct type : enable_self_abi_awareness<Derived, pedestrian::classify_code>
         {
             void init(
                 const param_string& model_directory,
@@ -95,34 +92,34 @@ namespace glasssix::exposing::impl
                     get_abi(device)));
             }
 
+
             exposing::param_vector<pedestrian::box_info> detect(
                 param_span<std::uint8_t> bitmap,
                 std::int32_t channels,
                 std::int32_t height,
                 std::int32_t width,
-				std::int32_t roi_x,
+                std::int32_t roi_x,
                 std::int32_t roi_y,
                 std::int32_t roi_width,
                 std::int32_t roi_height,
                 const exposing::param_hash_map<exposing::param_string, float>& param_map_abi) const
             {
-                exposing::param_vector<pedestrian::box_info> result{ nullptr };
+				exposing::param_vector<pedestrian::box_info> result{ nullptr };
 
-                return (check_abi_result(
-                    this->self_abi().detect(
-                        get_abi(bitmap),
-                        channels,
-                        height,
-                        width,
+				return (check_abi_result(
+					this->self_abi().detect(
+						get_abi(bitmap),
+						channels,
+						height,
+						width,
 						roi_x,
-                        roi_y,
-                        roi_width,
-                        roi_height,
-                        get_abi(param_map_abi),
-                        put_abi(result))
-                ),
-                result);
-            }
+						roi_y,
+						roi_width,
+						roi_height,
+						get_abi(param_map_abi),
+						put_abi(result))
+				),result);
+			}
 
             param_string version() const
             {
@@ -136,7 +133,7 @@ namespace glasssix::exposing::impl
 
 namespace glasssix::pedestrian
 {
-    struct detect_code : exposing::inherits<detect_code>
+    struct classify_code : exposing::inherits<classify_code>
     {
         using inherits::inherits;
     };
