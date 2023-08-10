@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.14.3)
 set(module_name parser)
-file(GLOB src ${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/jni/*.cpp)
-file(GLOB header ${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/*.hpp ${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/*.h)
+
+file(GLOB src
+	${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/protocol/*.cc
+	${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/*.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/jni/*.cpp)
+file(GLOB header
+	${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/*.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/*.h)
 if(NOT WITH_JNI AND NOT ANDROID_NDK)
 	list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/../../parser/cpp/jni/parser_jni.cpp")
 endif()
