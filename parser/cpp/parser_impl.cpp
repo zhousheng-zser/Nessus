@@ -9,6 +9,7 @@
 #else
 #include "message_protocol_jsoncpp.hpp"
 #endif
+#include "protocol_register.hpp"
 
 #include <filesystem.hpp>
 #include <os_context.hpp>
@@ -390,7 +391,7 @@ namespace glasssix::exposing::nessus
 		param_string init_plugin(const param_string& config_file_path)
 		{
 			static std::once_flag flag;
-
+			Protocol::AddProtocol(basic_protocol_map);
 			std::string status = fmt::format(R"({{"status":{{"message":"Function 'init_plugin' has beed called and could be called one time","code":0}},"nessus_version":"{}"}})", nessus_version);
 			std::call_once(flag, [&]
 				{
@@ -447,7 +448,7 @@ namespace glasssix::exposing::nessus
 		param_string init_plugin(const param_string& config_file_path)
 		{
 			static std::once_flag flag;
-
+			Protocol::AddProtocol(basic_protocol_map);
 			std::string status = fmt::format(R"({{"status":{{"message":"Function 'init_plugin' has beed called and could be called one time","code":0}},"nessus_version":"{}"}})", nessus_version);
 			std::call_once(flag, [&]
 				{
@@ -529,84 +530,7 @@ namespace glasssix::exposing::nessus
 #else
 	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> parser_impl::impl::basic_protocol_map = [] {
 		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> protocol_map;
-#endif	
-		protocol_map["pedestrian.new"] = &Pedestrian_new_json;
-		protocol_map["pedestrian.delete"] = &Pedestrian_delete_json;
-		protocol_map["pedestrian.detect"] = &Pedestrian_detect_json;
-		protocol_map["pedestrian.version"] = &Pedestrian_version_json;
-		protocol_map["workcloth.new"] = &Workcloth_new_json;
-		protocol_map["workcloth.delete"] = &Workcloth_delete_json;
-		protocol_map["workcloth.detect"] = &Workcloth_detect_json;
-		protocol_map["workcloth.version"] = &Workcloth_version_json;
-		protocol_map["playphone.new"] = &Playphone_new_json;
-		protocol_map["playphone.delete"] = &Playphone_delete_json;
-		protocol_map["playphone.detect"] = &Playphone_detect_json;
-		protocol_map["playphone.version"] = &Playphone_version_json;
-		protocol_map["needledash.new"] = &Needledash_new_json;
-		protocol_map["needledash.delete"] = &Needledash_delete_json;
-		protocol_map["needledash.detect"] = &Needledash_detect_json;
-		protocol_map["valve.new"] = &Valve_new_json;
-		protocol_map["valve.delete"] = &Valve_delete_json;
-		protocol_map["valve.detect"] = &Valve_detect_json;
-		protocol_map["startorus.new"] = &Startorus_new_json;
-		protocol_map["startorus.delete"] = &Startorus_delete_json;
-		protocol_map["startorus.detect"] = &Startorus_detect_json;
-		protocol_map["genocr.new"] = &Genocr_new_json;
-		protocol_map["genocr.delete"] = &Genocr_delete_json;
-		protocol_map["genocr.detect"] = &Genocr_detect_json;
-		protocol_map["callsmoke.new"] = &Callsmoke_new_json;
-		protocol_map["callsmoke.delete"] = &Callsmoke_delete_json;
-		protocol_map["callsmoke.detect"] = &Callsmoke_detect_json;
-		protocol_map["ebike.new"] = &Ebike_new_json;
-		protocol_map["ebike.delete"] = &Ebike_delete_json;
-		protocol_map["ebike.detect"] = &Ebike_detect_json;
-		protocol_map["helmet.new"] = &Helmet_new_json;
-		protocol_map["helmet.delete"] = &Helmet_delete_json;
-		protocol_map["helmet.detect"] = &Helmet_detect_json;
-		protocol_map["helmet.version"] = &Helmet_version_json;
-		protocol_map["trespass.new"] = &Trespass_new_json;
-		protocol_map["trespass.delete"] = &Trespass_delete_json;
-		protocol_map["trespass.detect"] = &Trespass_detect_json;
-		protocol_map["flame.new"] = &Flame_new_json;
-		protocol_map["flame.delete"] = &Flame_delete_json;
-		protocol_map["flame.detect"] = &Flame_detect_json;
-		protocol_map["flame.version"] = &Flame_version_json;
-		protocol_map["sleep.new"] = &Sleep_new_json;
-		protocol_map["sleep.delete"] = &Sleep_delete_json;
-		protocol_map["sleep.detect"] = &Sleep_detect_json;
-		protocol_map["sleep.version"] = &Sleep_version_json;
-		protocol_map["brionac.new"] = &Brionac_new_json;
-		protocol_map["brionac.delete"] = &Brionac_delete_json;
-		protocol_map["brionac.detect"] = &Brionac_detect_json;
-		protocol_map["brionac.version"] = &Brionac_version_json;
-		protocol_map["posture.new"] = &Posture_new_json;
-		protocol_map["posture.delete"] = &Posture_delete_json;
-		protocol_map["posture.detect"] = &Posture_detect_json;
-		protocol_map["posture.version"] = &Posture_version_json;
-		protocol_map["smoke.new"] = &Smoke_new_json;
-		protocol_map["smoke.delete"] = &Smoke_delete_json;
-		protocol_map["smoke.detect"] = &Smoke_detect_json;
-		protocol_map["smoke.version"] = &Smoke_version_json;
-		protocol_map["onphone.new"] = &Onphone_new_json;
-		protocol_map["onphone.version"] = &Onphone_version_json;
-		protocol_map["onphone.delete"] = &Onphone_delete_json;
-		protocol_map["onphone.detect"] = &Onphone_detect_json;
-		protocol_map["refvest.new"] = &Refvest_new_json;
-		protocol_map["refvest.delete"] = &Refvest_delete_json;
-		protocol_map["refvest.detect"] = &Refvest_detect_json;
-		protocol_map["refvest.version"] = &Refvest_version_json;
-		protocol_map["rail.new"] = &Rail_new_json;
-		protocol_map["rail.delete"] = &Rail_delete_json;
-		protocol_map["rail.detect"] = &Rail_detect_json;
-		protocol_map["plate.new"] = &Plate_new_json;
-		protocol_map["plate.delete"] = &Plate_delete_json;
-		protocol_map["plate.detect"] = &Plate_detect_json;
-		protocol_map["plate.trace_init"] = &Plate_trace_init_json;
-		protocol_map["plate.trace_update"] = &Plate_trace_update_json;
-		protocol_map["plate.recognize"] = &Plate_recognize_json;
-		protocol_map["ring.new"] = &Ring_new_json;
-		protocol_map["ring.delete"] = &Ring_delete_json;
-		protocol_map["ring.detect"] = &Ring_detect_json;
+#endif
 		protocol_map["longinus.new"] = &Longinus_new_json;
 		protocol_map["longinus.delete"] = &Longinus_delete_json;
 		protocol_map["longinus.detect"] = &Longinus_detect_json;
@@ -647,26 +571,7 @@ namespace glasssix::exposing::nessus
 		protocol_map["irisviel.remove_records"] = &Irisviel_remove_records_json;
 		protocol_map["irisviel.add_records"] = &Irisviel_add_records_json;
 		protocol_map["irisviel.update_records"] = &Irisviel_update_records_json;
-		protocol_map["leavepost.new"] = &Leavepost_new_json;
-		protocol_map["leavepost.delete"] = &Leavepost_delete_json;
-		protocol_map["leavepost.detect"] = &Leavepost_detect_json;
-		protocol_map["leavepost.version"] = &Leavepost_version_json;
-       	protocol_map["gungnir.new"] = &Gungnir_new_json;
-		protocol_map["gungnir.delete"] = &Gungnir_delete_json;
-		protocol_map["gungnir.detect"] = &Gungnir_detect_json;
-        protocol_map["mjollner.new"] = &Mjollner_new_json;
-		protocol_map["mjollner.delete"] = &Mjollner_delete_json;
-		protocol_map["mjollner.detect"] = &Mjollner_detect_json;
-        protocol_map["valklyrs.new"] = &Valklyrs_new_json;
-		protocol_map["valklyrs.delete"] = &Valklyrs_delete_json;
-		protocol_map["valklyrs.detect"] = &Valklyrs_detect_json;
-        protocol_map["heimdall.new"] = &Heimdall_new_json;
-		protocol_map["heimdall.delete"] = &Heimdall_delete_json;
-		protocol_map["heimdall.detect"] = &Heimdall_detect_json;
-        protocol_map["banshee.new"] = &Banshee_new_json;
-		protocol_map["banshee.delete"] = &Banshee_delete_json;
-		protocol_map["banshee.init"] = &Banshee_init_json;
-		protocol_map["banshee.update"] = &Banshee_update_json;
+
 		return protocol_map;
 	}();
 
