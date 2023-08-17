@@ -1,5 +1,5 @@
-#ifndef _NEEDLEDASH_OCR_CODE_HPP_
-#define _NEEDLEDASH_OCR_CODE_HPP_
+#ifndef _TUMBLE_DETECT_CODE_HPP_
+#define _TUMBLE_DETECT_CODE_HPP_
 
 #include "box_info.hpp"
 #include <abi/consumer.hpp>
@@ -29,7 +29,6 @@ namespace glasssix::exposing::impl
                 std::int32_t channels,
                 std::int32_t height,
                 std::int32_t width,
-                std::int32_t type,
                 std::int32_t roi_x,
                 std::int32_t roi_y,
                 std::int32_t roi_width,
@@ -59,7 +58,6 @@ namespace glasssix::exposing::impl
             std::int32_t channels,
             std::int32_t height,
             std::int32_t width,
-            std::int32_t type,
             std::int32_t roi_x,
             std::int32_t roi_y,
             std::int32_t roi_width,
@@ -68,7 +66,7 @@ namespace glasssix::exposing::impl
             abi_out_t<exposing::param_vector<tumble::box_info>> result) noexcept override
         {
             return abi_safe_call([&]
-                { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width, type,
+                { *result = detach_abi(this->self().detect(create_from_abi<param_span<std::uint8_t>>(bitmap), channels, height, width, 
                     roi_x, roi_y, roi_width, roi_height, create_from_abi<exposing::param_hash_map<exposing::param_string, float>>(param_map_abi))); });
         }
 
@@ -103,7 +101,6 @@ namespace glasssix::exposing::impl
                 std::int32_t channels,
                 std::int32_t height,
                 std::int32_t width,
-                std::int32_t type,
                 std::int32_t roi_x,
                 std::int32_t roi_y,
                 std::int32_t roi_width,
@@ -118,7 +115,6 @@ namespace glasssix::exposing::impl
                         channels,
                         height,
                         width,
-                        type,
                         roi_x,
                         roi_y,
                         roi_width,
