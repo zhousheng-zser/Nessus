@@ -137,6 +137,7 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				int roi_width = root["roi_width"].asInt();
 				int roi_height = root["roi_height"].asInt();
+				int color_index = root["color_index"].asInt();
 
 				Json::Value params = root.get("params", Json::Value());
 
@@ -155,12 +156,11 @@ namespace glasssix::exposing::nessus::Protocol {
 					{u8"height", box(height)},
 					{u8"width", box(width)},
 					{u8"object_id", box(instance)},
-
 					{u8"roi_x", box(roi_x)},
 					{u8"roi_y", box(roi_y)},
-
 					{u8"roi_width",  box(roi_width)},
 					{u8"roi_height", box(roi_height)},
+					{u8"color_index", box(color_index)},
 					{u8"params", param_map_abi},
 					});
 
@@ -178,18 +178,11 @@ namespace glasssix::exposing::nessus::Protocol {
 					jarray_box["y2"] = Json::Int(result[i].y2());
 
 					// rgb
-					auto up_rgb = result[i].up_rgb();
-					auto lw_rgb = result[i].lw_rgb();
-					jarray_box["up_rgb"]["r"] = Json::Int(up_rgb[0]);
-					jarray_box["up_rgb"]["g"] = Json::Int(up_rgb[1]);
-					jarray_box["up_rgb"]["b"] = Json::Int(up_rgb[2]);
-					jarray_box["up_rgb"]["strange"] = Json::Value(result[i].up_strange());
-					jarray_box["lw_rgb"]["r"] = Json::Int(lw_rgb[0]);
-					jarray_box["lw_rgb"]["g"] = Json::Int(lw_rgb[1]);
-					jarray_box["lw_rgb"]["b"] = Json::Int(lw_rgb[2]);;
-					jarray_box["lw_rgb"]["strange"] = Json::Value(result[i].lw_strange());
+					jarray_box["color_pure"] = result[i].color_pure();
+					jarray_box["color_conf"] = result[i].color_conf();
+					jarray_box["score"] = result[i].score();
+					jarray_box["category"] = result[i].category();
 
-					jarray_box["score"] = Json::Value(result[i].score());
 					jarray_workcloth_detected.append(jarray_box);
 				}
 
