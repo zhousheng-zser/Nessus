@@ -147,7 +147,7 @@ namespace glasssix::exposing::nessus::Protocol {
 						jarray_box["x2"] = Json::Int(result[i].x2());
 						jarray_box["y2"] = Json::Int(result[i].y2());
 						jarray_box["score"] = Json::Value(result[i].confidence());
-						jarray_normal_detected.append(jarray_box);
+						jarray_smog_detected.append(jarray_box);
 					}
 					else if (category == 0)
 					{
@@ -157,13 +157,13 @@ namespace glasssix::exposing::nessus::Protocol {
 						jarray_box["x2"] = Json::Int(result[i].x2());
 						jarray_box["y2"] = Json::Int(result[i].y2());
 						jarray_box["score"] = Json::Value(result[i].confidence());
-						jarray_smog_detected.append(jarray_box);
+						jarray_normal_detected.append(jarray_box);
 					}
 				}
 
 				Json::Value jarray_info;
 
-				jarray_info["norm_list"] = jarray_normal_detected;
+				//jarray_info["norm_list"] = jarray_normal_detected;
 				jarray_info["smog_list"] = jarray_smog_detected;
 
 				value["detect_info"] = jarray_info;
