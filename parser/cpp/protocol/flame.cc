@@ -160,7 +160,7 @@ namespace glasssix::exposing::nessus::Protocol {
 					Json::Value jarray_info;
 
 					jarray_info["fire_list"] = jarray_fire_detected;
-					jarray_info["smoke_list"] = jarray_smoke_detected;
+					//jarray_info["smoke_list"] = jarray_smoke_detected;
 
 					value["detect_info"] = jarray_info;
 					value["status"]["message"] = Json::Value("OK");
