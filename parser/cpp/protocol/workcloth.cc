@@ -137,7 +137,6 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				int roi_width = root["roi_width"].asInt();
 				int roi_height = root["roi_height"].asInt();
-				int color_index = root["color_index"].asInt();
 
 				Json::Value params = root.get("params", Json::Value());
 
@@ -160,7 +159,6 @@ namespace glasssix::exposing::nessus::Protocol {
 					{u8"roi_y", box(roi_y)},
 					{u8"roi_width",  box(roi_width)},
 					{u8"roi_height", box(roi_height)},
-					{u8"color_index", box(color_index)},
 					{u8"params", param_map_abi},
 					});
 
@@ -178,10 +176,9 @@ namespace glasssix::exposing::nessus::Protocol {
 					jarray_box["y2"] = Json::Int(result[i].y2());
 
 					// rgb
-					jarray_box["color_pure"] = result[i].color_pure();
+					jarray_box["is_sleeve"] = result[i].is_sleeve();
 					jarray_box["color_conf"] = result[i].color_conf();
-					jarray_box["score"] = result[i].score();
-					jarray_box["category"] = result[i].category();
+					jarray_box["color_type"] = result[i].color_type();
 
 					jarray_workcloth_detected.append(jarray_box);
 				}
