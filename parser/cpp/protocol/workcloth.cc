@@ -175,10 +175,17 @@ namespace glasssix::exposing::nessus::Protocol {
 					jarray_box["x2"] = Json::Int(result[i].x2());
 					jarray_box["y2"] = Json::Int(result[i].y2());
 
-					// rgb
 					jarray_box["is_sleeve"] = result[i].is_sleeve();
-					jarray_box["color_conf"] = result[i].color_conf();
-					jarray_box["color_type"] = result[i].color_type();
+					// color ratio : black = 0, grey, white, red, orange, yellow, green, cyan, blue, purple
+					auto color_ratios = result[i].color_ratios();
+					if (color_ratios.size() != 10)continue;
+
+					Json::Value jarray_color_ratios = Json::Value(Json::arrayValue);
+					for (size_t i = 0; i < 10; i++)
+					{				
+						jarray_color_ratios.append(Json::Value(color_ratios[i]));
+					}
+					jarray_box["color_ratios"] = jarray_color_ratios;
 
 					jarray_workcloth_detected.append(jarray_box);
 				}
