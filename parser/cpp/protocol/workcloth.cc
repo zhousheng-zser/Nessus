@@ -138,6 +138,8 @@ namespace glasssix::exposing::nessus::Protocol {
 				int roi_width = root["roi_width"].asInt();
 				int roi_height = root["roi_height"].asInt();
 
+				int strategy = root["strategy"].asInt();
+
 				Json::Value params = root.get("params", Json::Value());
 
 				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
@@ -159,6 +161,7 @@ namespace glasssix::exposing::nessus::Protocol {
 					{u8"roi_y", box(roi_y)},
 					{u8"roi_width",  box(roi_width)},
 					{u8"roi_height", box(roi_height)},
+					{u8"strategy", box(strategy)},
 					{u8"params", param_map_abi},
 					});
 

@@ -34,10 +34,11 @@ namespace glasssix::exposing::nessus::Service
 			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
 			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
 			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
+			auto strategy = unbox<std::int32_t>(params.get_value(u8"strategy"));
 
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
 
-			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, strategy, params_map_abi);
 		}
 
 		static constexpr utf8_string_view MODULE_{ u8"workcloth" };
