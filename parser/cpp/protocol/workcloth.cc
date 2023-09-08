@@ -138,8 +138,6 @@ namespace glasssix::exposing::nessus::Protocol {
 				int roi_width = root["roi_width"].asInt();
 				int roi_height = root["roi_height"].asInt();
 
-				int strategy = root["strategy"].asInt();
-
 				Json::Value params = root.get("params", Json::Value());
 
 				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
@@ -161,7 +159,6 @@ namespace glasssix::exposing::nessus::Protocol {
 					{u8"roi_y", box(roi_y)},
 					{u8"roi_width",  box(roi_width)},
 					{u8"roi_height", box(roi_height)},
-					{u8"strategy", box(strategy)},
 					{u8"params", param_map_abi},
 					});
 
@@ -181,15 +178,15 @@ namespace glasssix::exposing::nessus::Protocol {
 					jarray_box["is_sleeve"] = result[i].is_sleeve();
 					// color ratio : black = 0, grey, white, red, orange, yellow, green, cyan, blue, purple
 					auto color_ratios = result[i].color_ratios();
-					if (color_ratios.size() != 10)continue;
+					int color_ratios_size = color_ratios.size();
+					if (color_ratios_size != 10 && color_ratios_size != 30 && color_ratios_size != 40)continue;
 
 					Json::Value jarray_color_ratios = Json::Value(Json::arrayValue);
-					for (size_t i = 0; i < 10; i++)
+					for (size_t i = 0; i < color_ratios_size; i++)
 					{				
 						jarray_color_ratios.append(Json::Value(color_ratios[i]));
 					}
 					jarray_box["color_ratios"] = jarray_color_ratios;
-
 					jarray_workcloth_detected.append(jarray_box);
 				}
 
