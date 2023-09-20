@@ -14,7 +14,7 @@ namespace glasssix::exposing::nessus
 	vision_service_impl::impl::impl()
 	{
 		// ADD
-		printf("[vision_service] Service::AddService");
+		
 		Service::AddService(functions_);
 
 		// FACE SDK

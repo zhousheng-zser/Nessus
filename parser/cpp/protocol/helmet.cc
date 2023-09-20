@@ -130,8 +130,9 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto result = plugin.execute(u8"helmet.detect", param).as<exposing::param_vector<helmet::box_info>>();
 
 				Json::Value jarray_box;
-				Json::Value jarray_helmet_detected(Json::arrayValue);
-				Json::Value jarray_helmet_cant_detected(Json::arrayValue);
+				Json::Value jarray_helmet_detected(Json::arrayValue);			
+				Json::Value jarray_hat_detected(Json::arrayValue);
+				Json::Value jarray_head_detected(Json::arrayValue);
 
 				for (int i = 0; i < result.size(); i++)
 				{
@@ -143,7 +144,7 @@ namespace glasssix::exposing::nessus::Protocol {
 						jarray_box["y1"] = Json::Int(result[i].y1());
 						jarray_box["x2"] = Json::Int(result[i].x2());
 						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"] = Json::Value(result[i].score());
+						jarray_box["score"]= Json::Value(result[i].score());
 						jarray_helmet_detected.append(jarray_box);
 					}
 					else if (category == 1)
@@ -152,15 +153,25 @@ namespace glasssix::exposing::nessus::Protocol {
 						jarray_box["y1"] = Json::Int(result[i].y1());
 						jarray_box["x2"] = Json::Int(result[i].x2());
 						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"] = Json::Value(result[i].score());
-						jarray_helmet_cant_detected.append(jarray_box);
+						jarray_box["score"]= Json::Value(result[i].score());
+						jarray_hat_detected.append(jarray_box);
+					}
+					else if (category == 2)
+					{
+						jarray_box["x1"] = Json::Int(result[i].x1());
+						jarray_box["y1"] = Json::Int(result[i].y1());
+						jarray_box["x2"] = Json::Int(result[i].x2());
+						jarray_box["y2"] = Json::Int(result[i].y2());
+						jarray_box["score"]= Json::Value(result[i].score());
+						jarray_head_detected.append(jarray_box);
 					}
 				}
 
 				Json::Value jarray_info;
 
 				jarray_info["with_helmet_list"] = jarray_helmet_detected;
-				jarray_info["without_helmet_list"] = jarray_helmet_cant_detected;
+				jarray_info["with_hat_list"] = jarray_hat_detected;
+				jarray_info["head_list"] = jarray_head_detected;
 
 
 				value["detect_info"] = jarray_info;

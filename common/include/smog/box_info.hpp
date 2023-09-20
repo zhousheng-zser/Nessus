@@ -15,7 +15,7 @@ namespace glasssix::exposing::impl
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{ "8BFACA98-8243-5A33-CAB4-4E1319A2A46D" };
+        static constexpr guid id{ "88F85992-A1A3-1182-2D9F-036CD60B3A8B" };
 
         struct type : abi_unknown_object
         {
