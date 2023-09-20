@@ -166,8 +166,6 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::irisviel, make_exported_interface<face_service>(irisviel::face_service_implemention::brute_force, single_database_capacity, dimension, working_directory));
 		}
 
-		}
-
 		static unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto instance = get_instance<cassius::feature_extractor>(params);
