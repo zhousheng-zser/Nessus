@@ -101,27 +101,27 @@ namespace glasssix::exposing::nessus::Protocol {
 
 					for (int i = 0; i < result.size(); i++)
 					{
-						int category = Json::Int(result[i].category());
-						
+						float category = result[i].category();
 						// Json::Value jarray_box;
-						if (category == 1)
+						if (category > 0.5f)
 						{                  
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
 	
-							jarray_box["score"] = Json::Value(result[i].confidence());
+							jarray_box["det_score"] = Json::Value(result[i].confidence());
+							jarray_box["cls_score"] = Json::Value(category);
                             jarray_normal_detected.append(jarray_box);
 						}
-						else if (category == 0)
-						{  
+						else if (category <= 0.5f)
+						{
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
-							//jarray_box["label"] = Json::Int(result[i].category());
-							jarray_box["score"] = Json::Value(result[i].confidence());
+							jarray_box["det_score"] = Json::Value(result[i].confidence());
+							jarray_box["cls_score"] = Json::Value(category);
                             jarray_onphone_detected.append(jarray_box);
 						}					
 					}
