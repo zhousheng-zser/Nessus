@@ -95,31 +95,33 @@ namespace glasssix::exposing::nessus::Protocol {
 					int lying_detected = 0;
 					int desk_detected = 0;
 					int standing_detected = 0;
-					Json::Value jarray_box;
 					Json::Value jarray_normal_detected(Json::arrayValue);
 					Json::Value jarray_onphone_detected(Json::arrayValue);
 
 					for (int i = 0; i < result.size(); i++)
 					{
 						float category = result[i].category();
-						// Json::Value jarray_box;
-						if (category > 0.5f)
-						{                  
-							jarray_box["x1"] = Json::Int(result[i].x1());
-							jarray_box["y1"] = Json::Int(result[i].y1());
-							jarray_box["x2"] = Json::Int(result[i].x2());
-							jarray_box["y2"] = Json::Int(result[i].y2());
-	
-							jarray_box["det_score"] = Json::Value(result[i].confidence());
-							jarray_box["cls_score"] = Json::Value(category);
-                            jarray_normal_detected.append(jarray_box);
-						}
-						else if (category <= 0.5f)
+						Json::Value jarray_box;
+						if (category <= 0.5f)
 						{
 							jarray_box["x1"] = Json::Int(result[i].x1());
 							jarray_box["y1"] = Json::Int(result[i].y1());
 							jarray_box["x2"] = Json::Int(result[i].x2());
 							jarray_box["y2"] = Json::Int(result[i].y2());
+							float score = result[i].confidence() * (1.f - category);
+							jarray_box["score"] = Json::Value(score);
+							jarray_box["det_score"] = Json::Value(result[i].confidence());
+							jarray_box["cls_score"] = Json::Value(category);
+                            jarray_normal_detected.append(jarray_box);
+						}
+						else if (category > 0.5f)
+						{
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+							float score = result[i].confidence() * category;
+							jarray_box["score"] = Json::Value(score);
 							jarray_box["det_score"] = Json::Value(result[i].confidence());
 							jarray_box["cls_score"] = Json::Value(category);
                             jarray_onphone_detected.append(jarray_box);
