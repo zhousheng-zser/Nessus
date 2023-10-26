@@ -134,10 +134,11 @@ namespace glasssix::exposing::nessus
 		static unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
 			auto nms = unbox<float>(params.get_value(u8"nms"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/longinus.racy", models_directory + u8"/pfld_land71_simp.racy", nms, device));
+			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory, model_type, nms, device));
 		}
 
 		static 	unknown_object damocles_new(const param_hash_map<param_string, unknown_object>& params)
@@ -164,8 +165,6 @@ namespace glasssix::exposing::nessus
 			auto working_directory = unbox<param_string>(params.get_value(u8"working_directory"));
 
 			return add_instance(package_names::irisviel, make_exported_interface<face_service>(irisviel::face_service_implemention::brute_force, single_database_capacity, dimension, working_directory));
-		}
-
 		}
 
 		static unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)

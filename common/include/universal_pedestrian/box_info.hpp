@@ -1,9 +1,9 @@
-#ifndef _ONPHONE_BOX_INFO_HPP_
-#define _ONPHONE_BOX_INFO_HPP_
+#ifndef _UNV_PED_BOX_INFO_HPP_
+#define _UNV_PED_BOX_INFO_HPP_
 
 #include <abi/consumer.hpp>
 
-namespace glasssix::onphone
+namespace glasssix::universal_pedestrian
 {
     struct box_info;
 }
@@ -11,11 +11,11 @@ namespace glasssix::onphone
 namespace glasssix::exposing::impl
 {
     template<>
-    struct abi<onphone::box_info>
+    struct abi<universal_pedestrian::box_info>
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{ "D117F883-CCE9-D991-C559-CE01CF88DBD4" };
+        static constexpr guid id{ "13F564FD-1BF6-4C4F-AD4A-26C25E5C0E8E" };//
 
         struct type : abi_unknown_object
         {
@@ -23,13 +23,14 @@ namespace glasssix::exposing::impl
             virtual std::int32_t G6_ABI_CALL y1(abi_out_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL x2(abi_out_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL y2(abi_out_t<int> result) noexcept = 0;
-			virtual float G6_ABI_CALL category(abi_out_t<float> result) noexcept = 0;
-            virtual float G6_ABI_CALL confidence(abi_out_t<float> result) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL score(abi_out_t<float> result) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL category(abi_out_t<int> result) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept = 0;
         };
     };
 
     template <typename Derived>
-    struct interface_vtable<Derived, onphone::box_info> : interface_vtable_base<Derived, onphone::box_info>
+    struct interface_vtable<Derived, universal_pedestrian::box_info> : interface_vtable_base<Derived, universal_pedestrian::box_info>
     {
 
         virtual std::int32_t G6_ABI_CALL x1(abi_out_t<int> result) noexcept override
@@ -55,24 +56,30 @@ namespace glasssix::exposing::impl
             return abi_safe_call([&]
                 { *result = detach_abi(this->self().y2()); });
         }
-        virtual float G6_ABI_CALL category(abi_out_t<float> result) noexcept override
+
+        virtual std::int32_t G6_ABI_CALL score(abi_out_t<float> result) noexcept override
+        {
+            return abi_safe_call([&]
+                                 { *result = detach_abi(this->self().score()); });
+        }
+
+        virtual std::int32_t G6_ABI_CALL category(abi_out_t<int> result) noexcept override
         {
             return abi_safe_call([&]
                                  { *result = detach_abi(this->self().category()); });
         }
-
-        virtual float G6_ABI_CALL confidence(abi_out_t<float> result) noexcept override
+        
+        virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept override
         {
-            return abi_safe_call([&]
-                                 { *result = detach_abi(this->self().confidence()); });
+            return abi_safe_call([&] { *result = detach_abi(this->self().version()); });
         }
     };
 
     template <>
-    struct abi_adapter<onphone::box_info>
+    struct abi_adapter<universal_pedestrian::box_info>
     {
         template <typename Derived>
-        struct type : enable_self_abi_awareness<Derived, onphone::box_info>
+        struct type : enable_self_abi_awareness<Derived, universal_pedestrian::box_info>
         {
 
             int x1() const
@@ -99,23 +106,31 @@ namespace glasssix::exposing::impl
 
                 return (check_abi_result(this->self_abi().y2(put_abi(result))), result);
             }
-            float category() const
+			int category() const
             {
-                float result = 0.f;
+                int result = 0;
 
                 return (check_abi_result(this->self_abi().category(put_abi(result))), result);
             }
-            float confidence() const
+            
+            float score() const
             {
-                float result = 0.f;
+                float result;
 
-                return (check_abi_result(this->self_abi().confidence(put_abi(result))), result);
+                return (check_abi_result(this->self_abi().score(put_abi(result))), result);
+            }
+
+            param_string version() const
+            {
+                param_string result{ nullptr };
+
+                return (check_abi_result(this->self_abi().version(put_abi(result))), result);
             }
         };
     };
 }
 
-namespace glasssix::onphone
+namespace glasssix::universal_pedestrian
 {
     struct box_info : exposing::inherits<box_info>
     {
@@ -123,3 +138,4 @@ namespace glasssix::onphone
     };
 }
 #endif
+//完成

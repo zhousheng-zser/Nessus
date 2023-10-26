@@ -5,8 +5,8 @@
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
-      "buildRoot": "${projectDir}\\out\\build\\${name}",
-      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "buildRoot": "${projectDir}\\build\\build_windows_x64\\${configurationType}",
+      "installRoot": "${projectDir}\\install\\windows_x64\\${configurationType}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
@@ -23,12 +23,13 @@
         },
         {
           "name": "COMMON_LIBRARY_DIRS",
-          "value": "E:/Research/Source/Repos/Excalibur/cmake/out/build/x64-Debug/lib",
+          "value": "E:/Research/Source/Repos/Excalibur/cmake/build/build_windows_x64/${configurationType}/lib",
           "type": "STRING"
         },
         {
           "name": "CONTAINS_LICENSE_SERVER",
-          "value": "False"
+          "value": "False",
+          "type": "STRING"
         }
       ]
     },
@@ -36,8 +37,8 @@
       "name": "x64-Release",
       "generator": "Ninja",
       "configurationType": "Release",
-      "buildRoot": "${projectDir}\\out\\build\\${name}",
-      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "buildRoot": "${projectDir}\\build\\build_windows_x64\\${configurationType}",
+      "installRoot": "${projectDir}\\install\\windows_x64\\${configurationType}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
@@ -55,7 +56,35 @@
         },
         {
           "name": "COMMON_LIBRARY_DIRS",
-          "value": "E:/Research/Source/Repos/Excalibur/cmake/out/build/x64-Release/lib",
+          "value": "E:/Research/Source/Repos/Excalibur/cmake/build/build_windows_x64/${configurationType}/lib",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "name": "x86-Release",
+      "generator": "Ninja",
+      "configurationType": "Release",
+      "buildRoot": "${projectDir}\\build\\build_windows_x86\\${configurationType}",
+      "installRoot": "${projectDir}\\install\\windows_x86\\${configurationType}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x86" ],
+      "variables": [
+        {
+          "name": "JNI_INCLUDE_DIRS",
+          "value": "C:/Program Files/Java/jdk1.8.0_251/include;C:/Program Files/Java/jdk1.8.0_251/include/win32",
+          "type": "STRING"
+        },
+        {
+          "name": "WITH_JNI",
+          "value": "TRUE",
+          "type": "BOOL"
+        },
+        {
+          "name": "COMMON_LIBRARY_DIRS",
+          "value": "E:/Research/Source/Repos/Excalibur/cmake/build/build_windows_x86-cpu-only/${configurationType}/lib",
           "type": "STRING"
         }
       ]
