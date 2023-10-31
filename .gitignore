@@ -1,0 +1,5 @@
+build*/
+.vs/
+/cmake/ndk_cmake.bat
+.vscode
+/JSON/Schemas
