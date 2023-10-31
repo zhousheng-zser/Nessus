@@ -104,7 +104,7 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				Json::Value params = root.get("params", Json::Value());
 
-				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, double>();
 
 				for (auto& param_name : params.getMemberNames()) {
 					param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
@@ -137,40 +137,27 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				Json::Value jarray_box;
 
-				Json::Value jarray_normal_detected(Json::arrayValue);
-				Json::Value jarray_wander_detected(Json::arrayValue);
+				Json::Value jarray_detected(Json::arrayValue);
 				for (int i = 0; i < result.size(); i++)
 				{
-					int category = Json::Int(result[i].category());
 
-					// Json::Value jarray_box;
-					if (category == 1)
-					{
-						jarray_box["x1"] = Json::Int(result[i].x1());
-						jarray_box["y1"] = Json::Int(result[i].y1());
-						jarray_box["x2"] = Json::Int(result[i].x2());
-						jarray_box["y2"] = Json::Int(result[i].y2());
-						// jarray_box["label"] = Json::Int(result[i].category());
-						jarray_box["score"] = Json::Value(result[i].confidence());
-						jarray_normal_detected.append(jarray_box);
-					}
-					else if (category == 0)
-					{
-
-						jarray_box["x1"] = Json::Int(result[i].x1());
-						jarray_box["y1"] = Json::Int(result[i].y1());
-						jarray_box["x2"] = Json::Int(result[i].x2());
-						jarray_box["y2"] = Json::Int(result[i].y2());
-						// jarray_box["label"] = Json::Int(result[i].category());
-						jarray_box["score"] = Json::Value(result[i].confidence());
-						jarray_wander_detected.append(jarray_box);
-					}
+					jarray_box["x1"] = Json::Int(result[i].x1());
+					jarray_box["y1"] = Json::Int(result[i].y1());
+					jarray_box["x2"] = Json::Int(result[i].x2());
+					jarray_box["y2"] = Json::Int(result[i].y2());
+					// jarray_box["label"] = Json::Int(result[i].category());
+					jarray_box["id"] = Json::Int(result[i].id());
+					jarray_box["score"] = Json::Value(result[i].confidence());
+					jarray_box["first_show_time"] = Json::Value(result[i].first_show_time());
+					jarray_box["last_show_time"] = Json::Value(result[i].last_show_time());
+					jarray_box["cosine_similarity"] = Json::Value(result[i].cosine_similarity());
+					jarray_detected.append(jarray_box);
+				
 				}
 
 				Json::Value jarray_info;
 
-				jarray_info["norm_list"] = jarray_normal_detected;
-				jarray_info["wander_list"] = jarray_wander_detected;
+				jarray_info["person_info"] = jarray_detected;
 
 				value["detect_info"] = jarray_info;
 				value["status"]["message"] = Json::Value("OK");
