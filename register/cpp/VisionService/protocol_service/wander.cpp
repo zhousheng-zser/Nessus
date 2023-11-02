@@ -21,6 +21,7 @@ namespace glasssix::exposing::nessus::Service
 		{
 			constexpr std::int32_t channels = 3;
 			auto instance = vision_service_impl::impl::get_instance<wander::detect_code>(params);
+
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
@@ -39,16 +40,26 @@ namespace glasssix::exposing::nessus::Service
 			return box(instance.version());
 		}
 
+		static unknown_object wander_remove_library(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = vision_service_impl::impl::get_instance<wander::detect_code>(params);
+
+			auto id = unbox<std::int32_t>(params.get_value(u8"id"));
+			return box(instance.remove_library(id));
+		}
+
 		static constexpr utf8_string_view MODULE_{ u8"wander" };
 		static constexpr utf8_string_view NEW_{ u8"wander.new" };
 		static constexpr utf8_string_view DELETE_{ u8"wander.delete" };
 		static constexpr utf8_string_view VERSION_{ u8"wander.version" };
 		static constexpr utf8_string_view detect_{ u8"wander.detect" };
+		static constexpr utf8_string_view remove_library{ u8"wander.remove_library" };
 	public:
 		virtual const void service_dump(std::unordered_map<param_string, service_function_ty>& service_map) const override {
 			service_map.try_emplace(NEW_, &wander_new);
 			service_map.try_emplace(DELETE_, DELETE_FUNC);
 			service_map.try_emplace(VERSION_, &wander_version);
+			service_map.try_emplace(remove_library, &wander_remove_library);
 
 			service_map.try_emplace(detect_, &wander_detect);
 		}

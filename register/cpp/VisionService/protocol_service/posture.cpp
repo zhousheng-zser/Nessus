@@ -13,8 +13,9 @@ namespace glasssix::exposing::nessus::Service
 		{
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
 
-			return vision_service_impl::impl::add_instance(MODULE_, make_exported_interface<posture::detect_code>(models_directory, device));
+			return vision_service_impl::impl::add_instance(MODULE_, make_exported_interface<posture::detect_code>(models_directory, device,model_type));
 		}
 		
 		static unknown_object posture_detect(const param_hash_map<param_string, unknown_object>& params)
