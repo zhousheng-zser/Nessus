@@ -4,7 +4,7 @@
 //
 #include <wander/detect_code.hpp>
 #include <wander/box_info.hpp>
-
+#include <iostream>
 namespace glasssix::exposing::nessus::Protocol {
 
 	class P_Wander : public Protocol
@@ -87,6 +87,49 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
+
+			static Json::Value Wander_remove_library_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		{
+			Json::Value value;
+			try
+			{
+				int id = root["id"].asInt();
+				auto param = make_param_hash_map<param_string, unknown_object>(
+					{ 
+						{u8"object_id", box(instance)},
+						{u8"id", box(id)}
+					});
+
+				auto version = plugin.execute(u8"wander.remove_library", param);
+
+				value["delete_info"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
+				value["status"]["message"] = Json::Value("OK");
+				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+
+			}
+			catch (const parser_exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+			}
+			catch (const Json::Exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+			}
+			catch (const std::exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+			}
+			catch (const abi_error& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what_to_narrow());
+				value["status"]["code"] = Json::Int(ex.result());
+			}
+
+			return value;
+		}
 		static Json::Value Wander_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
@@ -145,7 +188,6 @@ namespace glasssix::exposing::nessus::Protocol {
 					jarray_box["y1"] = Json::Int(result[i].y1());
 					jarray_box["x2"] = Json::Int(result[i].x2());
 					jarray_box["y2"] = Json::Int(result[i].y2());
-					// jarray_box["label"] = Json::Int(result[i].category());
 					jarray_box["id"] = Json::Int(result[i].id());
 					jarray_box["score"] = Json::Value(result[i].confidence());
 					jarray_box["first_show_time"] = Json::Value(result[i].first_show_time());
@@ -230,6 +272,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			protocol_map["wander.delete"] = &Wander_delete_json;
 			protocol_map["wander.detect"] = &Wander_detect_json;
 			protocol_map["wander.version"] = &Wander_version_json;
+			protocol_map["wander.remove_library"] = &Wander_remove_library_json;
 
 			return protocol_map;
 		}

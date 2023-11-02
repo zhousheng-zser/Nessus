@@ -131,7 +131,6 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto result = plugin.execute(u8"head.detect", param).as<param_vector<head::box_info>>();
 
 
-				printf("in head detect1\n");
 				Json::Value jarray_boxes = Json::Value(Json::arrayValue);
 				for (auto box : result)
 				{
@@ -142,24 +141,11 @@ namespace glasssix::exposing::nessus::Protocol {
 					jobj_box["y1"] = Json::Int(box.y1());
 					jobj_box["x2"] = Json::Int(box.x2());
 					jobj_box["y2"] = Json::Int(box.y2());
-
-					// jobj_box["location"] = jarray_points;
 					jobj_box["score"] = Json::Value(box.score());
 
-					// Json::Value jarray_key_points = Json::Value(Json::arrayValue);
-					// auto key_points = box.key_points();
-					// for (size_t i = 0; i < (int)key_points.size() / 3; i++) {
-					// 	Json::Value KPoint;
-					// 	KPoint["x"] = Json::Int(key_points[i * 3]);
-					// 	KPoint["y"] = Json::Int(key_points[i * 3 + 1]);
-					// 	KPoint["point_score"] = Json::Value(key_points[i * 3 + 2]);
-					// 	jarray_key_points.append(KPoint);
-					// }
-
-					// jobj_box["key_points"] = jarray_key_points;
 					jarray_boxes.append(jobj_box);
 				}
-				printf("in head detect2\n");
+
 				value["info_list"] = jarray_boxes;
 
 				value["status"]["message"] = Json::Value("OK");

@@ -16,7 +16,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			{
 
 				int device = root["device"].asInt();
-				printf("device:%d\n", device);
+				// printf("device:%d\n", device);
 				std::string models_directory = root["models_directory"].asString();
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"device", box(device)},
