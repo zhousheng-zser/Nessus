@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.14.3)
 set(module_name vision_service)
-file(GLOB src ${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/VisionService/*.cpp)
+file(GLOB src
+	${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/VisionService/protocol_service/*.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/VisionService/*.cpp)
 file(GLOB header ${CMAKE_CURRENT_SOURCE_DIR}/../../../register/cpp/VisionService/*.hpp)
 
 add_library(${module_name} SHARED ${src} ${header})

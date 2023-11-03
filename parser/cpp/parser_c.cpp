@@ -55,7 +55,7 @@ extern "C" {
 		std::memcpy(status, status_.data(), size * sizeof(char));
 
 		glasssix::exposing::detach_abi(parser_object);
-
+		
 		return status;
 	}
 

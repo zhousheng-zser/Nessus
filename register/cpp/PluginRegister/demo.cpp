@@ -8,72 +8,72 @@ void test()
 	using namespace glasssix::exposing;
 	using namespace glasssix::exposing::nessus;
 
-	// ¼ÓÔØ²å¼ş¹ÜÀíÆ÷ DLL
+	// é”çŠºæµ‡é»ææ¬¢ç» ï¼„æ‚Šé£ï¿½ DLL
 	if (auto factory = get_component_loader().add_module_with_factory(u8"g6.pluginManager.dll"))
 	{
 		try
 		{
-			// ´´½¨²å¼ş¹ÜÀíÆ÷²¢¼ÓÔØÖ¸¶¨Ä¿Â¼ÏÂËùÓĞ²å¼ş
+			// é’æ¶˜ç¼“é»ææ¬¢ç» ï¼„æ‚Šé£ã„¥è‹Ÿé”çŠºæµ‡é¸å›§ç•¾é©î†¼ç¶æ¶“å¬«å¢éˆå¤‹å½ƒæµ ï¿½
 			auto manager = factory.create_by_name(u8"glasssix.nessus.pluginManager").as<plugin_manager>();
 
 			manager.load_from_directory(u8R"(D:\plugins)");
 
-			// ·½Ê½Ò»£ºÖ´ĞĞÄ³¸ö²å¼şÏÂµÄÄ³¸öº¯Êı£¨Ğ§ÂÊ½ÏµÍ£©
-			// ¼ÙÉè·µ»ØÖµÊÇÒ»¸ö map<string, object>
+			// é‚ç‘°ç´¡æ¶“â‚¬é”›æ°­å¢½ç›å±¾ç…‡æ¶“î…å½ƒæµ æœµç¬…é¨å‹¬ç…‡æ¶“î„åš±éå¸®ç´™éå ¢å·¼æˆå†§ç¶†é”›ï¿½
+			// é‹å›ªî†•æ©æ–¿æ´–éŠå…¼æ§¸æ¶“â‚¬æ¶“ï¿½ map<string, object>
 			auto array = make_param_vector<int>(1, 2, 3, 4, 5);
 			auto result = manager
-				.execute(u8"²å¼şÃû", u8"º¯ÊıÃû", make_param_hash_map<param_string, unknown_object>(
+				.execute(u8"é»ææ¬¢éšï¿½", u8"é‘èŠ¥æšŸéšï¿½", make_param_hash_map<param_string, unknown_object>(
 					{
-						{ u8"×Ö·û´®", box(u8"×°Ïä×Ö·û´®²ÎÊı") },
-						{ u8"×°ÏäÕûĞÍ", box(123) },
-						{ u8"×°Ïä¸¡µãĞÍ", box(3.14) },
-						{ u8"×°Ïäµ¥¾«¶È¸¡µãĞÍ", box(1.234f) },
-						{ u8"Êı×é", array }
+						{ u8"ç€›æ¥ƒîƒæ¶“ï¿½", box(u8"ç‘å‘¯î†ˆç€›æ¥ƒîƒæ¶“æ’å¼¬éï¿½") },
+						{ u8"ç‘å‘¯î†ˆéæ‘ç€·", box(123) },
+						{ u8"ç‘å‘¯î†ˆå¨´î†¾å£é¨ï¿½", box(3.14) },
+						{ u8"ç‘å‘¯î†ˆé—æ› ç°¿æ´ï¸½è¯éç‘°ç€·", box(1.234f) },
+						{ u8"éæ‰®ç²", array }
 					}))
 				.as<param_hash_map<param_string, unknown_object>>();
 
-			// ·½Ê½¶ş£ºÏÈ»ñÈ¡²å¼ş½Ó¿ÚÒıÓÃ£¬ÔÙµ÷ÓÃ²å¼şµÄ execute º¯Êı£¨Ğ§ÂÊ½Ï¸ß£©
-			if (auto plugin = manager.lookup(u8"²å¼şÃû"))
+			// é‚ç‘°ç´¡æµœå²‹ç´°éå £å¹é™æ ¨å½ƒæµ èˆµå¸´é™ï½…ç´©é¢îŸ’ç´éå¶ˆçšŸé¢ã„¦å½ƒæµ å‰æ®‘ execute é‘èŠ¥æšŸé”›å Ÿæ™¥éœå›ªç·æ¥‚æ©ˆç´š
+			if (auto plugin = manager.lookup(u8"é»ææ¬¢éšï¿½"))
 			{
-				auto result2 = plugin.execute(u8"º¯ÊıÃû", make_param_hash_map<param_string, unknown_object>(
+				auto result2 = plugin.execute(u8"é‘èŠ¥æšŸéšï¿½", make_param_hash_map<param_string, unknown_object>(
 					{
-						{ u8"×Ö·û´®", box(u8"×°Ïä×Ö·û´®²ÎÊı") },
-						{ u8"×°ÏäÕûĞÍ", box(123) },
-						{ u8"×°Ïä¸¡µãĞÍ", box(3.14) },
-						{ u8"×°Ïäµ¥¾«¶È¸¡µãĞÍ", box(1.234f) },
-						{ u8"Êı×é", array }
+						{ u8"ç€›æ¥ƒîƒæ¶“ï¿½", box(u8"ç‘å‘¯î†ˆç€›æ¥ƒîƒæ¶“æ’å¼¬éï¿½") },
+						{ u8"ç‘å‘¯î†ˆéæ‘ç€·", box(123) },
+						{ u8"ç‘å‘¯î†ˆå¨´î†¾å£é¨ï¿½", box(3.14) },
+						{ u8"ç‘å‘¯î†ˆé—æ› ç°¿æ´ï¸½è¯éç‘°ç€·", box(1.234f) },
+						{ u8"éæ‰®ç²", array }
 					}
 				));
 			}
 
-			auto feature = result.get_value(u8"ÌØÕ÷Öµ").as<param_vector<float>>();
-			auto length = unbox<int>(result.get_value(u8"¾ØĞÎ¿ò±ß³¤"));
+			auto feature = result.get_value(u8"é—ç‘°ç·›éŠï¿½").as<param_vector<float>>();
+			auto length = unbox<int>(result.get_value(u8"é­â•èˆ°å¦—å—šç«Ÿé—€ï¿½"));
 
-			// ´¦Àí·µ»ØÖµ1 £¨Òì³£°²È«ĞÍ£©
-			if (unknown_object obj{ nullptr }; result.try_get_value(u8"ÌØÕ÷Öµ", obj))
+			// æ¾¶å‹­æ‚Šæ©æ–¿æ´–éŠï¿½1 é”›å ç´“ç”¯ç¨¿ç•¨éã„¥ç€·é”›ï¿½
+			if (unknown_object obj{ nullptr }; result.try_get_value(u8"é—ç‘°ç·›éŠï¿½", obj))
 			{
-				// ×ª»»Îª¾ßÌåµÄ½Ó¿ÚÀàĞÍ
+				// æî„å´²æ¶“å“„å¿æµ£æ’¶æ®‘éºãƒ¥å½›ç»«è¯²ç€·
 				auto feature = obj.as<param_vector<float>>();
 
-				// TO DO: ´¦ÀíÌØÕ÷Öµ
+				// TO DO: æ¾¶å‹­æ‚Šé—ç‘°ç·›éŠï¿½
 			}
 			
-			if (unknown_object obj{ nullptr }; result.try_get_value(u8"¾ØĞÎ¿ò±ß³¤", obj))
+			if (unknown_object obj{ nullptr }; result.try_get_value(u8"é­â•èˆ°å¦—å—šç«Ÿé—€ï¿½", obj))
 			{
-				// ²ğÏä»ù´¡ÀàĞÍ
+				// é·å—™î†ˆé©è™¹î”…ç»«è¯²ç€·
 				auto length = unbox<int>(obj);
 
-				// TO DO: ´¦Àí±ß³¤
+				// TO DO: æ¾¶å‹­æ‚Šæˆå½’æš±
 			}
 
 			// ...
 
-			// ´¦Àí·µ»ØÖµ2£¨Òì³£ĞÍ£©
-			auto significant_points = result.get_value(u8"¹Ø¼üµã").as<param_vector<int>>();
+			// æ¾¶å‹­æ‚Šæ©æ–¿æ´–éŠï¿½2é”›å ç´“ç”¯ç¨¿ç€·é”›ï¿½
+			auto significant_points = result.get_value(u8"éæŠ½æ•­éï¿½").as<param_vector<int>>();
 		}
 		catch (const abi_error& ex)
 		{
-			std::cout << "·¢Éú´íÎó£º" << ex.what_to_narrow() << std::endl;
+			std::cout << "é™æˆ æ•“é–¿æ¬’î‡¤é”›ï¿½" << ex.what_to_narrow() << std::endl;
 		}
 	}
 }

@@ -147,7 +147,7 @@ namespace glasssix::exposing::impl
 		{
 			return abi_safe_call([&] { *result = detach_abi(this->self().search(create_from_abi<param_span<const float>>(feature), min_similarity, top_count_to_retrieve)); });
 		}
-		
+
 		virtual std::int32_t G6_ABI_CALL search_nf(abi_in_t<param_vector<float>> feature, float min_similarity, std::uint32_t top_count_to_retrieve, abi_out_t<param_vector<irisviel::search_result>> result) noexcept override
 		{
 			return abi_safe_call([&] { *result = detach_abi(this->self().search_nf(create_from_abi<param_vector<float>>(feature), min_similarity, top_count_to_retrieve)); });
