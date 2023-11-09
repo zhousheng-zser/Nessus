@@ -136,12 +136,12 @@ namespace glasssix::exposing::nessus::Protocol {
 
 					auto result = plugin.execute(u8"fighting.detect", param);
 					auto fight_score = unbox<float>(result);
-					value["fight_score"] = Json::Value(fight_score);
+					value["detect_info"]["score"] = Json::Value(fight_score);
 					if (fight_score > 0.5) {
-						value["category"] = Json::Int(1);
+						value["detect_info"]["category"] = Json::Int(1);
 					}
 					else {
-						value["category"] = Json::Int(0);
+						value["detect_info"]["category"] = Json::Int(0);
 					}
 
 					value["status"]["message"] = Json::Value("OK");
