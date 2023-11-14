@@ -134,11 +134,11 @@ namespace glasssix::exposing::nessus
 		static unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto instance_type = unbox<std::int32_t>(params.get_value(u8"instance_type"));
 			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
 			auto nms = unbox<float>(params.get_value(u8"nms"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
-
-			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory, model_type, nms, device));
+			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory, model_type,instance_type, nms, device));
 		}
 
 		static 	unknown_object damocles_new(const param_hash_map<param_string, unknown_object>& params)

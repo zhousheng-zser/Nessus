@@ -15,7 +15,6 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
-
 namespace glasssix
 {
 	namespace exposing
@@ -163,13 +162,15 @@ namespace glasssix
 				try
 				{
 					int device = root["device"].asInt();
-					//float nms = static_cast<float>(root["nms"].asDouble());
+					int instance_type = root["instance_type"].asInt();
 					float nms = 0.4f;
 					std::string models_directory = root["models_directory"].asString();
 					int model_type = root["model_type"].asInt();
+
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"device", box(device)},
 						 {u8"nms", box(nms)},
+						 {u8"instance_type", box(instance_type)},
 						 {u8"model_type", box(model_type)},
 						 {u8"models_directory", box(std::string_view(models_directory))} });
 
@@ -242,16 +243,15 @@ namespace glasssix
 				Json::Value value;
 				try
 				{
+
 					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
 					int min_size = root["min_size"].asInt();
 					float threshold = root["threshold"].asFloat();
 					bool do_attributing = root["do_attributing"].asBool();
-
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
-
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
@@ -2305,6 +2305,7 @@ namespace glasssix
 					for (auto i : jarray_feature)
 						feature.push_back(i.asFloat());
 
+					
 					auto assuming_top = root.get("top", Json::nullValue);
 					auto assuming_min_similarity = root.get("min_similarity", Json::nullValue);
 					bool has_top = assuming_top.isIntegral();
@@ -2342,7 +2343,6 @@ namespace glasssix
 
 						value["result"].append(jobj_result);
 					}
-
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}
