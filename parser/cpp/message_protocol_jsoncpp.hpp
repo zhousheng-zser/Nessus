@@ -166,10 +166,12 @@ namespace glasssix
 					//float nms = static_cast<float>(root["nms"].asDouble());
 					float nms = 0.4f;
 					std::string models_directory = root["models_directory"].asString();
+					int algo_type = root["algo_type"].asInt();
 					int model_type = root["model_type"].asInt();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"device", box(device)},
 						 {u8"nms", box(nms)},
+						 {u8"algo_type", box(algo_type)},
 						 {u8"model_type", box(model_type)},
 						 {u8"models_directory", box(std::string_view(models_directory))} });
 
