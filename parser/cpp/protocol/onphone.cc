@@ -91,10 +91,6 @@ namespace glasssix::exposing::nessus::Protocol {
 
 					auto result = plugin.execute(u8"onphone.detect", param).as<exposing::param_vector<onphone::box_info>>();
 
-					int work_detected = 0;
-					int lying_detected = 0;
-					int desk_detected = 0;
-					int standing_detected = 0;
 					Json::Value jarray_normal_detected(Json::arrayValue);
 					Json::Value jarray_onphone_detected(Json::arrayValue);
 
@@ -102,29 +98,38 @@ namespace glasssix::exposing::nessus::Protocol {
 					{
 						float category = result[i].category();
 						Json::Value jarray_box;
+
+						jarray_box["x1"] = Json::Int(result[i].x1());
+						jarray_box["y1"] = Json::Int(result[i].y1());
+						jarray_box["x2"] = Json::Int(result[i].x2());
+						jarray_box["y2"] = Json::Int(result[i].y2());
+						jarray_box["head_score"] = Json::Value(result[i].confidence());
 						if (category <= 0.5f)
 						{
-							jarray_box["x1"] = Json::Int(result[i].x1());
-							jarray_box["y1"] = Json::Int(result[i].y1());
-							jarray_box["x2"] = Json::Int(result[i].x2());
-							jarray_box["y2"] = Json::Int(result[i].y2());
-							float score = result[i].confidence() * (1.f - category);
-							jarray_box["score"] = Json::Value(score);
-							jarray_box["det_score"] = Json::Value(result[i].confidence());
-							jarray_box["cls_score"] = Json::Value(category);
                             jarray_normal_detected.append(jarray_box);
 						}
 						else if (category > 0.5f)
 						{
-							jarray_box["x1"] = Json::Int(result[i].x1());
-							jarray_box["y1"] = Json::Int(result[i].y1());
-							jarray_box["x2"] = Json::Int(result[i].x2());
-							jarray_box["y2"] = Json::Int(result[i].y2());
-							float score = result[i].confidence() * category;
-							jarray_box["score"] = Json::Value(score);
-							jarray_box["det_score"] = Json::Value(result[i].confidence());
-							jarray_box["cls_score"] = Json::Value(category);
-                            jarray_onphone_detected.append(jarray_box);
+							jarray_box["phone_list"] = Json::Value(Json::arrayValue);
+
+							Json::Value phone_info;
+							auto phone_loacl_list = result[i].phonelocal_list();
+							auto phone_score_list = result[i].phonescore_list();
+
+							if (phone_loacl_list.size() == 4 * phone_score_list.size())
+							{
+								for (size_t i = 0; i < phone_score_list.size(); i++)
+								{
+									phone_info["x1"] = Json::Int(phone_loacl_list[i + 0]);
+									phone_info["y1"] = Json::Int(phone_loacl_list[i + 1]);
+									phone_info["x2"] = Json::Int(phone_loacl_list[i + 2]);
+									phone_info["y2"] = Json::Int(phone_loacl_list[i + 3]);
+									phone_info["phone_score"] = Json::Value(phone_score_list[i]);
+								}
+								jarray_box["phone_list"].append(phone_info);
+							}
+
+							jarray_onphone_detected.append(jarray_box);
 						}					
 					}
 
