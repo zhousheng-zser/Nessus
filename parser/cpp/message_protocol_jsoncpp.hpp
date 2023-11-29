@@ -284,21 +284,24 @@ namespace glasssix
 							jobj_face["attributes"]["roll"] = Json::Value(obj.roll());
 							jobj_face["attributes"]["glass_index"] = Json::Int(obj.glass_index());
 							jobj_face["attributes"]["mask_index"] = Json::Int(obj.mask_index());
+
+							Json::Value jarray_landmark;
+							for (const auto& pt : obj.pts())
+							{
+
+								Json::Value jobj_point;
+								jobj_point["x"] = Json::Int((int)pt.key());
+								jobj_point["y"] = Json::Int((int)pt.value());
+								jarray_landmark.append(jobj_point);
+							}
+							jobj_face["landmark"] = jarray_landmark;
 						}
 						else
-							jobj_face["attributes"] = Json::Value(Json::nullValue);
-
-						Json::Value jarray_landmark;
-
-						for (const auto& pt : obj.pts())
 						{
-
-							Json::Value jobj_point;
-							jobj_point["x"] = Json::Int((int)pt.key());
-							jobj_point["y"] = Json::Int((int)pt.value());
-							jarray_landmark.append(jobj_point);
+							jobj_face["attributes"] = Json::Value(Json::nullValue);
+							jobj_face["landmark"] = Json::Value(Json::nullValue);
 						}
-						jobj_face["landmark"] = jarray_landmark;
+
 						jarray_rect.append(jobj_face);
 					}
 
