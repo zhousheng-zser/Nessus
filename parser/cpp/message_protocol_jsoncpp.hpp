@@ -299,7 +299,7 @@ namespace glasssix
 						else
 						{
 							jobj_face["attributes"] = Json::Value(Json::nullValue);
-							jobj_face["landmark"] = Json::Value(Json::nullValue);
+							jobj_face["landmark"] = Json::Value(Json::arrayValue);
 						}
 
 						jarray_rect.append(jobj_face);
