@@ -1,9 +1,9 @@
-#ifndef _WORKCLOTH_BOX_INFO_HPP_
-#define _WORKCLOTH_BOX_INFO_HPP_
+#ifndef _CROWD_BOX_INFO_HPP_
+#define _CROWD_BOX_INFO_HPP_
 
 #include <abi/consumer.hpp>
 
-namespace glasssix::workcloth
+namespace glasssix::crowd
 {
     struct box_info;
 }
@@ -11,11 +11,11 @@ namespace glasssix::workcloth
 namespace glasssix::exposing::impl
 {
     template<>
-    struct abi<workcloth::box_info>
+    struct abi<crowd::box_info>
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{ "{53A02D2A-7348-4EE7-A6A9-6A6D11535649}" };
+        static constexpr guid id{ "0B56CAD4-7E46-43BF-9354-71BD0AB1C93B" };
 
         struct type : abi_unknown_object
         {
@@ -23,14 +23,14 @@ namespace glasssix::exposing::impl
             virtual std::int32_t G6_ABI_CALL y1(abi_out_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL x2(abi_out_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL y2(abi_out_t<int> result) noexcept = 0;
-            virtual std::int32_t G6_ABI_CALL is_sleeve(abi_out_t<int> result) noexcept = 0;
-            virtual std::int32_t G6_ABI_CALL color_ratios(abi_out_t<param_vector<float>> result) noexcept = 0;
-
+            virtual std::int32_t G6_ABI_CALL score(abi_out_t<float> result) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL category(abi_out_t<int> result) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept = 0;
         };
     };
 
     template <typename Derived>
-    struct interface_vtable<Derived, workcloth::box_info> : interface_vtable_base<Derived, workcloth::box_info>
+    struct interface_vtable<Derived, crowd::box_info> : interface_vtable_base<Derived, crowd::box_info>
     {
 
         virtual std::int32_t G6_ABI_CALL x1(abi_out_t<int> result) noexcept override
@@ -57,24 +57,29 @@ namespace glasssix::exposing::impl
                 { *result = detach_abi(this->self().y2()); });
         }
 
-        virtual std::int32_t G6_ABI_CALL is_sleeve(abi_out_t<int> result) noexcept override
+        virtual std::int32_t G6_ABI_CALL score(abi_out_t<float> result) noexcept override
         {
             return abi_safe_call([&]
-                                 { *result = detach_abi(this->self().is_sleeve()); });
+                                 { *result = detach_abi(this->self().score()); });
         }
 
-        virtual std::int32_t G6_ABI_CALL color_ratios(abi_out_t<param_vector<float>> result) noexcept override
+        virtual std::int32_t G6_ABI_CALL category(abi_out_t<int> result) noexcept override
         {
             return abi_safe_call([&]
-                { *result = detach_abi(this->self().color_ratios()); });
+                                 { *result = detach_abi(this->self().category()); });
+        }
+        
+        virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept override
+        {
+            return abi_safe_call([&] { *result = detach_abi(this->self().version()); });
         }
     };
 
     template <>
-    struct abi_adapter<workcloth::box_info>
+    struct abi_adapter<crowd::box_info>
     {
         template <typename Derived>
-        struct type : enable_self_abi_awareness<Derived, workcloth::box_info>
+        struct type : enable_self_abi_awareness<Derived, crowd::box_info>
         {
 
             int x1() const
@@ -101,25 +106,31 @@ namespace glasssix::exposing::impl
 
                 return (check_abi_result(this->self_abi().y2(put_abi(result))), result);
             }
-
-			int is_sleeve() const
+			int category() const
             {
                 int result = 0;
 
-                return (check_abi_result(this->self_abi().is_sleeve(put_abi(result))), result);
+                return (check_abi_result(this->self_abi().category(put_abi(result))), result);
+            }
+            
+            float score() const
+            {
+                float result;
+
+                return (check_abi_result(this->self_abi().score(put_abi(result))), result);
             }
 
-            param_vector<float> color_ratios() const
+            param_string version() const
             {
-                param_vector<float> result;
+                param_string result{ nullptr };
 
-                return (check_abi_result(this->self_abi().color_ratios(put_abi(result))), result);
+                return (check_abi_result(this->self_abi().version(put_abi(result))), result);
             }
         };
     };
 }
 
-namespace glasssix::workcloth
+namespace glasssix::crowd
 {
     struct box_info : exposing::inherits<box_info>
     {

@@ -166,9 +166,13 @@ namespace glasssix
 					//float nms = static_cast<float>(root["nms"].asDouble());
 					float nms = 0.4f;
 					std::string models_directory = root["models_directory"].asString();
+					int algo_type = root["algo_type"].asInt();
+					int model_type = root["model_type"].asInt();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"device", box(device)},
 						 {u8"nms", box(nms)},
+						 {u8"algo_type", box(algo_type)},
+						 {u8"model_type", box(model_type)},
 						 {u8"models_directory", box(std::string_view(models_directory))} });
 
 					instance = unbox<guid>(plugin.execute(u8"longinus.new", param));
@@ -280,21 +284,24 @@ namespace glasssix
 							jobj_face["attributes"]["roll"] = Json::Value(obj.roll());
 							jobj_face["attributes"]["glass_index"] = Json::Int(obj.glass_index());
 							jobj_face["attributes"]["mask_index"] = Json::Int(obj.mask_index());
+
+							Json::Value jarray_landmark;
+							for (const auto& pt : obj.pts())
+							{
+
+								Json::Value jobj_point;
+								jobj_point["x"] = Json::Int((int)pt.key());
+								jobj_point["y"] = Json::Int((int)pt.value());
+								jarray_landmark.append(jobj_point);
+							}
+							jobj_face["landmark"] = jarray_landmark;
 						}
 						else
-							jobj_face["attributes"] = Json::Value(Json::nullValue);
-
-						Json::Value jarray_landmark;
-
-						for (const auto& pt : obj.pts())
 						{
-
-							Json::Value jobj_point;
-							jobj_point["x"] = Json::Int((int)pt.key());
-							jobj_point["y"] = Json::Int((int)pt.value());
-							jarray_landmark.append(jobj_point);
+							jobj_face["attributes"] = Json::Value(Json::nullValue);
+							jobj_face["landmark"] = Json::Value(Json::arrayValue);
 						}
-						jobj_face["landmark"] = jarray_landmark;
+
 						jarray_rect.append(jobj_face);
 					}
 

@@ -6,12 +6,12 @@
 
 namespace glasssix::longinus
 {
-	struct retina_net;
+	struct facedetector;
 }
 
 namespace glasssix::exposing::impl
 {
-	template<> struct abi<longinus::retina_net>
+	template<> struct abi<longinus::facedetector>
 	{
 		using identity_type = type_identity_interface;
 
@@ -19,8 +19,7 @@ namespace glasssix::exposing::impl
 
 		struct type : abi_unknown_object
 		{
-			virtual std::int32_t G6_ABI_CALL init(abi_in_t<param_string> racy_path, abi_in_t<param_string> tracker_racy_path, float nms, std::int32_t device) noexcept = 0;
-			virtual std::int32_t G6_ABI_CALL init(abi_in_t<param_span<const param_string>> phai, abi_in_t<param_string> racy_path, abi_in_t<param_span<const param_string>> tracker_phai, abi_in_t<param_string> tracker_racy_path, float nms, std::int32_t device) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL init(abi_in_t<param_string> models_directory, std::int32_t algo_type, std::int32_t model_type, float nms, std::int32_t device) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL detect(abi_in_t<param_span<std::uint8_t>> bitmap, std::int32_t channels, std::int32_t height, std::int32_t width, std::int32_t min_size, float threshold, std::int32_t order, bool do_attributing, abi_out_t<param_vector<longinus::face_info>> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL single_trace(abi_in_t<longinus::face_info> face, abi_in_t<param_span<std::uint8_t>> bitmap, std::int32_t channels, std::int32_t height, std::int32_t width, std::int32_t order, abi_out_t<longinus::face_info> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL center_scale_align(abi_in_t<param_span<std::uint8_t>> bitmap, std::int32_t channels, std::int32_t height, std::int32_t width,
@@ -30,16 +29,11 @@ namespace glasssix::exposing::impl
 	};
 
 	template<typename Derived>
-	struct interface_vtable<Derived, longinus::retina_net> : interface_vtable_base<Derived, longinus::retina_net>
+	struct interface_vtable<Derived, longinus::facedetector> : interface_vtable_base<Derived, longinus::facedetector>
 	{
-		virtual std::int32_t G6_ABI_CALL init(abi_in_t<param_string> racy_path, abi_in_t<param_string> tracker_racy_path, float nms, std::int32_t device) noexcept override
+		virtual std::int32_t G6_ABI_CALL init(abi_in_t<param_string> models_directory, std::int32_t algo_type, std::int32_t model_type, float nms, std::int32_t device) noexcept override
 		{
-			return abi_safe_call([&] { this->self().init(create_from_abi<param_string>(racy_path), create_from_abi<param_string>(tracker_racy_path), nms, device); });
-		}
-
-		virtual std::int32_t G6_ABI_CALL init(abi_in_t<param_span<const param_string>> phai, abi_in_t<param_string> racy_path, abi_in_t<param_span<const param_string>> tracker_phai, abi_in_t<param_string> tracker_racy_path, float nms, std::int32_t device) noexcept override
-		{
-			return abi_safe_call([&] { this->self().init(create_from_abi<param_span<const param_string>>(phai), create_from_abi<param_string>(racy_path), create_from_abi<param_span<const param_string>>(tracker_phai), create_from_abi<param_string>(tracker_racy_path), nms, device); });
+			return abi_safe_call([&] { this->self().init(create_from_abi<param_string>(models_directory), algo_type, model_type, nms, device); });
 		}
 
 		virtual std::int32_t G6_ABI_CALL detect(abi_in_t<param_span<std::uint8_t>> bitmap, std::int32_t channels, std::int32_t height, std::int32_t width, std::int32_t min_size, float threshold, std::int32_t order, bool do_attributing, abi_out_t<param_vector<longinus::face_info>> result) noexcept override
@@ -64,19 +58,14 @@ namespace glasssix::exposing::impl
 		}
 	};
 
-	template<> struct abi_adapter<longinus::retina_net>
+	template<> struct abi_adapter<longinus::facedetector>
 	{
 		template<typename Derived>
-		struct type : enable_self_abi_awareness<Derived, longinus::retina_net>
+		struct type : enable_self_abi_awareness<Derived, longinus::facedetector>
 		{
-			void init(const param_string& racy_path, const param_string& tracker_racy_path, float nms = 0.4, std::int32_t device = -1) const
+			void init(const param_string& models_directory, std::int32_t algo_type, std::int32_t model_type, float nms = 0.4, std::int32_t device = -1) const
 			{
-				check_abi_result(this->self_abi().init(get_abi(racy_path), get_abi(tracker_racy_path), get_abi(nms), get_abi(device)));
-			}
-
-			void init(param_span<const param_string> phai, const param_string& racy_path, param_span<const param_string> tracker_phai, const param_string& tracker_racy_path, float nms = 0.4, std::int32_t device = -1) const
-			{
-				check_abi_result(this->self_abi().init(get_abi(phai), get_abi(racy_path), get_abi(tracker_phai), get_abi(tracker_racy_path), get_abi(nms), get_abi(device)));
+				check_abi_result(this->self_abi().init(get_abi(models_directory), get_abi(algo_type), get_abi(model_type), get_abi(nms), get_abi(device)));
 			}
 
 			param_vector<longinus::face_info> detect(param_span<std::uint8_t> bitmap, std::int32_t channels, std::int32_t height, std::int32_t width, std::int32_t min_size, float threshold, std::int32_t order, bool do_attributing) const
@@ -112,7 +101,7 @@ namespace glasssix::exposing::impl
 
 namespace glasssix::longinus
 {
-	struct retina_net : exposing::inherits<retina_net>
+	struct facedetector : exposing::inherits<facedetector>
 	{
 		using inherits::inherits;
 	};

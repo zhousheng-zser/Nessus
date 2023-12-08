@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <iostream>
 
-#include <longinus/retina_net.hpp>
+#include <longinus/facedetector.hpp>
 #include <irisviel/face_service.hpp>
 #include <romancia/face_alignment.hpp>
 #include <gaius/feature_extractor.hpp>
@@ -134,10 +134,12 @@ namespace glasssix::exposing::nessus
 		static unknown_object longinus_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto algo_type = unbox<std::int32_t>(params.get_value(u8"algo_type"));
+			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
 			auto nms = unbox<float>(params.get_value(u8"nms"));
 			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
 
-			return add_instance(package_names::longinus, make_exported_interface<retina_net>(models_directory + u8"/longinus.racy", models_directory + u8"/pfld_land71_simp.racy", nms, device));
+			return add_instance(package_names::longinus, make_exported_interface<facedetector>(models_directory, algo_type, model_type, nms, device));
 		}
 
 		static 	unknown_object damocles_new(const param_hash_map<param_string, unknown_object>& params)
@@ -163,7 +165,7 @@ namespace glasssix::exposing::nessus
 			auto dimension = unbox<std::int32_t>(params.get_value(u8"dimension"));
 			auto working_directory = unbox<param_string>(params.get_value(u8"working_directory"));
 
-			return add_instance(package_names::irisviel, make_exported_interface<face_service>(irisviel::face_service_implemention::lsh_algorithm, single_database_capacity, dimension, working_directory));
+			return add_instance(package_names::irisviel, make_exported_interface<face_service>(irisviel::face_service_implemention::brute_force, single_database_capacity, dimension, working_directory));
 		}
 
 		static unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
@@ -207,7 +209,7 @@ namespace glasssix::exposing::nessus
 		static unknown_object longinus_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<retina_net>(params);
+			auto instance = get_instance<facedetector>(params);
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
@@ -249,7 +251,7 @@ namespace glasssix::exposing::nessus
 		static unknown_object longinus_trace(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<retina_net>(params);
+			auto instance = get_instance<facedetector>(params);
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));
@@ -263,7 +265,7 @@ namespace glasssix::exposing::nessus
 		static unknown_object longinus_center_scale_align_face(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
-			auto instance = get_instance<retina_net>(params);
+			auto instance = get_instance<facedetector>(params);
 			auto image = unbox<param_span<std::uint8_t>>(params.get_value(u8"image"));
 			auto height = unbox<std::int32_t>(params.get_value(u8"height"));
 			auto width = unbox<std::int32_t>(params.get_value(u8"width"));

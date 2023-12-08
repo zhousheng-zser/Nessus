@@ -2,28 +2,25 @@
 #include "../protocol_register.hpp"
 #include "../message_protocol_jsoncpp.hpp"
 //
-#include <leavepost/box_info.hpp>
-#include <leavepost/yolo_net.hpp>
-
+#include <wander/detect_code.hpp>
+#include <wander/box_info.hpp>
+#include <iostream>
 namespace glasssix::exposing::nessus::Protocol {
 
-	class P_Leavepost : public Protocol
+	class P_Wander : public Protocol
 	{
-		static Json::Value Leavepost_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Wander_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
-			try
-			{
 
+			try {
 				int device = root["device"].asInt();
-				// printf("device:%d\n", device);
 				std::string models_directory = root["models_directory"].asString();
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"device", box(device)},
-					 {u8"models_directory", box(std::string_view(models_directory))} });
+							{u8"models_directory", box(std::string_view(models_directory))} });
 
-
-				instance = unbox<guid>(plugin.execute(u8"leavepost.new", param));
+				instance = unbox<guid>(plugin.execute(u8"wander.new", param));
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 			}
@@ -51,7 +48,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Leavepost_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Wander_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -59,7 +56,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				auto version = plugin.execute(u8"leavepost.version", param);
+				auto version = plugin.execute(u8"wander.version", param);
 
 				value["version"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
 
@@ -90,18 +87,25 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Leavepost_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+
+			static Json::Value Wander_remove_library_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
 			{
+				int id = root["id"].asInt();
 				auto param = make_param_hash_map<param_string, unknown_object>(
-					{ {u8"object_id", box(instance)} });
+					{ 
+						{u8"object_id", box(instance)},
+						{u8"id", box(id)}
+					});
 
-				plugin.execute(u8"leavepost.delete", param);
+				auto version = plugin.execute(u8"wander.remove_library", param);
 
+				value["delete_info"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+
 			}
 			catch (const parser_exception& ex)
 			{
@@ -123,12 +127,11 @@ namespace glasssix::exposing::nessus::Protocol {
 				value["status"]["message"] = Json::Value(ex.what_to_narrow());
 				value["status"]["code"] = Json::Int(ex.result());
 			}
+
 			return value;
 		}
-
-		static Json::Value Leavepost_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Wander_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
-
 			Json::Value value;
 			try
 			{
@@ -141,11 +144,10 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				int roi_width = root["roi_width"].asInt();
 				int roi_height = root["roi_height"].asInt();
-				int channels = 3;
 
 				Json::Value params = root.get("params", Json::Value());
 
-				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, double>();
 
 				for (auto& param_name : params.getMemberNames()) {
 					param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
@@ -159,37 +161,45 @@ namespace glasssix::exposing::nessus::Protocol {
 						{u8"image", box(image_span)},
 						{u8"height", box(height)},
 						{u8"width", box(width)},
+						{u8"object_id", box(instance)},
+
 						{u8"roi_x", box(roi_x)},
 						{u8"roi_y", box(roi_y)},
-						{u8"roi_width", box(roi_width)},
+
+						{u8"roi_width",  box(roi_width)},
 						{u8"roi_height", box(roi_height)},
-						{u8"channels", box(channels)},
-						{u8"object_id", box(instance)},
 						{u8"params", param_map_abi},
 					});
 
-				auto result = plugin.execute(u8"leavepost.detect", param).as<param_vector<leavepost::box_info>>();
+				auto result = plugin.execute(u8"wander.detect", param).as<exposing::param_vector<wander::box_info>>();
+
+				int work_detected = 0;
+				int lying_detected = 0;
+				int desk_detected = 0;
+				int standing_detected = 0;
+
 				Json::Value jarray_box;
-				Json::Value jarray_info;
-				Json::Value jarray_work = Json::Value(Json::arrayValue);
 
-				for (auto obj : result)
+				Json::Value jarray_detected(Json::arrayValue);
+				for (int i = 0; i < result.size(); i++)
 				{
-					int category = Json::Int(obj.label());
-					if (category == 0 || category == 1)
-					{
-						jarray_box["x1"] = Json::Int(obj.x());
-						jarray_box["y1"] = Json::Int(obj.y());
-						jarray_box["x2"] = Json::Int(obj.x() + obj.width());
-						jarray_box["y2"] = Json::Int(obj.height() + obj.y());
-						jarray_box["score"] = Json::Value(obj.confidence());
-						// jarray_box["label"] = Json::Value(obj.label());
-						jarray_work.append(jarray_box);
-					}
 
-
+					jarray_box["x1"] = Json::Int(result[i].x1());
+					jarray_box["y1"] = Json::Int(result[i].y1());
+					jarray_box["x2"] = Json::Int(result[i].x2());
+					jarray_box["y2"] = Json::Int(result[i].y2());
+					jarray_box["id"] = Json::Int(result[i].id());
+					jarray_box["score"] = Json::Value(result[i].confidence());
+					jarray_box["first_show_time"] = Json::Value(result[i].first_show_time());
+					jarray_box["last_show_time"] = Json::Value(result[i].last_show_time());
+					jarray_box["cosine_similarity"] = Json::Value(result[i].cosine_similarity());
+					jarray_detected.append(jarray_box);
+				
 				}
-				jarray_info["hat_list"] = jarray_work;
+
+				Json::Value jarray_info;
+
+				jarray_info["person_info"] = jarray_detected;
 
 				value["detect_info"] = jarray_info;
 				value["status"]["message"] = Json::Value("OK");
@@ -219,18 +229,55 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
+		static Json::Value Wander_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		{
+			Json::Value value;
+			try
+			{
+				auto param = make_param_hash_map<param_string, unknown_object>(
+					{ {u8"object_id", box(instance)} });
+
+				plugin.execute(u8"wander.delete", param);
+
+				value["status"]["message"] = Json::Value("OK");
+				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+			}
+			catch (const parser_exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+			}
+			catch (const Json::Exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+			}
+			catch (const std::exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+			}
+			catch (const abi_error& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what_to_narrow());
+				value["status"]["code"] = Json::Int(ex.result());
+			}
+			return value;
+		}
+
 	public:
 		virtual const std::unordered_map<std::string, protocol_function> parser_protocol_dump() const override {
 			std::unordered_map<std::string, protocol_function> protocol_map;
-			protocol_map["leavepost.new"] = &Leavepost_new_json;
-			protocol_map["leavepost.delete"] = &Leavepost_delete_json;
-			protocol_map["leavepost.detect"] = &Leavepost_detect_json;
-			protocol_map["leavepost.version"] = &Leavepost_version_json;
+			protocol_map["wander.new"] = &Wander_new_json;
+			protocol_map["wander.delete"] = &Wander_delete_json;
+			protocol_map["wander.detect"] = &Wander_detect_json;
+			protocol_map["wander.version"] = &Wander_version_json;
+			protocol_map["wander.remove_library"] = &Wander_remove_library_json;
 
 			return protocol_map;
 		}
 	};
 
-	REGISTE_PROTOCOL(P_Leavepost)
+	REGISTE_PROTOCOL(P_Wander)
 
 }
