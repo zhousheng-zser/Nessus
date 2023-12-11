@@ -139,13 +139,21 @@ namespace glasssix::exposing::nessus::Protocol {
 				int roi_height = root["roi_height"].asInt();
 
 				Json::Value params = root.get("params", Json::Value());
+				Json::Value color_hsv_cfg = root.get("color_hsv_cfg", Json::Value());
 
 				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+				auto color_hsv_cfg_abi = exposing::make_param_hash_map<exposing::param_string, exposing::param_vector<int>>();
 
 				for (auto& param_name : params.getMemberNames()) {
 					param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
 				}
-
+				for (auto& param_name : color_hsv_cfg.getMemberNames()) {
+					param_vector<int> color_array = make_param_vector<int>();
+					auto iarray_data = color_hsv_cfg[param_name.c_str()];
+					for (auto j : iarray_data)
+						color_array.push_back(j.asInt());
+					color_hsv_cfg_abi.add_or_update(param_name.c_str(), color_array);
+				}
 				auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 				param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
@@ -160,6 +168,7 @@ namespace glasssix::exposing::nessus::Protocol {
 					{u8"roi_width",  box(roi_width)},
 					{u8"roi_height", box(roi_height)},
 					{u8"params", param_map_abi},
+					{u8"color_hsv_cfg", color_hsv_cfg_abi},
 					});
 
 				auto result = plugin.execute(u8"workcloth.detect", param).as<exposing::param_vector<workcloth::box_info>>();
