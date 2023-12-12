@@ -60,7 +60,7 @@ namespace glasssix::exposing::impl
         virtual std::int32_t G6_ABI_CALL is_sleeve(abi_out_t<int> result) noexcept override
         {
             return abi_safe_call([&]
-                                 { *result = detach_abi(this->self().is_sleeve()); });
+                { *result = detach_abi(this->self().is_sleeve()); });
         }
 
         virtual std::int32_t G6_ABI_CALL color_ratios(abi_out_t<param_vector<float>> result) noexcept override
@@ -102,7 +102,7 @@ namespace glasssix::exposing::impl
                 return (check_abi_result(this->self_abi().y2(put_abi(result))), result);
             }
 
-			int is_sleeve() const
+            int is_sleeve() const
             {
                 int result = 0;
 
