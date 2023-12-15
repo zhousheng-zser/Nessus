@@ -166,38 +166,67 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				auto result = plugin.execute(u8"playphone.detect", param).as<exposing::param_vector<playphone::box_info>>();
 
-				Json::Value jarray_box;
-				Json::Value jarray_phone_detected(Json::arrayValue);
-				Json::Value jarray_no_phone_detected(Json::arrayValue);
+				Json::Value jarray_normal_detected(Json::arrayValue);
+				Json::Value jarray_bodyerror_detected(Json::arrayValue);
+				Json::Value jarray_playphone_detected(Json::arrayValue);
 
 				for (int i = 0; i < result.size(); i++)
 				{
-					int category = Json::Int(result[i].category());
+					int category = result[i].category();
+					Json::Value jarray_box;
 
-					if (category == 0)
-					{
-						jarray_box["x1"] = Json::Int(result[i].x1());
-						jarray_box["y1"] = Json::Int(result[i].y1());
-						jarray_box["x2"] = Json::Int(result[i].x2());
-						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"] = Json::Value(result[i].score());
-						jarray_phone_detected.append(jarray_box);
+					jarray_box["x1"] = Json::Int(result[i].x1());
+					jarray_box["y1"] = Json::Int(result[i].y1());
+					jarray_box["x2"] = Json::Int(result[i].x2());
+					jarray_box["y2"] = Json::Int(result[i].y2());
+					jarray_box["man_score"] = Json::Value(result[i].confidence());
+
+					if (category == 1) {
+						// good man
+						jarray_normal_detected.append(jarray_box);
 					}
-					else if (category == 1)
-					{
-						jarray_box["x1"] = Json::Int(result[i].x1());
-						jarray_box["y1"] = Json::Int(result[i].y1());
-						jarray_box["x2"] = Json::Int(result[i].x2());
-						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"] = Json::Value(result[i].score());
-						jarray_no_phone_detected.append(jarray_box);
+					else if (category == 2) {
+						// body error
+						auto should_empty_points_list = result[i].phonelocal_list();
+						auto target_points_score_list = result[i].phonescore_list();
+						if (target_points_score_list.size() == 5 && should_empty_points_list.size() == 0) {
+							jarray_box["error_keypoints"]["nose"] = Json::Value(target_points_score_list[0]);
+							jarray_box["error_keypoints"]["Reye"] = Json::Value(target_points_score_list[1]);
+							jarray_box["error_keypoints"]["Leye"] = Json::Value(target_points_score_list[2]);
+							jarray_box["error_keypoints"]["Rhand"] = Json::Value(target_points_score_list[3]);
+							jarray_box["error_keypoints"]["Lhand"] = Json::Value(target_points_score_list[4]);
+						}
+						jarray_bodyerror_detected.append(jarray_box);
+					}
+					else if (category == 0) {
+						// target task: body play phones
+						jarray_box["phone_list"] = Json::Value(Json::arrayValue);
+						Json::Value phone_info;
+						auto phone_loacl_list = result[i].phonelocal_list();
+						auto phone_score_list = result[i].phonescore_list();
+
+						if (phone_loacl_list.size() == 4 * phone_score_list.size())
+						{
+							for (size_t i = 0; i < phone_score_list.size(); i++)
+							{
+								phone_info["x1"] = Json::Int(phone_loacl_list[i + 0]);
+								phone_info["y1"] = Json::Int(phone_loacl_list[i + 1]);
+								phone_info["x2"] = Json::Int(phone_loacl_list[i + 2]);
+								phone_info["y2"] = Json::Int(phone_loacl_list[i + 3]);
+								phone_info["phone_score"] = Json::Value(phone_score_list[i]);
+							}
+							jarray_box["phone_list"].append(phone_info);
+						}
+
+						jarray_playphone_detected.append(jarray_box);
 					}
 				}
 
 				Json::Value jarray_info;
 
-				jarray_info["phone_list"] = jarray_phone_detected;
-				jarray_info["no_phone_list"] = jarray_no_phone_detected;
+				jarray_info["norm_list"] = jarray_normal_detected;
+				jarray_info["bodyerror_list"] = jarray_bodyerror_detected;
+				jarray_info["playphone_list"] = jarray_playphone_detected;
 
 				value["detect_info"] = jarray_info;
 
