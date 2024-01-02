@@ -587,6 +587,8 @@ namespace glasssix
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
 					auto jarray_rect = root["facerectwithfaceinfo_list"];
+					// std::vector<longinus::face_info> faces;
+
 					auto faces = exposing::make_param_vector<longinus::face_info>();
 					for (auto i : jarray_rect)
 					{
