@@ -191,10 +191,10 @@ namespace glasssix::exposing::nessus::Protocol {
 						auto target_points_score_list = result[i].phonescore_list();
 						if (target_points_score_list.size() == 5 && should_empty_points_list.size() == 0) {
 							jarray_box["error_keypoints"]["nose"] = Json::Value(target_points_score_list[0]);
-							jarray_box["error_keypoints"]["Reye"] = Json::Value(target_points_score_list[1]);
-							jarray_box["error_keypoints"]["Leye"] = Json::Value(target_points_score_list[2]);
-							jarray_box["error_keypoints"]["Rhand"] = Json::Value(target_points_score_list[3]);
-							jarray_box["error_keypoints"]["Lhand"] = Json::Value(target_points_score_list[4]);
+							jarray_box["error_keypoints"]["r_eye"] = Json::Value(target_points_score_list[1]);
+							jarray_box["error_keypoints"]["l_eye"] = Json::Value(target_points_score_list[2]);
+							jarray_box["error_keypoints"]["r_hand"] = Json::Value(target_points_score_list[3]);
+							jarray_box["error_keypoints"]["l_hand"] = Json::Value(target_points_score_list[4]);
 						}
 						jarray_bodyerror_detected.append(jarray_box);
 					}
