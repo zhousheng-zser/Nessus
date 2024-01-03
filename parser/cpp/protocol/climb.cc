@@ -61,11 +61,35 @@ namespace glasssix::exposing::nessus::Protocol {
                 int roi_width  = root["roi_width"].asInt();
                 int roi_height = root["roi_height"].asInt();
                 Json::Value params = root.get("params", Json::Value());
+                auto posture_info_list = root["posture_info_list"];
 
                 auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
+                // auto posture_info_list_abi = exposing::make_param_hash_map<exposing::param_string,exposing::param_vector<posture::box_info>>();
 
                 for (auto& param_name : params.getMemberNames()) {
                     param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+                }
+                auto postures = exposing::make_param_vector<posture::box_info>();
+                for (auto p : posture_info_list)
+                {
+                    auto posture = exposing::make_exported_interface<posture::box_info>();
+                    auto key_points = exposing::make_param_vector<float>();
+                    auto pts = p["key_points"];
+                    for(auto j : pts)
+                    {
+                        key_points.push_back(j["x"].asFloat());
+                        key_points.push_back(j["y"].asFloat());
+                        key_points.push_back(j["point_score"].asFloat());
+                    }
+
+                    posture.set_x1(p["location"]["x1"].asInt());
+                    posture.set_x2(p["location"]["x2"].asInt());
+                    posture.set_y1(p["location"]["y1"].asInt());
+                    posture.set_y2(p["location"]["y2"].asInt());
+                    posture.set_score(p["score"].asFloat());
+                    // posture.set_category(p["set_category"].asFloat());
+                    posture.set_key_points(key_points);
+                    postures.push_back(posture);
                 }
 
                 auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
@@ -82,6 +106,7 @@ namespace glasssix::exposing::nessus::Protocol {
                         {u8"roi_y", box(roi_y)},
                         {u8"roi_width",  box(roi_width)},
                         {u8"roi_height", box(roi_height)},
+                        {u8"posture_info_list", postures},
                         {u8"params", param_map_abi},
                     });
 
