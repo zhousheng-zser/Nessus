@@ -151,7 +151,7 @@ namespace glasssix::exposing::nessus::Protocol {
 					{
 						key_points.push_back(j["x"].asInt());
 						key_points.push_back(j["y"].asInt());
-						key_points.push_back(j["point_score"].asInt());
+						key_points.push_back(j["point_score"].asFloat());
 					}
 					posture.set_x1(p["location"]["x1"].asInt());
 					posture.set_y1(p["location"]["y1"].asInt());

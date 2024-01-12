@@ -3,3 +3,7 @@ build*/
 /cmake/ndk_cmake.bat
 .vscode
 /JSON/Schemas
+
+# zhangjian_only
+.vscode/
+.history/

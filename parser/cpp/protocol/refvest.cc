@@ -115,8 +115,8 @@ namespace glasssix::exposing::nessus::Protocol {
 					auto pts = p["key_points"];
 					for(auto j : pts)
 					{
-						key_points.push_back(j["x"].asFloat());
-						key_points.push_back(j["y"].asFloat());
+						key_points.push_back(j["x"].asInt());
+						key_points.push_back(j["y"].asInt());
 						key_points.push_back(j["point_score"].asFloat());
 					}
 					posture.set_key_points(key_points);
