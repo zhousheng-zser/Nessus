@@ -62,10 +62,7 @@ namespace glasssix::exposing::impl
         virtual std::int32_t G6_ABI_CALL category(abi_out_t<int> result) noexcept override
         {
             return abi_safe_call([&]
-                {
-                    *result = detach_abi(this->self().category());
-                }
-            );
+                { *result = detach_abi(this->self().category()); });
         }
 
         virtual std::int32_t G6_ABI_CALL confidence(abi_out_t<float> result) noexcept override

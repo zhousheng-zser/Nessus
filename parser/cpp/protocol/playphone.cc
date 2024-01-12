@@ -140,6 +140,29 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				Json::Value params = root.get("params", Json::Value());
 
+
+				auto posture_info_list = root["posture_info_list"];
+				auto postures = exposing::make_param_vector<posture::box_info>();
+				for (auto p : posture_info_list)
+				{
+					auto posture = exposing::make_exported_interface<posture::box_info>();
+					auto key_points = exposing::make_param_vector<float>();
+					auto pts = p["key_points"];
+					for (auto j : pts)
+					{
+						key_points.push_back(j["x"].asInt());
+						key_points.push_back(j["y"].asInt());
+						key_points.push_back(j["point_score"].asFloat());
+					}
+					posture.set_x1(p["location"]["x1"].asInt());
+					posture.set_y1(p["location"]["y1"].asInt());
+					posture.set_x2(p["location"]["x2"].asInt());
+					posture.set_y2(p["location"]["y2"].asInt());
+					posture.set_score(p["score"].asFloat());
+					posture.set_key_points(key_points);
+					postures.push_back(posture);
+				}
+
 				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
 
 				for (auto& param_name : params.getMemberNames()) {
@@ -162,6 +185,7 @@ namespace glasssix::exposing::nessus::Protocol {
 						{u8"roi_width",  box(roi_width)},
 						{u8"roi_height", box(roi_height)},
 						{u8"params", param_map_abi},
+						{u8"posture_info_list", postures}
 					});
 
 				auto result = plugin.execute(u8"playphone.detect", param).as<exposing::param_vector<playphone::box_info>>();
