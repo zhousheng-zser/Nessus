@@ -88,7 +88,7 @@ namespace glasssix::exposing::nessus::Protocol {
 		}
 
 
-			static Json::Value Wander_remove_library_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+        static Json::Value Wander_remove_library_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -130,6 +130,52 @@ namespace glasssix::exposing::nessus::Protocol {
 
 			return value;
 		}
+		
+		static Json::Value Wander_remove_person_by_index_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		{
+			Json::Value value;
+			try
+			{
+				int id = root["id"].asInt();
+				int device_id = root["device_id"].asInt();
+				auto param = make_param_hash_map<param_string, unknown_object>(
+					{
+						{u8"object_id", box(instance)},
+						{u8"id", box(id)},
+						{u8"device_id", box(device_id)}
+					});
+
+				auto version = plugin.execute(u8"wander.remove_person_by_index", param);
+
+				value["delete_info"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
+				value["status"]["message"] = Json::Value("OK");
+				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+
+			}
+			catch (const parser_exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+			}
+			catch (const Json::Exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+			}
+			catch (const std::exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+			}
+			catch (const abi_error& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what_to_narrow());
+				value["status"]["code"] = Json::Int(ex.result());
+			}
+
+			return value;
+		}
+
 		static Json::Value Wander_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
@@ -153,6 +199,20 @@ namespace glasssix::exposing::nessus::Protocol {
 					param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
 				}
 
+				Json::Value pedestrain_info(Json::arrayValue);
+				pedestrain_info = root["person_list"];
+
+                auto pedestrain_info_abi = exposing::make_param_vector<pedestrian::box_info>();
+                for (int i = 0; i < pedestrain_info.size(); i++)
+                {
+					auto temp = exposing::make_exported_interface<pedestrian::box_info>();
+                    temp.set_x1(pedestrain_info[i]["x1"].asInt());
+                    temp.set_y2(pedestrain_info[i]["y2"].asInt());
+                    temp.set_x2(pedestrain_info[i]["x2"].asInt());
+                    temp.set_y1(pedestrain_info[i]["y1"].asInt());
+                    temp.set_score(pedestrain_info[i]["score"].asFloat());
+                    pedestrain_info_abi.push_back(temp);
+                }
 				auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 				param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
@@ -169,6 +229,7 @@ namespace glasssix::exposing::nessus::Protocol {
 						{u8"roi_width",  box(roi_width)},
 						{u8"roi_height", box(roi_height)},
 						{u8"params", param_map_abi},
+						{u8"person_list", pedestrain_info_abi},
 					});
 
 				auto result = plugin.execute(u8"wander.detect", param).as<exposing::param_vector<wander::box_info>>();
@@ -273,6 +334,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			protocol_map["wander.detect"] = &Wander_detect_json;
 			protocol_map["wander.version"] = &Wander_version_json;
 			protocol_map["wander.remove_library"] = &Wander_remove_library_json;
+			protocol_map["wander.remove_person_by_index"] = &Wander_remove_person_by_index_json;
 
 			return protocol_map;
 		}

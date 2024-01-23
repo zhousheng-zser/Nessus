@@ -15,6 +15,7 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+
 namespace glasssix
 {
 	namespace exposing
@@ -162,15 +163,15 @@ namespace glasssix
 				try
 				{
 					int device = root["device"].asInt();
-					int instance_type = root["instance_type"].asInt();
+					//float nms = static_cast<float>(root["nms"].asDouble());
 					float nms = 0.4f;
 					std::string models_directory = root["models_directory"].asString();
+					int algo_type = root["algo_type"].asInt();
 					int model_type = root["model_type"].asInt();
-
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"device", box(device)},
 						 {u8"nms", box(nms)},
-						 {u8"instance_type", box(instance_type)},
+						 {u8"algo_type", box(algo_type)},
 						 {u8"model_type", box(model_type)},
 						 {u8"models_directory", box(std::string_view(models_directory))} });
 
@@ -243,15 +244,16 @@ namespace glasssix
 				Json::Value value;
 				try
 				{
-
 					int format = root["format"].asInt();
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
 					int min_size = root["min_size"].asInt();
 					float threshold = root["threshold"].asFloat();
 					bool do_attributing = root["do_attributing"].asBool();
+
 					auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 					param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{ {u8"image", box(image_span)},
 						 {u8"height", box(height)},
@@ -282,21 +284,24 @@ namespace glasssix
 							jobj_face["attributes"]["roll"] = Json::Value(obj.roll());
 							jobj_face["attributes"]["glass_index"] = Json::Int(obj.glass_index());
 							jobj_face["attributes"]["mask_index"] = Json::Int(obj.mask_index());
+
+							Json::Value jarray_landmark;
+							for (const auto& pt : obj.pts())
+							{
+
+								Json::Value jobj_point;
+								jobj_point["x"] = Json::Int((int)pt.key());
+								jobj_point["y"] = Json::Int((int)pt.value());
+								jarray_landmark.append(jobj_point);
+							}
+							jobj_face["landmark"] = jarray_landmark;
 						}
 						else
-							jobj_face["attributes"] = Json::Value(Json::nullValue);
-
-						Json::Value jarray_landmark;
-
-						for (const auto& pt : obj.pts())
 						{
-
-							Json::Value jobj_point;
-							jobj_point["x"] = Json::Int((int)pt.key());
-							jobj_point["y"] = Json::Int((int)pt.value());
-							jarray_landmark.append(jobj_point);
+							jobj_face["attributes"] = Json::Value(Json::nullValue);
+							jobj_face["landmark"] = Json::Value(Json::arrayValue);
 						}
-						jobj_face["landmark"] = jarray_landmark;
+
 						jarray_rect.append(jobj_face);
 					}
 
@@ -582,6 +587,8 @@ namespace glasssix
 					int height = root["height"].asInt();
 					int width = root["width"].asInt();
 					auto jarray_rect = root["facerectwithfaceinfo_list"];
+					// std::vector<longinus::face_info> faces;
+
 					auto faces = exposing::make_param_vector<longinus::face_info>();
 					for (auto i : jarray_rect)
 					{
@@ -2305,7 +2312,6 @@ namespace glasssix
 					for (auto i : jarray_feature)
 						feature.push_back(i.asFloat());
 
-					
 					auto assuming_top = root.get("top", Json::nullValue);
 					auto assuming_min_similarity = root.get("min_similarity", Json::nullValue);
 					bool has_top = assuming_top.isIntegral();
@@ -2343,6 +2349,7 @@ namespace glasssix
 
 						value["result"].append(jobj_result);
 					}
+
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 				}

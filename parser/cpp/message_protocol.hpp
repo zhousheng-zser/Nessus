@@ -135,13 +135,12 @@ namespace glasssix
 				try
 				{
 					int device = static_cast<int>(root["device"].get<int64_t>().value());
-					int instance_type = root["instance_type"].asInt();
+					//float nms = static_cast<float>(root["nms"].get<double>().value());
 					float nms = 0.4f;
 					std::string_view models_directory = root["models_directory"].get<std::string_view>().value();
 					auto param = make_param_hash_map<param_string, unknown_object>(
 						{
 							{u8"device", box(device)},
-							{u8"instance_type", box(instance_type)},
 							{u8"nms", box(nms)},
 							{u8"models_directory", box(models_directory)}
 						});

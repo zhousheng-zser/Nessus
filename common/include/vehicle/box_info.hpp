@@ -1,10 +1,10 @@
 #pragma once
-#ifndef _ONPHONE_BOX_INFO_HPP_
-#define _ONPHONE_BOX_INFO_HPP_
+#ifndef _VEHICLE_BOX_INFO_HPP_
+#define _VEHICLE_BOX_INFO_HPP_
 
 #include <abi/consumer.hpp>
 
-namespace glasssix::onphone
+namespace glasssix::vehicle
 {
     struct box_info;
 }
@@ -12,10 +12,10 @@ namespace glasssix::onphone
 namespace glasssix::exposing::impl
 {
     template<>
-    struct abi<onphone::box_info>
+    struct abi<vehicle::box_info>
     {
         using identity_type = type_identity_interface;
-        static constexpr guid id{ "{446E5551-BD1A-448E-A0B7-B16C02914D43}" };
+        static constexpr guid id{ "{6AE56276-408D-4BD3-B1C2-C0ECD7C42C27}" };
 
         struct type : abi_unknown_object
         {
@@ -27,19 +27,15 @@ namespace glasssix::exposing::impl
 
             virtual std::int32_t G6_ABI_CALL y2(abi_out_t<std::int32_t> result) noexcept = 0;
 
-            virtual std::int32_t G6_ABI_CALL category(abi_out_t<float> result) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL score(abi_out_t<float> result) noexcept = 0;
 
-            virtual std::int32_t G6_ABI_CALL confidence(abi_out_t<float> result) noexcept = 0;
-
-            virtual std::int32_t G6_ABI_CALL phonelocal_list(abi_out_t<exposing::param_vector<std::int32_t>> result) noexcept = 0;
-
-            virtual std::int32_t G6_ABI_CALL phonescore_list(abi_out_t<exposing::param_vector<float>> result) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL category(abi_out_t<std::int32_t> result) noexcept = 0;
 
         };
     };
 
     template <typename Derived>
-    struct interface_vtable<Derived, onphone::box_info> : interface_vtable_base<Derived, onphone::box_info>
+    struct interface_vtable<Derived, vehicle::box_info> : interface_vtable_base<Derived, vehicle::box_info>
     {
         virtual std::int32_t G6_ABI_CALL x1(abi_out_t<std::int32_t> result) noexcept override
         {
@@ -77,7 +73,16 @@ namespace glasssix::exposing::impl
             );
         }
 
-        virtual std::int32_t G6_ABI_CALL category(abi_out_t<float> result) noexcept override
+        virtual std::int32_t G6_ABI_CALL score(abi_out_t<float> result) noexcept override
+        {
+            return abi_safe_call([&]
+                {
+                    *result = detach_abi(this->self().score());
+                }
+            );
+        }
+
+        virtual std::int32_t G6_ABI_CALL category(abi_out_t<std::int32_t> result) noexcept override
         {
             return abi_safe_call([&]
                 {
@@ -86,40 +91,13 @@ namespace glasssix::exposing::impl
             );
         }
 
-        virtual std::int32_t G6_ABI_CALL confidence(abi_out_t<float> result) noexcept override
-        {
-            return abi_safe_call([&]
-                {
-                    *result = detach_abi(this->self().confidence());
-                }
-            );
-        }
-
-        virtual std::int32_t G6_ABI_CALL phonelocal_list(abi_out_t<exposing::param_vector<std::int32_t>> result) noexcept override
-        {
-            return abi_safe_call([&]
-                {
-                    *result = detach_abi(this->self().phonelocal_list());
-                }
-            );
-        }
-
-        virtual std::int32_t G6_ABI_CALL phonescore_list(abi_out_t<exposing::param_vector<float>> result) noexcept override
-        {
-            return abi_safe_call([&]
-                {
-                    *result = detach_abi(this->self().phonescore_list());
-                }
-            );
-        }
-
     };
 
     template <>
-    struct abi_adapter<onphone::box_info>
+    struct abi_adapter<vehicle::box_info>
     {
         template <typename Derived>
-        struct type : enable_self_abi_awareness<Derived, onphone::box_info>
+        struct type : enable_self_abi_awareness<Derived, vehicle::box_info>
         {
             std::int32_t x1() const
             {
@@ -145,35 +123,23 @@ namespace glasssix::exposing::impl
                 return (check_abi_result(this->self_abi().y2(put_abi(result))), result);
             }
 
-            float category() const
+            float score() const
             {
                 float result;
+                return (check_abi_result(this->self_abi().score(put_abi(result))), result);
+            }
+
+            std::int32_t category() const
+            {
+                std::int32_t result;
                 return (check_abi_result(this->self_abi().category(put_abi(result))), result);
-            }
-
-            float confidence() const
-            {
-                float result;
-                return (check_abi_result(this->self_abi().confidence(put_abi(result))), result);
-            }
-
-            exposing::param_vector<std::int32_t> phonelocal_list() const
-            {
-                exposing::param_vector<std::int32_t> result{ nullptr };
-                return (check_abi_result(this->self_abi().phonelocal_list(put_abi(result))), result);
-            }
-
-            exposing::param_vector<float> phonescore_list() const
-            {
-                exposing::param_vector<float> result{ nullptr };
-                return (check_abi_result(this->self_abi().phonescore_list(put_abi(result))), result);
             }
 
         };
     };
 }
 
-namespace glasssix::onphone
+namespace glasssix::vehicle
 {
     struct box_info : exposing::inherits<box_info>
     {
