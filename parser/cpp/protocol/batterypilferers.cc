@@ -55,7 +55,6 @@ namespace glasssix::exposing::nessus::Protocol {
 			Json::Value value;
 			try
 			{
-				std::cout<<"dsds111d\n";
 				int format = root["format"].asInt();
 				int height = root["height"].asInt();
 				int width = root["width"].asInt();
@@ -75,7 +74,6 @@ namespace glasssix::exposing::nessus::Protocol {
 				int channels = 24;
 				
 				auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width*8, height);
-				std::cout<<"frame->size_: "<<frame->size_<<std::endl;
 				param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
 				auto param = make_param_hash_map<param_string, unknown_object>(
@@ -101,7 +99,6 @@ namespace glasssix::exposing::nessus::Protocol {
 				Json::Value jarray_info;
                 jarray_info["score"] = Json::Value(0);
                 jarray_info["category"] = Json::Int(0);
-
                 for (int i = 0; i < result.size(); i++)
                 {
                     int category = Json::Int(result[i].category());
@@ -109,7 +106,7 @@ namespace glasssix::exposing::nessus::Protocol {
                     // Json::Value jarray_box;
                     if (category == 1)
                     {
-						jarray_info["score"] = Json::Value(result[i].score());
+						jarray_info["score"] = Json::Value(std::max(result[i].score(), jarray_info["score"].asFloat() ) );
                 		jarray_info["category"] = Json::Int(1);
                         // jarray_box["x1"] = Json::Int(result[i].x1());
                         // jarray_box["y1"] = Json::Int(result[i].y1());
