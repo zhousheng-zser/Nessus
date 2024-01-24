@@ -94,8 +94,8 @@ namespace glasssix::exposing::nessus::Protocol {
 				Json::Value jarray_box;
 				Json::Value jarray_work_detected(Json::arrayValue);
 				Json::Value jarray_lying_detected(Json::arrayValue);
-				Json::Value jarray_desk_detected(Json::arrayValue);
-				Json::Value jarray_standing_detected(Json::arrayValue);
+				// Json::Value jarray_desk_detected(Json::arrayValue);
+				// Json::Value jarray_standing_detected(Json::arrayValue);
 
 				for (int i = 0; i < result.size(); i++)
 				{
@@ -120,24 +120,24 @@ namespace glasssix::exposing::nessus::Protocol {
 						jarray_box["score"] = Json::Value(result[i].confidence());
 						jarray_lying_detected.append(jarray_box);
 					}
-					else if (category == 2)
-					{
-						jarray_box["x1"] = Json::Int(result[i].x1());
-						jarray_box["y1"] = Json::Int(result[i].y1());
-						jarray_box["x2"] = Json::Int(result[i].x2());
-						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"] = Json::Value(result[i].confidence());
-						jarray_desk_detected.append(jarray_box);
-					}
-					else if (category == 3)
-					{
-						jarray_box["x1"] = Json::Int(result[i].x1());
-						jarray_box["y1"] = Json::Int(result[i].y1());
-						jarray_box["x2"] = Json::Int(result[i].x2());
-						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"] = Json::Value(result[i].confidence());
-						jarray_standing_detected.append(jarray_box);
-					}
+					// else if (category == 2)
+					// {
+					// 	jarray_box["x1"] = Json::Int(result[i].x1());
+					// 	jarray_box["y1"] = Json::Int(result[i].y1());
+					// 	jarray_box["x2"] = Json::Int(result[i].x2());
+					// 	jarray_box["y2"] = Json::Int(result[i].y2());
+					// 	jarray_box["score"] = Json::Value(result[i].confidence());
+					// 	jarray_desk_detected.append(jarray_box);
+					// }
+					// else if (category == 3)
+					// {
+					// 	jarray_box["x1"] = Json::Int(result[i].x1());
+					// 	jarray_box["y1"] = Json::Int(result[i].y1());
+					// 	jarray_box["x2"] = Json::Int(result[i].x2());
+					// 	jarray_box["y2"] = Json::Int(result[i].y2());
+					// 	jarray_box["score"] = Json::Value(result[i].confidence());
+					// 	jarray_standing_detected.append(jarray_box);
+					// }
 				}
 
 				Json::Value jarray_info;
@@ -147,9 +147,9 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				jarray_info["lying_list"] = jarray_lying_detected;
 
-				jarray_info["desk_list"] = jarray_desk_detected;
+				// jarray_info["desk_list"] = jarray_desk_detected;
 
-				jarray_info["standing_list"] = jarray_standing_detected;
+				// jarray_info["standing_list"] = jarray_standing_detected;
 
 				value["detect_info"] = jarray_info;
 				value["status"]["message"] = Json::Value("OK");
