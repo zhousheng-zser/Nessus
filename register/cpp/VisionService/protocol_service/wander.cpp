@@ -30,9 +30,8 @@ namespace glasssix::exposing::nessus::Service
 			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
 			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, double>>();
-			auto pedestrain_info_abi = params.get_value(u8"person_list").as<exposing::param_vector<pedestrian::box_info>>();
 
-			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi, pedestrain_info_abi);
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
 		static unknown_object wander_version(const param_hash_map<param_string, unknown_object>& params)
@@ -49,30 +48,19 @@ namespace glasssix::exposing::nessus::Service
 			return box(instance.remove_library(id));
 		}
 
-
-		static unknown_object wander_remove_person_by_index(const param_hash_map<param_string, unknown_object>& params)
-		{
-			auto instance = vision_service_impl::impl::get_instance<wander::detect_code>(params);
-
-			auto id = unbox<std::int32_t>(params.get_value(u8"id"));
-			auto device_id = unbox<std::int32_t>(params.get_value(u8"device_id"));
-			return box(instance.remove_person_by_index(device_id, id));
-		}
-
 		static constexpr utf8_string_view MODULE_{ u8"wander" };
 		static constexpr utf8_string_view NEW_{ u8"wander.new" };
 		static constexpr utf8_string_view DELETE_{ u8"wander.delete" };
 		static constexpr utf8_string_view VERSION_{ u8"wander.version" };
 		static constexpr utf8_string_view detect_{ u8"wander.detect" };
 		static constexpr utf8_string_view remove_library{ u8"wander.remove_library" };
-		static constexpr utf8_string_view remove_person_by_index{ u8"wander.remove_person_by_index" };
 	public:
 		virtual const void service_dump(std::unordered_map<param_string, service_function_ty>& service_map) const override {
 			service_map.try_emplace(NEW_, &wander_new);
 			service_map.try_emplace(DELETE_, DELETE_FUNC);
 			service_map.try_emplace(VERSION_, &wander_version);
 			service_map.try_emplace(remove_library, &wander_remove_library);
-			service_map.try_emplace(remove_person_by_index, &wander_remove_person_by_index);
+
 			service_map.try_emplace(detect_, &wander_detect);
 		}
 	};

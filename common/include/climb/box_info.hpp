@@ -3,8 +3,6 @@
 
 #include <abi/consumer.hpp>
 
-#include "../posture/detect_code.hpp"
-
 namespace glasssix::climb
 {
     struct box_info;

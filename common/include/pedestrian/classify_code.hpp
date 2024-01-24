@@ -104,22 +104,22 @@ namespace glasssix::exposing::impl
                 std::int32_t roi_height,
                 const exposing::param_hash_map<exposing::param_string, float>& param_map_abi) const
             {
-                exposing::param_vector<pedestrian::box_info> result{ nullptr };
+				exposing::param_vector<pedestrian::box_info> result{ nullptr };
 
-                return (check_abi_result(
-                    this->self_abi().detect(
-                        get_abi(bitmap),
-                        channels,
-                        height,
-                        width,
-                        roi_x,
-                        roi_y,
-                        roi_width,
-                        roi_height,
-                        get_abi(param_map_abi),
-                        put_abi(result))
+				return (check_abi_result(
+					this->self_abi().detect(
+						get_abi(bitmap),
+						channels,
+						height,
+						width,
+						roi_x,
+						roi_y,
+						roi_width,
+						roi_height,
+						get_abi(param_map_abi),
+						put_abi(result))
 				),result);
-            }
+			}
 
             param_string version() const
             {

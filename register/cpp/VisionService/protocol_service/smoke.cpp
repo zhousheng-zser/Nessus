@@ -28,10 +28,9 @@ namespace glasssix::exposing::nessus::Service
 			auto roi_y = unbox<std::int32_t>(params.get_value(u8"roi_y"));
 			auto roi_width = unbox<std::int32_t>(params.get_value(u8"roi_width"));
 			auto roi_height = unbox<std::int32_t>(params.get_value(u8"roi_height"));
-			auto posture_info_list = params.get_value(u8"posture_info_list").as<exposing::param_vector<posture::box_info>>();
 			auto params_map_abi = params.get_value(u8"params").as<exposing::param_hash_map<exposing::param_string, float>>();
 
-			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, posture_info_list, params_map_abi);
+			return instance.detect(image, channels, height, width, roi_x, roi_y, roi_width, roi_height, params_map_abi);
 		}
 
 		static unknown_object smoke_version(const param_hash_map<param_string, unknown_object>& params)
