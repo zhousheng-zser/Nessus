@@ -94,6 +94,9 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
+				//YHC
+				std::cout << "NEW DEL" << std::endl;
+
 				plugin.execute(u8"pedestrian.delete", param);
 
 				value["status"]["message"] = Json::Value("OK");
