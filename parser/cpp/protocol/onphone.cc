@@ -132,10 +132,10 @@ namespace glasssix::exposing::nessus::Protocol {
 							{
 								for (size_t i = 0; i < phone_score_list.size(); i++)
 								{
-									phone_info["x1"] = Json::Int(phone_loacl_list[i + 0]);
-									phone_info["y1"] = Json::Int(phone_loacl_list[i + 1]);
-									phone_info["x2"] = Json::Int(phone_loacl_list[i + 2]);
-									phone_info["y2"] = Json::Int(phone_loacl_list[i + 3]);
+									phone_info["x1"] = Json::Int(phone_loacl_list[i * 4 + 0]);
+									phone_info["y1"] = Json::Int(phone_loacl_list[i * 4 + 1]);
+									phone_info["x2"] = Json::Int(phone_loacl_list[i * 4 + 2]);
+									phone_info["y2"] = Json::Int(phone_loacl_list[i * 4 + 3]);
 									phone_info["phone_score"] = Json::Value(phone_score_list[i]);
 								}
 								jarray_box["phone_list"].append(phone_info);
@@ -273,10 +273,10 @@ namespace glasssix::exposing::nessus::Protocol {
 							{
 								for (size_t i = 0; i < phone_score_list.size(); i++)
 								{
-									phone_info["x1"] = Json::Int(phone_loacl_list[i + 0]);
-									phone_info["y1"] = Json::Int(phone_loacl_list[i + 1]);
-									phone_info["x2"] = Json::Int(phone_loacl_list[i + 2]);
-									phone_info["y2"] = Json::Int(phone_loacl_list[i + 3]);
+									phone_info["x1"] = Json::Int(phone_loacl_list[i * 4 + 0]);
+									phone_info["y1"] = Json::Int(phone_loacl_list[i * 4 + 1]);
+									phone_info["x2"] = Json::Int(phone_loacl_list[i * 4 + 2]);
+									phone_info["y2"] = Json::Int(phone_loacl_list[i * 4 + 3]);
 									phone_info["phone_score"] = Json::Value(phone_score_list[i]);
 								}
 								jarray_box["phone_list"].append(phone_info);
