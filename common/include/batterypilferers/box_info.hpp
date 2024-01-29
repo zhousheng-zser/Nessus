@@ -1,9 +1,9 @@
-#ifndef _HEAD_BOX_INFO_HPP_
-#define _HEAD_BOX_INFO_HPP_
+#ifndef _batterypilferers_BOX_INFO_HPP_
+#define _batterypilferers_BOX_INFO_HPP_
 
 #include <abi/consumer.hpp>
 
-namespace glasssix::head
+namespace glasssix::batterypilferers
 {
     struct box_info;
 }
@@ -11,11 +11,11 @@ namespace glasssix::head
 namespace glasssix::exposing::impl
 {
     template<>
-    struct abi<head::box_info>
+    struct abi<batterypilferers::box_info>
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{ "004C36B8-A53E-4DE1-820C-516075C703A4" };
+        static constexpr guid id{ "D85B45E5-6BF7-ADEA-755A-DC21DED8E887" };
 
         struct type : abi_unknown_object
         {
@@ -25,18 +25,11 @@ namespace glasssix::exposing::impl
             virtual std::int32_t G6_ABI_CALL y2(abi_out_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL score(abi_out_t<float> result) noexcept = 0;
 			virtual std::int32_t G6_ABI_CALL category(abi_out_t<int> result) noexcept = 0;
-
-            virtual std::int32_t G6_ABI_CALL set_x1(abi_in_t<int> result) noexcept = 0;
-            virtual std::int32_t G6_ABI_CALL set_y1(abi_in_t<int> result) noexcept = 0;
-            virtual std::int32_t G6_ABI_CALL set_x2(abi_in_t<int> result) noexcept = 0;
-            virtual std::int32_t G6_ABI_CALL set_y2(abi_in_t<int> result) noexcept = 0;
-            virtual std::int32_t G6_ABI_CALL set_score(abi_in_t<float> result) noexcept = 0;
-            virtual std::int32_t G6_ABI_CALL set_category(abi_in_t<int> result) noexcept = 0;
         };
     };
 
     template <typename Derived>
-    struct interface_vtable<Derived, head::box_info> : interface_vtable_base<Derived, head::box_info>
+    struct interface_vtable<Derived, batterypilferers::box_info> : interface_vtable_base<Derived, batterypilferers::box_info>
     {
 
         virtual std::int32_t G6_ABI_CALL x1(abi_out_t<int> result) noexcept override
@@ -73,43 +66,14 @@ namespace glasssix::exposing::impl
                 { *result = detach_abi(this->self().category()); });
         }
 
-        virtual std::int32_t G6_ABI_CALL set_x1(abi_in_t<int> input) noexcept override
-        {
-            return abi_safe_call([&]
-                { this->self().set_x1(create_from_abi<int>(input)); });
-        }
-        virtual std::int32_t G6_ABI_CALL set_y1(abi_in_t<int> input) noexcept override
-        {
-            return abi_safe_call([&]
-                { this->self().set_y1(create_from_abi<int>(input)); });
-        }
-        virtual std::int32_t G6_ABI_CALL set_x2(abi_in_t<int> input) noexcept override
-        {
-            return abi_safe_call([&]
-                { this->self().set_x2(create_from_abi<int>(input)); });
-        }
-        virtual std::int32_t G6_ABI_CALL set_y2(abi_in_t<int> input) noexcept override
-        {
-            return abi_safe_call([&]
-                { this->self().set_y2(create_from_abi<int>(input)); });
-        }
-        virtual std::int32_t G6_ABI_CALL set_score(abi_in_t<float> input) noexcept override
-        {
-            return abi_safe_call([&]
-                { this->self().set_score(create_from_abi<float>(input)); });
-        }
-        virtual std::int32_t G6_ABI_CALL set_category(abi_in_t<int> input) noexcept override
-        {
-            return abi_safe_call([&]
-                { this->self().set_category(create_from_abi<int>(input)); });
-        }
+
     };
 
     template <>
-    struct abi_adapter<head::box_info>
+    struct abi_adapter<batterypilferers::box_info>
     {
         template <typename Derived>
-        struct type : enable_self_abi_awareness<Derived, head::box_info>
+        struct type : enable_self_abi_awareness<Derived, batterypilferers::box_info>
         {
 
             int x1() const
@@ -148,36 +112,12 @@ namespace glasssix::exposing::impl
 
                 return (check_abi_result(this->self_abi().category(put_abi(result))), result);
             }
-
-            void set_x1(int input)
-            {
-                check_abi_result(this->self_abi().set_x1(get_abi(input)));
-            }
-            void set_y1(int input)
-            {
-                check_abi_result(this->self_abi().set_y1(get_abi(input)));
-            }
-            void set_x2(int input)
-            {
-                check_abi_result(this->self_abi().set_x2(get_abi(input)));
-            }
-            void set_y2(int input)
-            {
-                check_abi_result(this->self_abi().set_y2(get_abi(input)));
-            }
-            void set_score(float input)
-            {
-                check_abi_result(this->self_abi().set_score(get_abi(input)));
-            }
-            void set_category(int input)
-            {
-                check_abi_result(this->self_abi().set_category(get_abi(input)));
-            }           
+           
         };
     };
 }
 
-namespace glasssix::head
+namespace glasssix::batterypilferers
 {
     struct box_info : exposing::inherits<box_info>
     {

@@ -1,54 +1,14 @@
 #pragma once
 #include "../protocol_register.hpp"
 #include "../message_protocol_jsoncpp.hpp"
-//
-#include <playphone/detect_code.hpp>
-#include <playphone/box_info.hpp>
+#include <vehicle/classify_code.hpp>
+#include <vehicle/box_info.hpp>
 
 namespace glasssix::exposing::nessus::Protocol {
 
-	class P_PlayPhone : public Protocol
+	class P_Vehicle : public Protocol
 	{
-		static Json::Value Playphone_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
-		{
-			Json::Value value;
-
-			try {
-				int device = root["device"].asInt();
-				std::string models_directory = root["models_directory"].asString();
-				auto param = make_param_hash_map<param_string, unknown_object>(
-					{ {u8"device", box(device)},
-							{u8"models_directory", box(std::string_view(models_directory))} });
-
-				instance = unbox<guid>(plugin.execute(u8"playphone.new", param));
-				value["status"]["message"] = Json::Value("OK");
-				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-			}
-			catch (const parser_exception& ex)
-			{
-				value["status"]["message"] = Json::Value(ex.what());
-				value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
-			}
-			catch (const Json::Exception& ex)
-			{
-				value["status"]["message"] = Json::Value(ex.what());
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-			}
-			catch (const std::exception& ex)
-			{
-				value["status"]["message"] = Json::Value(ex.what());
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
-			}
-			catch (const abi_error& ex)
-			{
-				value["status"]["message"] = Json::Value(ex.what_to_narrow());
-				value["status"]["code"] = Json::Int(ex.result());
-			}
-
-			return value;
-		}
-
-		static Json::Value Playphone_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Vehicle_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -56,7 +16,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				auto version = plugin.execute(u8"playphone.version", param);
+				auto version = plugin.execute(u8"vehicle.version", param);
 
 				value["version"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
 
@@ -87,7 +47,46 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Playphone_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Vehicle_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		{
+			Json::Value value;
+
+			try {
+				int device = root["device"].asInt();
+				std::string models_directory = root["models_directory"].asString();
+				auto param = make_param_hash_map<param_string, unknown_object>(
+					{ {u8"device", box(device)},
+					{u8"models_directory", box(std::string_view(models_directory))} });
+
+				instance = unbox<guid>(plugin.execute(u8"vehicle.new", param));
+				value["status"]["message"] = Json::Value("OK");
+				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+			}
+			catch (const parser_exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+			}
+			catch (const Json::Exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+			}
+			catch (const std::exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+			}
+			catch (const abi_error& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what_to_narrow());
+				value["status"]["code"] = Json::Int(ex.result());
+			}
+
+			return value;
+		}
+
+		static Json::Value Vehicle_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -95,7 +94,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				plugin.execute(u8"playphone.delete", param);
+				plugin.execute(u8"vehicle.delete", param);
 
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -123,7 +122,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Playphone_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Vehicle_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -140,29 +139,6 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				Json::Value params = root.get("params", Json::Value());
 
-
-				auto posture_info_list = root["posture_info_list"];
-				auto postures = exposing::make_param_vector<posture::box_info>();
-				for (auto p : posture_info_list)
-				{
-					auto posture = exposing::make_exported_interface<posture::box_info>();
-					auto key_points = exposing::make_param_vector<float>();
-					auto pts = p["key_points"];
-					for (auto j : pts)
-					{
-						key_points.push_back(j["x"].asInt());
-						key_points.push_back(j["y"].asInt());
-						key_points.push_back(j["point_score"].asFloat());
-					}
-					posture.set_x1(p["location"]["x1"].asInt());
-					posture.set_y1(p["location"]["y1"].asInt());
-					posture.set_x2(p["location"]["x2"].asInt());
-					posture.set_y2(p["location"]["y2"].asInt());
-					posture.set_score(p["score"].asFloat());
-					posture.set_key_points(key_points);
-					postures.push_back(posture);
-				}
-
 				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
 
 				for (auto& param_name : params.getMemberNames()) {
@@ -174,85 +150,40 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{
-						{u8"image", box(image_span)},
-						{u8"height", box(height)},
-						{u8"width", box(width)},
-						{u8"object_id", box(instance)},
+					{u8"image", box(image_span)},
+					{u8"height", box(height)},
+					{u8"width", box(width)},
+					{u8"object_id", box(instance)},
 
-						{u8"roi_x", box(roi_x)},
-						{u8"roi_y", box(roi_y)},
+					{u8"roi_x", box(roi_x)},
+					{u8"roi_y", box(roi_y)},
 
-						{u8"roi_width",  box(roi_width)},
-						{u8"roi_height", box(roi_height)},
-						{u8"params", param_map_abi},
-						{u8"posture_info_list", postures}
+					{u8"roi_width",  box(roi_width)},
+					{u8"roi_height", box(roi_height)},
+					{u8"params", param_map_abi},
 					});
 
-				auto result = plugin.execute(u8"playphone.detect", param).as<exposing::param_vector<playphone::box_info>>();
+				auto result = plugin.execute(u8"vehicle.detect", param).as<exposing::param_vector<vehicle::box_info>>();
 
-				Json::Value jarray_normal_detected(Json::arrayValue);
-				Json::Value jarray_bodyerror_detected(Json::arrayValue);
-				Json::Value jarray_playphone_detected(Json::arrayValue);
+				Json::Value jarray_box;
+
+				Json::Value jarray_vehicle_detected(Json::arrayValue);
 
 				for (int i = 0; i < result.size(); i++)
 				{
-					int category = result[i].category();
-					Json::Value jarray_box;
-
 					jarray_box["x1"] = Json::Int(result[i].x1());
 					jarray_box["y1"] = Json::Int(result[i].y1());
 					jarray_box["x2"] = Json::Int(result[i].x2());
 					jarray_box["y2"] = Json::Int(result[i].y2());
-					jarray_box["man_score"] = Json::Value(result[i].confidence());
 
-					if (category == 1) {
-						// good man
-						jarray_normal_detected.append(jarray_box);
-					}
-					else if (category == 2) {
-						// body error
-						auto should_empty_points_list = result[i].phonelocal_list();
-						auto target_points_score_list = result[i].phonescore_list();
-						if (target_points_score_list.size() == 5 && should_empty_points_list.size() == 0) {
-							jarray_box["error_keypoints"]["nose"] = Json::Value(target_points_score_list[0]);
-							jarray_box["error_keypoints"]["r_eye"] = Json::Value(target_points_score_list[1]);
-							jarray_box["error_keypoints"]["l_eye"] = Json::Value(target_points_score_list[2]);
-							jarray_box["error_keypoints"]["r_hand"] = Json::Value(target_points_score_list[3]);
-							jarray_box["error_keypoints"]["l_hand"] = Json::Value(target_points_score_list[4]);
-						}
-						jarray_bodyerror_detected.append(jarray_box);
-					}
-					else if (category == 0) {
-						// target task: body play phones
-						jarray_box["phone_list"] = Json::Value(Json::arrayValue);
-						Json::Value phone_info;
-						auto phone_loacl_list = result[i].phonelocal_list();
-						auto phone_score_list = result[i].phonescore_list();
 
-						if (phone_loacl_list.size() == 4 * phone_score_list.size())
-						{
-							for (size_t i = 0; i < phone_score_list.size(); i++)
-							{
-								phone_info["x1"] = Json::Int(phone_loacl_list[i * 4 + 0]);
-								phone_info["y1"] = Json::Int(phone_loacl_list[i * 4 + 1]);
-								phone_info["x2"] = Json::Int(phone_loacl_list[i * 4 + 2]);
-								phone_info["y2"] = Json::Int(phone_loacl_list[i * 4 + 3]);
-								phone_info["phone_score"] = Json::Value(phone_score_list[i]);
-							}
-							jarray_box["phone_list"].append(phone_info);
-						}
-
-						jarray_playphone_detected.append(jarray_box);
-					}
+					jarray_box["category"] = Json::Int(result[i].category());
+					jarray_box["score"] = Json::Value(result[i].score());
+					jarray_vehicle_detected.append(jarray_box);
 				}
 
-				Json::Value jarray_info;
 
-				jarray_info["norm_list"] = jarray_normal_detected;
-				jarray_info["bodyerror_list"] = jarray_bodyerror_detected;
-				jarray_info["playphone_list"] = jarray_playphone_detected;
-
-				value["detect_info"] = jarray_info;
+				value["detect_info"]["vehicle_list"] = jarray_vehicle_detected;
 
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -285,15 +216,15 @@ namespace glasssix::exposing::nessus::Protocol {
 	public:
 		virtual const std::unordered_map<std::string, protocol_function> parser_protocol_dump() const override {
 			std::unordered_map<std::string, protocol_function> protocol_map;
-			protocol_map["playphone.new"] = &Playphone_new_json;
-			protocol_map["playphone.delete"] = &Playphone_delete_json;
-			protocol_map["playphone.detect"] = &Playphone_detect_json;
-			protocol_map["playphone.version"] = &Playphone_version_json;
+			protocol_map["vehicle.new"] = &Vehicle_new_json;
+			protocol_map["vehicle.delete"] = &Vehicle_delete_json;
+			protocol_map["vehicle.detect"] = &Vehicle_detect_json;
+			protocol_map["vehicle.version"] = &Vehicle_version_json;
 
 			return protocol_map;
 		}
 	};
 
-	REGISTE_PROTOCOL(P_PlayPhone)
+	REGISTE_PROTOCOL(P_Vehicle)
 
 }
