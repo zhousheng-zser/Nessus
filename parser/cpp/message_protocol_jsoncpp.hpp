@@ -275,6 +275,10 @@ namespace glasssix
 						jobj_face["y"] = Json::Int(obj.y());
 						jobj_face["width"] = Json::Int(obj.width());
 						jobj_face["height"] = Json::Int(obj.height());
+						jobj_face["ori_x"] = Json::Int(obj.ori_x());
+						jobj_face["ori_y"] = Json::Int(obj.ori_y());
+						jobj_face["ori_width"] = Json::Int(obj.ori_width());
+						jobj_face["ori_height"] = Json::Int(obj.ori_height());
 						jobj_face["confidence"] = Json::Value(obj.confidence());
 
 						if (do_attributing)
