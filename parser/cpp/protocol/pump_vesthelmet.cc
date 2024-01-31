@@ -1,14 +1,14 @@
 #pragma once
 #include "../protocol_register.hpp"
 #include "../message_protocol_jsoncpp.hpp"
-#include <vesthelmet/detect_code.hpp>
-#include <vesthelmet/box_info.hpp>
+#include <pump_vesthelmet/detect_code.hpp>
+#include <pump_vesthelmet/box_info.hpp>
 
 namespace glasssix::exposing::nessus::Protocol {
 
-	class P_Vesthelmet : public Protocol
+	class P_Pump_Vesthelmet : public Protocol
 	{
-		static Json::Value Vesthelmet_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Pump_Vesthelmet_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 
@@ -19,7 +19,7 @@ namespace glasssix::exposing::nessus::Protocol {
 					{ {u8"device", box(device)},
 							{u8"models_directory", box(std::string_view(models_directory))} });
 
-				instance = unbox<guid>(plugin.execute(u8"vesthelmet.new", param));
+				instance = unbox<guid>(plugin.execute(u8"pump_vesthelmet.new", param));
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 			}
@@ -47,7 +47,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Vesthelmet_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Pump_Vesthelmet_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -55,7 +55,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				auto version = plugin.execute(u8"vesthelmet.version", param);
+				auto version = plugin.execute(u8"pump_vesthelmet.version", param);
 
 				value["version"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
 
@@ -86,7 +86,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Vesthelmet_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Pump_Vesthelmet_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -125,7 +125,7 @@ namespace glasssix::exposing::nessus::Protocol {
 						{u8"params", param_map_abi},
 					});
 
-				auto result = plugin.execute(u8"vesthelmet.detect", param).as<exposing::param_vector<vesthelmet::box_info>>();
+				auto result = plugin.execute(u8"pump_vesthelmet.detect", param).as<exposing::param_vector<pump_vesthelmet::box_info>>();
 
 				Json::Value jarray_target_detected(Json::arrayValue);
 
@@ -144,7 +144,7 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				Json::Value jarray_info;
 
-				jarray_info["vesthelmet_list"] = jarray_target_detected;
+				jarray_info["pump_vesthelmet_list"] = jarray_target_detected;
 
 				value["detect_info"] = jarray_info;
 				value["status"]["message"] = Json::Value("OK");
@@ -174,7 +174,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Vesthelmet_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Pump_Vesthelmet_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -182,7 +182,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				plugin.execute(u8"vesthelmet.delete", param);
+				plugin.execute(u8"pump_vesthelmet.delete", param);
 
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -213,15 +213,15 @@ namespace glasssix::exposing::nessus::Protocol {
 	public:
 		virtual const std::unordered_map<std::string, protocol_function> parser_protocol_dump() const override {
 			std::unordered_map<std::string, protocol_function> protocol_map;
-			protocol_map["vesthelmet.new"] = &Vesthelmet_new_json;
-			protocol_map["vesthelmet.delete"] = &Vesthelmet_delete_json;
-			protocol_map["vesthelmet.detect"] = &Vesthelmet_detect_json;
-			protocol_map["vesthelmet.version"] = &Vesthelmet_version_json;
+			protocol_map["pump_vesthelmet.new"] = &Pump_Vesthelmet_new_json;
+			protocol_map["pump_vesthelmet.delete"] = &Pump_Vesthelmet_delete_json;
+			protocol_map["pump_vesthelmet.detect"] = &Pump_Vesthelmet_detect_json;
+			protocol_map["pump_vesthelmet.version"] = &Pump_Vesthelmet_version_json;
 
 			return protocol_map;
 		}
 	};
 
-	REGISTE_PROTOCOL(P_Vesthelmet)
+	REGISTE_PROTOCOL(P_Pump_Vesthelmet)
 
 }
