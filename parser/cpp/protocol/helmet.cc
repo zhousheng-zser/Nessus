@@ -105,6 +105,20 @@ namespace glasssix::exposing::nessus::Protocol {
 
 				Json::Value params = root.get("params", Json::Value());
 
+				auto head_info_list = root["head_info_list"];
+				auto heads = exposing::make_param_vector<head::box_info>();
+				for (auto p : head_info_list)
+				{
+					auto head = exposing::make_exported_interface<head::box_info>();
+					head.set_x1(p["x1"].asInt());
+					head.set_y1(p["y1"].asInt());
+					head.set_x2(p["x2"].asInt());
+					head.set_y2(p["y2"].asInt());
+					head.set_score(p["score"].asFloat());
+					heads.push_back(head);
+				}
+
+
 				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
 
 				for (auto& param_name : params.getMemberNames()) {
@@ -124,6 +138,7 @@ namespace glasssix::exposing::nessus::Protocol {
 						{u8"roi_width", box(roi_width)},
 						{u8"roi_height", box(roi_height)},
 						{u8"object_id", box(instance)},
+						{u8"head_info_list", heads},
 						{u8"params", param_map_abi},
 					});
 
