@@ -1349,6 +1349,7 @@ namespace glasssix
 
 				return value;
 			}
+			
 			inline Json::Value Cassius_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -1385,7 +1386,7 @@ namespace glasssix
 				return value;
 			}
 
-			constexpr int cassius_forward_aligned_buffer_len = 3 * 128 * 128;
+			constexpr int cassius_forward_aligned_buffer_len = 3 * 96 * 96;
 			inline Json::Value Cassius_forward_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -1405,7 +1406,6 @@ namespace glasssix
 							 {u8"num", box(num)},
 							 {u8"order", box(format)},
 							 {u8"object_id", box(instance)} });
-
 						result = plugin.execute(u8"cassius.forward", param).as<param_vector<param_vector<float>>>();
 					}
 					else
