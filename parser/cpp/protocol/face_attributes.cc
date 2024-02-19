@@ -1,30 +1,29 @@
 #pragma once
 #include "../protocol_register.hpp"
 #include "../message_protocol_jsoncpp.hpp"
-#include <helmet/detect_code.hpp>
-#include <helmet/box_info.hpp>
 //
+#include "../../common/include/longinus/face_info.hpp"
+#include "../../common/include/irisviel/search_result.hpp"
+#include "../../common/include/irisviel/record.hpp"
+#include "../../common/include/faceattributes/face_attribute_info.hpp"
 
 namespace glasssix::exposing::nessus::Protocol {
 
-	class P_Helmet : public Protocol
+	class P_FaceAttributes : public Protocol
 	{
-		static Json::Value Helmet_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value FaceAttributes_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
-
 			try {
-
-				std::string models_directory = root["models_directory"].asString();
 				int device = root["device"].asInt();
+				std::string models_directory = root["models_directory"].asString();
 				auto param = make_param_hash_map<param_string, unknown_object>(
-					{ {u8"device", box(device)}, {u8"models_directory", box(std::string_view(models_directory))} });
+					{ {u8"device", box(device)},
+							{u8"models_directory", box(std::string_view(models_directory))} });
 
-
-				instance = unbox<guid>(plugin.execute(u8"helmet.new", param));
+				instance = unbox<guid>(plugin.execute(u8"face_attributes.new", param));
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-
 			}
 			catch (const parser_exception& ex)
 			{
@@ -50,7 +49,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Helmet_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value FaceAttributes_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -58,7 +57,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				auto version = plugin.execute(u8"helmet.version", param);
+				auto version = plugin.execute(u8"face_attributes.version", param);
 
 				value["version"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
 
@@ -89,40 +88,24 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Helmet_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value FaceAttributes_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
 			{
-
 				int format = root["format"].asInt();
 				int height = root["height"].asInt();
 				int width = root["width"].asInt();
-				int roi_x = root["roi_x"].asInt();
-				int roi_y = root["roi_y"].asInt();
-				int roi_width = root["roi_width"].asInt();
-				int roi_height = root["roi_height"].asInt();
-
-				Json::Value params = root.get("params", Json::Value());
-
-				auto head_info_list = root["head_info_list"];
-				auto heads = exposing::make_param_vector<head::box_info>();
-				for (auto p : head_info_list)
+				auto facerect_list = root["facerect_list"];
+				auto faces = make_param_vector<longinus::face_info>();
+				for(auto &i :facerect_list)
 				{
-					auto head = exposing::make_exported_interface<head::box_info>();
-					head.set_x1(p["x1"].asInt());
-					head.set_y1(p["y1"].asInt());
-					head.set_x2(p["x2"].asInt());
-					head.set_y2(p["y2"].asInt());
-					head.set_score(p["score"].asFloat());
-					heads.push_back(head);
-				}
-
-
-				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
-
-				for (auto& param_name : params.getMemberNames()) {
-					param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
+					auto face = make_exported_interface<longinus::face_info>();
+					face.set_x(i["x"].asFloat());
+					face.set_y(i["y"].asFloat());
+					face.set_width(i["width"].asFloat());
+					face.set_height(i["height"].asFloat());
+					faces.push_back(face);
 				}
 
 				auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
@@ -133,63 +116,24 @@ namespace glasssix::exposing::nessus::Protocol {
 						{u8"image", box(image_span)},
 						{u8"height", box(height)},
 						{u8"width", box(width)},
-						{u8"roi_x", box(roi_x)},
-						{u8"roi_y", box(roi_y)},
-						{u8"roi_width", box(roi_width)},
-						{u8"roi_height", box(roi_height)},
 						{u8"object_id", box(instance)},
-						{u8"head_info_list", heads},
-						{u8"params", param_map_abi},
+						{u8"facerect_list", faces},
+						{u8"order", box(static_cast<int>(frame->format_))}
 					});
 
-				auto result = plugin.execute(u8"helmet.detect", param).as<exposing::param_vector<helmet::box_info>>();
-
-				Json::Value jarray_box;
-				Json::Value jarray_helmet_detected(Json::arrayValue);			
-				Json::Value jarray_hat_detected(Json::arrayValue);
-				Json::Value jarray_head_detected(Json::arrayValue);
-
-				for (int i = 0; i < result.size(); i++)
+				Json::Value face_attribute_array = Json::Value(Json::arrayValue);
+				auto result = plugin.execute(u8"face_attributes.detect", param).as<param_vector<face_attributes::face_attribute_info>>();
+				for(auto i : result)
 				{
-					int category = Json::Int(result[i].category());
-
-					if (category == 0)
-					{
-						jarray_box["x1"] = Json::Int(result[i].x1());
-						jarray_box["y1"] = Json::Int(result[i].y1());
-						jarray_box["x2"] = Json::Int(result[i].x2());
-						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"]= Json::Value(result[i].score());
-						jarray_helmet_detected.append(jarray_box);
-					}
-					else if (category == 1)
-					{
-						jarray_box["x1"] = Json::Int(result[i].x1());
-						jarray_box["y1"] = Json::Int(result[i].y1());
-						jarray_box["x2"] = Json::Int(result[i].x2());
-						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"]= Json::Value(result[i].score());
-						jarray_hat_detected.append(jarray_box);
-					}
-					else if (category == 2)
-					{
-						jarray_box["x1"] = Json::Int(result[i].x1());
-						jarray_box["y1"] = Json::Int(result[i].y1());
-						jarray_box["x2"] = Json::Int(result[i].x2());
-						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"]= Json::Value(result[i].score());
-						jarray_head_detected.append(jarray_box);
-					}
+					Json::Value val;
+					val["age"] = Json::Value(i.age());
+					val["gender"] = Json::Value(i.gender());
+					val["glass"] = Json::Value(i.glass());
+					val["mask"] = Json::Value(i.mask());
+					face_attribute_array.append(val);
 				}
 
-				Json::Value jarray_info;
-
-				jarray_info["with_helmet_list"] = jarray_helmet_detected;
-				jarray_info["with_hat_list"] = jarray_hat_detected;
-				jarray_info["head_list"] = jarray_head_detected;
-
-
-				value["detect_info"] = jarray_info;
+				value["face_attributes"] = face_attribute_array;
 
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -218,7 +162,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Helmet_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value FaceAttributes_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -226,7 +170,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				plugin.execute(u8"helmet.delete", param);
+				plugin.execute(u8"face_attributes.delete", param);
 
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -257,15 +201,15 @@ namespace glasssix::exposing::nessus::Protocol {
 	public:
 		virtual const std::unordered_map<std::string, protocol_function> parser_protocol_dump() const override {
 			std::unordered_map<std::string, protocol_function> protocol_map;
-			protocol_map["helmet.new"] = &Helmet_new_json;
-			protocol_map["helmet.delete"] = &Helmet_delete_json;
-			protocol_map["helmet.detect"] = &Helmet_detect_json;
-			protocol_map["helmet.version"] = &Helmet_version_json;
+			protocol_map["face_attributes.new"] = &FaceAttributes_new_json;
+			protocol_map["face_attributes.delete"] = &FaceAttributes_delete_json;
+			protocol_map["face_attributes.detect"] = &FaceAttributes_detect_json;
+			protocol_map["face_attributes.version"] = &FaceAttributes_version_json;
 
 			return protocol_map;
 		}
 	};
 
-	REGISTE_PROTOCOL(P_Helmet)
+	REGISTE_PROTOCOL(P_FaceAttributes)
 
 }

@@ -275,6 +275,10 @@ namespace glasssix
 						jobj_face["y"] = Json::Int(obj.y());
 						jobj_face["width"] = Json::Int(obj.width());
 						jobj_face["height"] = Json::Int(obj.height());
+						jobj_face["ori_x"] = Json::Int(obj.ori_x());
+						jobj_face["ori_y"] = Json::Int(obj.ori_y());
+						jobj_face["ori_width"] = Json::Int(obj.ori_width());
+						jobj_face["ori_height"] = Json::Int(obj.ori_height());
 						jobj_face["confidence"] = Json::Value(obj.confidence());
 
 						if (do_attributing)
@@ -1345,6 +1349,7 @@ namespace glasssix
 
 				return value;
 			}
+			
 			inline Json::Value Cassius_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -1381,7 +1386,7 @@ namespace glasssix
 				return value;
 			}
 
-			constexpr int cassius_forward_aligned_buffer_len = 3 * 128 * 128;
+			constexpr int cassius_forward_aligned_buffer_len = 3 * 96 * 96;
 			inline Json::Value Cassius_forward_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
@@ -1401,7 +1406,6 @@ namespace glasssix
 							 {u8"num", box(num)},
 							 {u8"order", box(format)},
 							 {u8"object_id", box(instance)} });
-
 						result = plugin.execute(u8"cassius.forward", param).as<param_vector<param_vector<float>>>();
 					}
 					else
