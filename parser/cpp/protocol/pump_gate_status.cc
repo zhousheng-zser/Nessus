@@ -149,9 +149,9 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto result = unbox<int>(plugin.execute(u8"pump_gate_status.detect", param));
 
 				if(result)
-					value["security status"] = Json::Value("dangerous");
+					value["security_status"] = Json::Value("dangerous");
 				else
-					value["security status"] = Json::Value("secure");
+					value["security_status"] = Json::Value("secure");
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
