@@ -183,7 +183,9 @@ namespace glasssix::exposing::nessus::Protocol {
 					jarray_box["x2"] = Json::Int(result[i].x2());
 					jarray_box["y2"] = Json::Int(result[i].y2());
 					auto category = result[i].category();
+					auto score = result[i].score();
 					jarray_box["category"] = Json::Int(category);
+					jarray_box["score"] = Json::Value(score);
 
 					auto pump_loaction = result[i].pump();
 					if (pump_loaction.size() == 8) {
