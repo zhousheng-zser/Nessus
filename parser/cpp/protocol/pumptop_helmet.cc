@@ -83,12 +83,11 @@ namespace glasssix::exposing::nessus::Protocol
 
 				auto result = plugin.execute(u8"pumptop_helmet.detect", param).as<exposing::param_vector<pumptop_helmet::pumptop_helmet_info>>();
 
-				Json::Value jarray_box;
 				Json::Value jarray_normal_detected(Json::arrayValue);
 				Json::Value jarray_steal_detected(Json::arrayValue);
 
-				Json::Value jarray_info =  Json::Value(Json::arrayValue);
-				// jarray_info["category"] = Json::Int(0);
+				Json::Value jarray_box =  Json::Value(Json::arrayValue);
+				// jarray_box["category"] = Json::Int(0);
 				for (int i = 0; i < result.size(); i++)
 				{
 					Json::Value val;
@@ -98,13 +97,15 @@ namespace glasssix::exposing::nessus::Protocol
 					val["x2"] = Json::Value(result[i].x2());
 					val["y2"] = Json::Value(result[i].y2());
 					val["category"] = Json::Value(result[i].category());
-					jarray_info.append(val);
+					jarray_box.append(val);
 					// Json::Value jarray_box;
 					// if (category == 1)
 					// {
-					// 	jarray_info["category"] = Json::Int(1);
+					// 	jarray_box["category"] = Json::Int(1);
 					// }
 				}
+				Json::Value jarray_info;
+				jarray_info["person_list"] = jarray_box;
 
 				value["detect_info"] = jarray_info;
 				value["status"]["message"] = Json::Value("OK");
