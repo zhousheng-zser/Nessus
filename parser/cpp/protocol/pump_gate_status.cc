@@ -94,13 +94,6 @@ namespace glasssix::exposing::nessus::Protocol {
 				int height = root["height"].asInt();
 				int width = root["width"].asInt();
 
-				int roi_x = root["roi_x"].asInt();
-				int roi_y = root["roi_y"].asInt();
-
-				int roi_width = root["roi_width"].asInt();
-				int roi_height = root["roi_height"].asInt();
-				
-
 				int yellow_hsv_lower = root["yellow_hsv_lower"].asInt();
 				int yellow_hsv_upper = root["yellow_hsv_upper"].asInt();
 				int gray_hsv_lower = root["gray_hsv_lower"].asInt();
