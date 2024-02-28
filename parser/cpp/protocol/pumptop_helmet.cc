@@ -91,12 +91,13 @@ namespace glasssix::exposing::nessus::Protocol
 				for (int i = 0; i < result.size(); i++)
 				{
 					Json::Value val;
-					int category = Json::Int(result[i].category());
 					val["x1"] = Json::Value(result[i].x1());
 					val["y1"] = Json::Value(result[i].y1());
 					val["x2"] = Json::Value(result[i].x2());
 					val["y2"] = Json::Value(result[i].y2());
 					val["category"] = Json::Value(result[i].category());
+					val["score"] = Json::Value(result[i].score());
+					val["helmet_score"] = Json::Value(result[i].helmet_score());
 					jarray_box.append(val);
 					// Json::Value jarray_box;
 					// if (category == 1)
