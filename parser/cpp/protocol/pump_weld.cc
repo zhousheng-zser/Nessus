@@ -159,10 +159,14 @@ namespace glasssix::exposing::nessus::Protocol {
 				for (int i = 0; i < result.size(); i++)
 				{
 					Json::Value jarray_box;
-					jarray_box["x1"] = Json::Int(result[i].x1());
-					jarray_box["y1"] = Json::Int(result[i].y1());
-					jarray_box["x2"] = Json::Int(result[i].x2());
-					jarray_box["y2"] = Json::Int(result[i].y2());
+					jarray_box["can_x1"] = Json::Int(result[i].can_x1());
+					jarray_box["can_x2"] = Json::Int(result[i].can_x2());
+					jarray_box["can_y1"] = Json::Int(result[i].can_y1());
+					jarray_box["can_y2"] = Json::Int(result[i].can_y2());
+					jarray_box["weld_x1"] = Json::Int(result[i].weld_x1());
+					jarray_box["weld_x2"] = Json::Int(result[i].weld_x2());
+					jarray_box["weld_y1"] = Json::Int(result[i].weld_y1());
+					jarray_box["weld_y2"] = Json::Int(result[i].weld_y2());
 					auto category = result[i].category();
 					auto score = result[i].score();
 					jarray_box["category"] = Json::Int(category);
