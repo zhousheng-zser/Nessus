@@ -159,10 +159,10 @@ namespace glasssix::exposing::nessus::Protocol {
 				for (int i = 0; i < result.size(); i++)
 				{
 					Json::Value jarray_box;
-					jarray_box["can_x1"] = Json::Int(result[i].can_x1());
-					jarray_box["can_x2"] = Json::Int(result[i].can_x2());
-					jarray_box["can_y1"] = Json::Int(result[i].can_y1());
-					jarray_box["can_y2"] = Json::Int(result[i].can_y2());
+					jarray_box["x1"] = Json::Int(result[i].can_x1()); // 临时将can_x1改回x1
+					jarray_box["x2"] = Json::Int(result[i].can_x2());//  临时将can_x2改回x2
+					jarray_box["y1"] = Json::Int(result[i].can_y1());//  临时将can_y1改回y1
+					jarray_box["y2"] = Json::Int(result[i].can_y2());//  临时将can_y2改回y2
 					jarray_box["weld_x1"] = Json::Int(result[i].weld_x1());
 					jarray_box["weld_x2"] = Json::Int(result[i].weld_x2());
 					jarray_box["weld_y1"] = Json::Int(result[i].weld_y1());
