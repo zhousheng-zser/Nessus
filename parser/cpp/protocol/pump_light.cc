@@ -117,6 +117,7 @@ namespace glasssix::exposing::nessus::Protocol {
 					jarray_box["red_ratio"] = Json::Value(result.red_ratio());
 					jarray_box["white_ratio"] = Json::Value(result.white_ratio());
 					jarray_box["orange_ratio"] = Json::Value(result.orange_ratio());
+					jarray_box["grey_ratio"] = Json::Value(result.grey_ratio());
 					jarray_box["light_status"] = Json::Value(result.light_status());
 
 					value["detect_info"] = jarray_box;
