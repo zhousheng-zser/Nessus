@@ -22,7 +22,7 @@ namespace glasssix::exposing::impl
             virtual std::int32_t G6_ABI_CALL red_ratio(abi_out_t<float> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL white_ratio(abi_out_t<float> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL orange_ratio(abi_out_t<float> result) noexcept = 0;
-            virtual std::int32_t G6_ABI_CAL  grey_ratio(abi_out_t<float> result) noexcept = 0;
+            virtual std::int32_t G6_ABI_CALL  grey_ratio(abi_out_t<float> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL light_status(abi_out_t<bool> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL version(abi_out_t<param_string> result) noexcept = 0;
         };
