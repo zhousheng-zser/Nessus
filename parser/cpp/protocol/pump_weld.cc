@@ -163,10 +163,20 @@ namespace glasssix::exposing::nessus::Protocol {
 					jarray_box["can_x2"] = Json::Int(result[i].can_x2());
 					jarray_box["can_y1"] = Json::Int(result[i].can_y1());
 					jarray_box["can_y2"] = Json::Int(result[i].can_y2());
-					jarray_box["weld_x1"] = Json::Int(result[i].weld_x1());
-					jarray_box["weld_x2"] = Json::Int(result[i].weld_x2());
-					jarray_box["weld_y1"] = Json::Int(result[i].weld_y1());
-					jarray_box["weld_y2"] = Json::Int(result[i].weld_y2());
+
+					Json::Value weld_boxes_info;
+					auto weld_loacl_list = result[i].weldlocal_list();
+					int weld_loacl_list_size = weld_loacl_list.size();
+					int weld_loacl_list_group = weld_loacl_list_size / 4;
+					for (size_t g = 0; g < weld_loacl_list_group; g++)
+					{
+						weld_boxes_info["x1"] = Json::Int(weld_loacl_list[g * 4 + 0]);
+						weld_boxes_info["y1"] = Json::Int(weld_loacl_list[g * 4 + 1]);
+						weld_boxes_info["x2"] = Json::Int(weld_loacl_list[g * 4 + 2]);
+						weld_boxes_info["y2"] = Json::Int(weld_loacl_list[g * 4 + 3]);
+					}
+					jarray_box["weld_list"].append(weld_boxes_info);
+					
 					auto category = result[i].category();
 					auto score = result[i].score();
 					jarray_box["category"] = Json::Int(category);
