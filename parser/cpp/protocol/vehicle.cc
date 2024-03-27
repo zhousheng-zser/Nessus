@@ -175,6 +175,12 @@ namespace glasssix::exposing::nessus::Protocol {
 					jarray_box["y1"] = Json::Int(result[i].y1());
 					jarray_box["x2"] = Json::Int(result[i].x2());
 					jarray_box["y2"] = Json::Int(result[i].y2());
+					jarray_box["x3"] = Json::Int(result[i].x3());
+					jarray_box["y3"] = Json::Int(result[i].y3());
+					jarray_box["x4"] = Json::Int(result[i].x4());
+					jarray_box["y4"] = Json::Int(result[i].y4());
+					jarray_box["x5"] = Json::Int(result[i].x5());
+					jarray_box["y5"] = Json::Int(result[i].y5());
 
 
 					jarray_box["category"] = Json::Int(result[i].category());
