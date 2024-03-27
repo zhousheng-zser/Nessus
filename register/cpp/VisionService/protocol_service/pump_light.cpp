@@ -11,7 +11,9 @@ namespace glasssix::exposing::nessus::Service
 	class S_Pump_Light :public Service { //Plugin
 		static unknown_object pump_light_new(const param_hash_map<param_string, unknown_object>& params)
 		{
-			return vision_service_impl::impl::add_instance(MODULE_, make_exported_interface<pump_light::detect_code>());
+			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
+			auto models_directory = unbox<param_string>(params.get_value(u8"models_directory"));
+			return vision_service_impl::impl::add_instance(MODULE_, make_exported_interface<pump_light::detect_code>(models_directory, device));
 		}
 
 		static 	unknown_object pump_light_version(const param_hash_map<param_string, unknown_object>& params)
