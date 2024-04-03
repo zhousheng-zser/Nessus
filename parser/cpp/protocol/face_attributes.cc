@@ -105,6 +105,10 @@ namespace glasssix::exposing::nessus::Protocol {
 					face.set_y(i["y"].asFloat());
 					face.set_width(i["width"].asFloat());
 					face.set_height(i["height"].asFloat());
+					face.set_ori_x(i["ori_x"].asFloat());
+					face.set_ori_y(i["ori_y"].asFloat());
+					face.set_ori_width(i["ori_width"].asFloat());
+					face.set_ori_height(i["ori_height"].asFloat());
 					faces.push_back(face);
 				}
 

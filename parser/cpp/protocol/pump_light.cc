@@ -13,7 +13,10 @@ namespace glasssix::exposing::nessus::Protocol {
 				Json::Value value;
 
 				try {
-					auto param = make_param_hash_map<param_string, unknown_object>({ });
+					int device = root["device"].asInt();
+					std::string models_directory = root["models_directory"].asString();
+					auto param = make_param_hash_map<param_string, unknown_object>({ {u8"device", box(device)},
+							{u8"models_directory", box(std::string_view(models_directory))} });
 
 					instance = unbox<guid>(plugin.execute(u8"pump_light.new", param));
 					value["status"]["message"] = Json::Value("OK");
@@ -114,9 +117,7 @@ namespace glasssix::exposing::nessus::Protocol {
 					auto result = plugin.execute(u8"pump_light.detect", param).as<pump_light::box_info>();
 					
 					Json::Value jarray_box;
-					jarray_box["red_ratio"] = Json::Value(result.red_ratio());
-					jarray_box["white_ratio"] = Json::Value(result.white_ratio());
-					jarray_box["orange_ratio"] = Json::Value(result.orange_ratio());
+					jarray_box["score"] = Json::Value(result.score());
 					jarray_box["light_status"] = Json::Value(result.light_status());
 
 					value["detect_info"] = jarray_box;
