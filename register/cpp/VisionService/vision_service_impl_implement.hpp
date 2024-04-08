@@ -107,7 +107,6 @@ namespace glasssix::exposing::nessus
 			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
 			auto use_int8 = unbox<std::int32_t>(params.get_value(u8"use_int8"));
 			auto racy_path = unbox<param_string>(params.get_value(u8"models_directory"));
-			// auto racy_path = model_type ? models_directory + (use_int8 ? u8"/unicorn_res101_int8.racy" : u8"/unicorn_res101.racy") : models_directory + (use_int8 ? u8"/unicorn_int8.racy" : u8"/unicorn.racy");
 			return add_instance(package_names::cassius, make_exported_interface<cassius::feature_extractor>(model_type, racy_path, device, use_int8 ? true : false));
 		}
 
@@ -168,7 +167,7 @@ namespace glasssix::exposing::nessus
 			return add_instance(package_names::irisviel, make_exported_interface<face_service>(irisviel::face_service_implemention::brute_force, single_database_capacity, dimension, working_directory));
 		}
 
-				static unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
+		static unknown_object cassius_extract_feature(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto instance = get_instance<cassius::feature_extractor>(params);
 			auto aligned_faces = unbox<param_span<std::uint8_t>>(params.get_value(u8"aligned_faces"));

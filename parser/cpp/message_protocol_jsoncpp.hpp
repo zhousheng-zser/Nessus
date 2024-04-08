@@ -1386,7 +1386,7 @@ namespace glasssix
 				return value;
 			}
 
-			constexpr int cassius_forward_aligned_buffer_len = 3 * 96 * 96;
+			constexpr int cassius_forward_aligned_buffer_len = 3 * 128 * 128;
 			inline Json::Value Cassius_forward_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 			{
 				Json::Value value;
