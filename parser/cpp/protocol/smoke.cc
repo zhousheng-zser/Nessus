@@ -164,7 +164,9 @@ namespace glasssix::exposing::nessus::Protocol {
 				for (int i = 0; i < result.size(); i++)
 				{
 					int category = Json::Int(result[i].category());
-
+					
+					Json::Value jarray_key_points = Json::Value(Json::arrayValue);
+					
 					// Json::Value jarray_box;
 					if (category == 1)
 					{
@@ -174,17 +176,38 @@ namespace glasssix::exposing::nessus::Protocol {
 						jarray_box["y2"] = Json::Int(result[i].y2());
 						// jarray_box["label"] = Json::Int(result[i].category());
 						jarray_box["score"] = Json::Value(result[i].confidence());
+
+						auto key_points = result[i].key_points();
+						for (size_t i = 0; i < (int)key_points.size() / 3; i++) {
+							Json::Value KPoint;
+							KPoint["x"] = Json::Int(key_points[i * 3]);
+							KPoint["y"] = Json::Int(key_points[i * 3 + 1]);
+							KPoint["point_score"] = Json::Value(key_points[i * 3 + 2]);
+							jarray_key_points.append(KPoint);
+						}
+						jarray_box["key_points"] = jarray_key_points;
+
 						jarray_normal_detected.append(jarray_box);
 					}
 					else if (category == 0)
 					{
-
 						jarray_box["x1"] = Json::Int(result[i].x1());
 						jarray_box["y1"] = Json::Int(result[i].y1());
 						jarray_box["x2"] = Json::Int(result[i].x2());
 						jarray_box["y2"] = Json::Int(result[i].y2());
 						// jarray_box["label"] = Json::Int(result[i].category());
 						jarray_box["score"] = Json::Value(result[i].confidence());
+
+						auto key_points = result[i].key_points();
+						for (size_t i = 0; i < (int)key_points.size() / 3; i++) {
+							Json::Value KPoint;
+							KPoint["x"] = Json::Int(key_points[i * 3]);
+							KPoint["y"] = Json::Int(key_points[i * 3 + 1]);
+							KPoint["point_score"] = Json::Value(key_points[i * 3 + 2]);
+							jarray_key_points.append(KPoint);
+						}
+						jarray_box["key_points"] = jarray_key_points;
+
 						jarray_smoke_detected.append(jarray_box);
 					}
 				}
