@@ -105,7 +105,6 @@ if((CMAKE_SIZEOF_VOID_P EQUAL 8) AND USE_SIMDJSON)
 	add_subdirectory(3rd-party/simdjson)
 endif()
 add_subdirectory(3rd-party/libyuv)
-add_subdirectory(register/VisionService)
 add_subdirectory(register/PluginRegister)
 add_subdirectory(parser)
 

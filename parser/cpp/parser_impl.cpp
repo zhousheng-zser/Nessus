@@ -1,15 +1,11 @@
 #include "parser_impl.hpp"
-#include "plugin_interface.hpp"
-#include "vision_service.hpp"
 #include "plugin_manager.hpp"
+#include "parser_exception.hpp"
+#include "json.h"
+#include "libyuv.h"
+#include "base64_x.hpp"
+#include <singleton.hpp>
 #include <fmt/format.h>
-
-#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
-#include "message_protocol.hpp"
-#else
-#include "message_protocol_jsoncpp.hpp"
-#endif
-#include "protocol_register.hpp"
 
 #include <filesystem.hpp>
 #include <os_context.hpp>
@@ -73,554 +69,223 @@ namespace glasssix::exposing::nessus
 		}
 	}
 
-	/// <summary>
-	/// An implementation of the standard plugin manager.
-	/// </summary>
-	class parser_impl::impl
+
+	//supported image format
+	enum class IMAGE_FORMAT
 	{
-	public:
-#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
-		param_string parse(const param_string& topic, const param_string& jstr_param, param_span<std::uint8_t> data)
+		IMAGE_BGR_NCHW = 0,
+		IMAGE_BGR_NHWC = 1,
+		IMAGE_NV21 = 2,
+		UNKNOW = 99
+	};
+
+	struct data_handler
+	{
+		data_handler() : data_{ nullptr }, size_{ 0 }, format_{ IMAGE_FORMAT::UNKNOW }, is_heap_allocated_{ false } {}
+		data_handler(std::uint8_t* data, size_t size, IMAGE_FORMAT format, bool is_heap_allocated) : data_{ data }, size_{ size }, format_{ format }, is_heap_allocated_{ is_heap_allocated } {}
+		~data_handler()
 		{
-			Json::Value value;
-			std::string topic_str(topic.data(), topic.size());
-			std::transform(topic_str.begin(), topic_str.end(), topic_str.begin(), ::tolower);
-			std::string_view jstr_param_view(jstr_param.data(), jstr_param.size());
-			if (!ready)
-			{
-				value["status"]["message"] = Json::Value("parser hasn't been inited plugin");
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_OPERATION));
-				return to_param_string(writer.write(value));
-			}
-
-			simdjson::dom::element root;
-			try
-			{
-				root = parser_.parse(jstr_param_view);
-			}
-			catch (const std::exception& ex)
-			{
-				value["status"]["message"] = Json::Value(ex.what());
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-				return to_param_string(writer.write(value));
-			}
-
-			std::vector<std::string> str_vec = split(topic_str, ".");
-			if ((str_vec[0] == "fusion" && str_vec.size() != 5))
-			{
-				value["status"]["message"] = Json::Value("topic illegal");
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-				return to_param_string(writer.write(value));
-			}
-			else if ((str_vec[0] != "fusion" && str_vec.size() != 2))
-			{
-				value["status"] = Json::Value("topic illegal");
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-				return to_param_string(writer.write(value));
-			}
-
-			if (str_vec[0] == "fusion")
-			{
-				std::vector<guid> guids;
-
-				try
-				{
-					guids.push_back(guid(std::string(root["romancia_instance_guid"].get<std::string_view>().value())));
-					guids.push_back(guid(std::string(root["gaius_instance_guid"].get<std::string_view>().value())));
-				}
-				catch (const simdjson::simdjson_error& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-					return to_param_string(writer.write(value));
-				}
-
-				std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)> func;
-				try
-				{
-					func = fusion_protocol_map.at(topic_str);
-				}
-				catch (const std::exception&)
-				{
-					value["status"]["message"] = Json::Value("Topic \"" + topic_str+ "\" not registed.");
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-					return to_param_string(writer.write(value));
-				}
-
-				value = func(plugin, root, data, guids);
-			}
-			else
-			{
-				std::string instance_type = str_vec[0];
-				std::string method = str_vec[1];
-
-				if (method == "new")
-				{
-					guid instance;
-					std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)> func;
-					try
-					{
-						func = basic_protocol_map.at(topic_str);
-					}
-					catch (const std::exception&)
-					{
-						value["status"]["message"] = Json::Value("Function of the topic not registed");
-						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-						return to_param_string(writer.write(value));
-					}
-
-					value = func(plugin, root, data, instance);
-
-					if (value["status"]["code"].asInt() == 0)
-					{
-						auto array = to_char_array(instance);
-						value["instance_guid"] = Json::Value(std::string(array.begin(), array.end()));
-					}
-				}
-				else
-				{
-					std::string instance_guid = "";
-					try
-					{
-						instance_guid = std::string(root["instance_guid"].get<std::string_view>().value());
-					}
-					catch (const simdjson::simdjson_error& ex)
-					{
-						value["status"]["message"] = Json::Value(ex.what());
-						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-						return to_param_string(writer.write(value));
-					}
-
-					std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)> func;
-					try
-					{
-						func = basic_protocol_map.at(topic_str);
-					}
-					catch (const std::exception&)
-					{
-						value["status"]["message"] = Json::Value("Function of the topic not registed");
-						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-						return to_param_string(writer.write(value));
-					}
-
-					guid instance(instance_guid);
-					value = func(plugin, root, data, instance);
-#ifdef __GNUC__
-					if (method == "delete")
-						::malloc_trim(0);
-#endif
-				}
-			}
-
-			return to_param_string(writer.write(value));
+			if (is_heap_allocated_)
+				if (data_)
+					delete[] data_;
 		}
-#else
-		param_string parse(const param_string& topic, const param_string& str_param, param_span<std::uint8_t> data, param_span<std::uint8_t> external)
-		{
-			Json::Value value;
-			std::string topic_str(topic.data(), topic.size());
-			std::transform(topic_str.begin(), topic_str.end(), topic_str.begin(), ::tolower);
-			std::string_view str_param_view(str_param.data(), str_param.size());
-			if (!ready)
-			{
-				value["status"]["message"] = Json::Value("parser hasn't been inited plugin");
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_OPERATION));
-				return to_param_string(writer.write(value));
-			}
-
-			Json::Value root;
-			try
-			{
-				if (str_param_view.size() != 0)
-				{
-					if(!parser_.parse(std::string(str_param_view), root))
-						throw parser_exception(parser_exception::parser_exception_code::JSON_EXCEPTION, "parse json failed");
-				}
-			}
-			catch (const std::exception& ex)
-			{
-				value["status"]["message"] = Json::Value(ex.what());
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-				return to_param_string(writer.write(value));
-			}
-
-			std::vector<std::string> str_vec = split(topic_str, ".");
-			if (str_vec[0] == "fusion" && str_vec.size() != 5)
-			{
-				value["status"]["message"] = Json::Value("topic illegal");
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-				return to_param_string(writer.write(value));
-			}
-			else if (str_vec[0] == "new" && (str_vec.size() != 2 && str_vec.size() != 3))
-			{
-				value["status"] = Json::Value("topic illegal");
-				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-				return to_param_string(writer.write(value));
-			}
-
-			if (str_vec[0] == "fusion")
-			{
-				std::vector<guid> guids;
-				try
-				{
-					guids.push_back(guid(root[str_vec[1] + "_instance_guid"].asString()));
-					guids.push_back(guid(root[str_vec[3] + "_instance_guid"].asString()));
-				}
-				catch (const Json::Exception& ex)
-				{
-					value["status"]["message"] = Json::Value(ex.what());
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-					return to_param_string(writer.write(value));
-				}
-
-				std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&, param_span<std::uint8_t>&)> func;
-				try
-				{
-					func = fusion_protocol_map.at(topic_str);
-				}
-				catch (const std::exception&)
-				{
-					value["status"]["message"] = Json::Value(fmt::format("Topic {} not registed.", topic_str));
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-					return to_param_string(writer.write(value));
-				}
-
-				value = func(plugin, root, data, guids, external);
-			}
-			else
-			{
-				std::string instance_type = str_vec[0];
-				std::string method = str_vec[1];
-
-				if (method == "new")
-				{
-					guid instance;
-					std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)> func;
-					try
-					{
-						func = basic_protocol_map.at(topic_str);
-					}
-					catch (const std::exception&)
-					{
-						value["status"]["message"] = Json::Value("Function of the topic not registed");
-						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-						return to_param_string(writer.write(value));
-					}
-
-					value = func(plugin, root, data, instance, external);
-
-					if (value["status"]["code"].asInt() == 0)
-					{
-						auto array = to_char_array(instance);
-						value["instance_guid"] = Json::Value(std::string(array.begin(), array.end()));
-					}
-				}
-				else if(str_vec.size() == 2)
-				{
-					std::string instance_guid = "";
-					try
-					{
-						instance_guid = root["instance_guid"].asString();
-					}
-					catch (const Json::Exception& ex)
-					{
-						value["status"]["message"] = Json::Value(ex.what());
-						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
-						return to_param_string(writer.write(value));
-					}
-
-					std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)> func;
-					try
-					{
-						func = basic_protocol_map.at(topic_str);
-					}
-					catch (const std::exception&)
-					{
-						value["status"]["message"] = Json::Value("Function of the topic not registed");
-						value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-						return to_param_string(writer.write(value));
-					}
-
-					guid instance(instance_guid);
-					value = func(plugin, root, data, instance, external);
-
-#if defined(__GNUC__) && !defined(ANDROID)
-					if (method == "delete")
-						::malloc_trim(0);
-#endif
-				}
-				else
-				{
-					value["status"] = Json::Value("topic illegal");
-					value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::INVALID_ARGUMENT));
-					return to_param_string(writer.write(value));
-				}
-			}
-
-			return to_param_string(writer.write(value));
-		}
-#endif
-
-		param_string query_all_instance()
-		{
-			Json::Value value;
-			auto instances = plugin.as<vision_service>().existing_instances();
-			for (const auto& instance : instances)
-			{
-				auto key_array = to_char_array(instance.key());
-				value[std::string(key_array.begin(), key_array.end())] = to_narrow_string(instance.value());
-			}
-
-			return to_param_string(writer.write(value));
-		}
-
-		param_string support_protocol()
-		{
-			Json::Value value;
-			Json::Value protocol_array = Json::Value(Json::arrayValue);
-			for (auto& protocol : basic_protocol_map)
-				protocol_array.append(protocol.first);
-			value["protocol"] = protocol_array;
-
-			return to_param_string(writer.write(value));
-		}
-
-		const char* nessus_version = "1.0.0";
-
-#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
-		param_string init_plugin(const param_string& config_file_path)
-		{
-			static std::once_flag flag;
-			Protocol::AddProtocol(basic_protocol_map);
-			std::string status = fmt::format(R"({{"status":{{"message":"Function 'init_plugin' has beed called and could be called one time","code":0}},"nessus_version":"{}"}})", nessus_version);
-			std::call_once(flag, [&]
-				{
-					std::ifstream f_config{ std::string(config_file_path.begin(), config_file_path.end()) };
-					std::string buffer(std::istreambuf_iterator<char>{ f_config }, std::istreambuf_iterator<char>{});
-
-					try
-					{
-						simdjson::dom::parser parser_temp;
-						simdjson::dom::element config = parser_temp.parse(buffer);
-						//fs::path plugin_directory = os_context::expand_enviroment_variables(config["plugin_directory"].get<std::string_view>().value());
-
-						for (auto lib_item : config["plugin_list"].get<simdjson::dom::array>().value())
-						{	
-											
-							bool ret = get_component_loader().add_module_by_name(to_param_string(lib_item.get<std::string_view>().value()));
-							if (!ret)
-							{
-								ready = false;
-								status = fmt::format(R"({{"status":{{"message":"load module '{}' failed","code":-1}},"nessus_version":"{}"}})", lib_item.get<std::string_view>().value(), nessus_version);
-								return;
-							}
-						}
-
-						auto manager = exposing::make_exported_interface<plugin_manager>();
-
-						manager.load_from_existing_libraries();
-						plugin = manager.lookup(u8"Glasssix Vision Service");
-						if (!plugin)
-						{
-							ready = false;
-							status = fmt::format(R"({{"status":{{"message":"Get a nullptr 'plugin_interface' instance","code":-1}},"nessus_version":"{}"}})", nessus_version);
-							return;
-						}
-
-						ready = true;
-						status = fmt::format(R"({{"status":{{"message":"OK","code":0}},"nessus_version":"{}"}})", nessus_version);
-					}
-					catch (const std::exception& ex)
-					{
-						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}","code":-99}},"nessus_version":"{}"}})", ex.what(), nessus_version);
-					}
-					catch (const abi_error& ex)
-					{
-						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}", "code":{}}},"nessus_version":"{}"}})", ex.what_to_narrow(), ex.result(), nessus_version);
-					}
-				});
-
-			return to_param_string(status);
-		}
-#else
-		param_string init_plugin(const param_string& config_file_path)
-		{
-			static std::once_flag flag;
-			Protocol::AddProtocol(basic_protocol_map);
-			std::string status = fmt::format(R"({{"status":{{"message":"Function 'init_plugin' has beed called and could be called one time","code":0}},"nessus_version":"{}"}})", nessus_version);
-			std::call_once(flag, [&]
-				{
-					std::ifstream f_config{ std::string(config_file_path.begin(), config_file_path.end()) };
-					std::string buffer(std::istreambuf_iterator<char>{ f_config }, std::istreambuf_iterator<char>{});
-
-					try
-					{
-						Json::Reader reader_temp(Json::Features::strictMode());
-						Json::Value config;
-						if (!reader_temp.parse(buffer, config))
-							throw parser_exception(parser_exception::parser_exception_code::JSON_EXCEPTION, "parse json failed");
-
-						for (auto lib_item : config["plugin_list"])
-						{
-							bool ret = get_component_loader().add_module_by_name(to_param_string(std::string_view(lib_item.asString())));
-							if (!ret)
-							{
-								ready = false;
-								status = fmt::format(R"({{"status":{{"message":"load module '{}' failed","code":-1}},"nessus_version":"{}"}})", lib_item.asString(), nessus_version);
-								return;
-							}
-						}
-
-						auto manager = exposing::make_exported_interface<plugin_manager>();
-
-						manager.load_from_existing_libraries();
-						plugin = manager.lookup(u8"Glasssix Vision Service");
-						if (!plugin)
-						{
-							ready = false;
-							status = fmt::format(R"({{"status":{{"message":"Get a nullptr 'plugin_interface' instance","code":-1}},"nessus_version":"{}"}})", nessus_version);
-							return;
-						}
-
-						ready = true;
-						status = fmt::format(R"({{"status":{{"message":"OK","code":0}},"nessus_version":"{}"}})", nessus_version);
-					}
-					catch (const Json::Exception& ex)
-					{
-						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}","code":-98}},"nessus_version":"{}"}})", ex.what(), nessus_version);
-					}
-					catch (const std::exception& ex)
-					{
-						ready = false;
-						status = fmt::format(R"({{"status":{{"message":"{}","code":-99}},"nessus_version":"{}"}})", ex.what(), nessus_version);
-					}
-				});
-
-			return to_param_string(status);
-		}
-#endif
-
-	private:
-#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
-		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> basic_protocol_map;
-		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> fusion_protocol_map;
-		simdjson::dom::parser parser_;
-#else
-		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> basic_protocol_map;
-		static std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&, param_span<std::uint8_t>&)>> fusion_protocol_map;
-		Json::Reader parser_;
-	public:
-		impl() :parser_(Json::Features::strictMode()) {}
-
-	private:
-#endif
-
-		Json::FastWriter writer;
-		static plugin_interface plugin;
-		static bool ready;
+		const std::uint8_t* data_;
+		size_t size_;
+		IMAGE_FORMAT format_;
+		bool is_heap_allocated_;
 	};
 
 
-#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
-	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> parser_impl::impl::basic_protocol_map = [] {
-		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, guid&)>> protocol_map;
-#else
-	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> parser_impl::impl::basic_protocol_map = [] {
-		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, guid&, param_span<std::uint8_t>&)>> protocol_map;
+
+	inline void convert_to_bgr(std::shared_ptr<data_handler>& src, std::shared_ptr<data_handler>& dst, int width, int height)
+	{
+		switch (src->format_)
+		{
+		case IMAGE_FORMAT::IMAGE_BGR_NCHW:
+		{
+			if (width * height * 3 != src->size_)
+				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NCHW, width * height * 3 != src->size_");
+			dst = src;
+		}
+		case IMAGE_FORMAT::IMAGE_BGR_NHWC:
+		{
+			int step = 0;
+			if (src->size_ != width * height * 3)
+			{
+				step = ((width * 3 + 3) >> 2) << 2;
+				if (src->size_ != step * height)
+					throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, src->size_ != width * height * 3 || src->size_ != (((width * 3 + 3) >> 2) << 2) * height");
+			}
+			else
+				step = width * 3;
+
+			if (step == width * 3)
+				dst = src;
+			else if (step > width * 3)
+			{
+				size_t size = 3 * height * width;
+				std::uint8_t* dst_ptr = new std::uint8_t[size];
+				const std::uint8_t* src_ptr = src->data_;
+				for (size_t i = 0; i < height; i++)
+					std::copy(src_ptr + i * step, src_ptr + i * step + width * 3, dst_ptr + i * width * 3);
+
+				dst = std::make_shared<data_handler>(dst_ptr, size, IMAGE_FORMAT::IMAGE_BGR_NHWC, true);
+			}
+			else
+			{
+				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "step < width * 3");
+			}
+
+			break;
+		}
+		case IMAGE_FORMAT::IMAGE_NV21:
+		{
+			size_t size = width * height * 3;
+			if (src->size_ != (size >> 1))
+				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "convert_to_bgr: src->size_ != (width * height * 3 >> 1)");
+
+			std::uint8_t* dst_ptr = new std::uint8_t[size];
+			int aligned_src_width = (width + 1) & ~1;
+			const uint8_t* y = src->data_;
+			const uint8_t* uv = src->data_ + aligned_src_width * height;
+			if (libyuv::NV21ToRGB24(y, width, uv, aligned_src_width, dst_ptr, width * 3, width, height))
+				throw parser_exception(parser_exception::parser_exception_code::INTERNAL_FUNCTION_FAILURE, "NV21ToRGB24 failed.");
+
+			dst = std::make_shared<data_handler>(dst_ptr, size, IMAGE_FORMAT::IMAGE_BGR_NHWC, true);
+			break;
+		}
+		default:
+			throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Unsupported image format.");
+			break;
+		}
+	}
+
+	inline std::shared_ptr<data_handler> decode_and_convert(param_span<std::uint8_t> src, bool is_base64, IMAGE_FORMAT format, int width, int height)
+	{
+		if (height <= 0 || width <= 0)
+			throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Invalid argument: height <= 0 || width <= 0");
+
+		if (src.size() <= 0)
+			throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Invalid argument: src.size() <= 0");
+
+		std::shared_ptr<data_handler> temp;
+		if (is_base64)
+		{
+			int current_image_str_len = TB64DECLEN(src.size());
+
+			std::uint8_t* decoded_data = new std::uint8_t[current_image_str_len];
+			tb64xdec(reinterpret_cast<const std::uint8_t*>(src.data()), src.size(), decoded_data);
+			temp = std::make_shared<data_handler>(decoded_data, current_image_str_len, format, true);
+		}
+		else
+		{
+			temp = std::make_shared<data_handler>(src.data(), src.size(), format, false);
+		}
+
+		std::shared_ptr<data_handler> dst;
+		convert_to_bgr(temp, dst, width, height);
+		return dst;
+	}
+
+
+	/// <summary>
+	/// An implementation of the standard plugin manager.
+	/// </summary>
+	class parser_impl_concret : public singleton<parser_impl_concret>
+	{
+	public:
+		guid create_instance(const param_string& qualified_name, const param_string& str_param)
+		{
+			return plugin_manager_.create_algo_instance(qualified_name, str_param);
+		}
+
+		param_string execute(const guid& instance_id, const param_string& str_param, const param_span<std::uint8_t> img_data, const int height, const int width, const IMAGE_FORMAT img_format, bool is_base64, const param_span<std::uint8_t> output_data)
+		{
+			auto frame = decode_and_convert(img_data, is_base64, img_format, width, height);
+			param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+
+			auto input_params_map = make_param_hash_map<param_string, unknown_object>(
+				{ {u8"params", box(str_param)},
+				{u8"bgr_data", box(image_span)},
+				{u8"height", box(height)},
+				{u8"width", box(width)},
+				{u8"output_data", box(output_data)} });
+
+			return plugin_manager_.execute(instance_id, input_params_map);
+		}
+
+		const char* nessus_version_ = "1.0.0";
+
+		void release_instance(const guid& instance_id)
+		{
+			plugin_manager_.release_algo_instance(instance_id);
+#if defined(__GNUC__) && !defined(ANDROID)
+			::malloc_trim(0);
 #endif
-		protocol_map["longinus.new"] = &Longinus_new_json;
-		protocol_map["longinus.delete"] = &Longinus_delete_json;
-		protocol_map["longinus.detect"] = &Longinus_detect_json;
-		protocol_map["longinus.trace"] = &Longinus_trace_json;
-		protocol_map["longinus.center_scale_alignface"] = &Longinus_center_scale_alignFace_json;
-		protocol_map["romancia.new"] = &Romancia_new_json;
-		protocol_map["romancia.delete"] = &Romancia_delete_json;
-		protocol_map["romancia.alignface128"] = &Romancia_alignFace_128_json;
-		protocol_map["romancia.alignface"] = &Romancia_alignFace_json;
-		protocol_map["romancia.blur_detect"] = &Romancia_blur_detect_json;
-		protocol_map["romancia.mask_detect"] = &Romancia_mask_detect_json;
-		protocol_map["romancia.rotate"] = &Romancia_rotate_json;
-		protocol_map["gaius.new"] = &Gaius_new_json;
-		protocol_map["gaius.delete"] = &Gaius_delete_json;
-		protocol_map["gaius.forward"] = &Gaius_forward_json;
-		protocol_map["gaius.make_mask_forward"] = &Gaius_make_mask_forward_json;
-		protocol_map["cassius.new"] = &Cassius_new_json;
-		protocol_map["cassius.delete"] = &Cassius_delete_json;
-		protocol_map["cassius.forward"] = &Cassius_forward_json;
-		protocol_map["selene.new"] = &Selene_new_json;
-		protocol_map["selene.delete"] = &Selene_delete_json;
-		protocol_map["selene.forward"] = &Selene_forward_json;
-		protocol_map["selene.make_mask_forward"] = &Selene_make_mask_forward_json;
-		protocol_map["damocles.new"] = &Damocles_new_json;
-		protocol_map["damocles.delete"] = &Damocles_delete_json;
-		protocol_map["damocles.spoofing_detect"] = &Damocles_spoofing_detect_json;
-		protocol_map["damocles.presentation_attack_detect"] = &Damocles_presentation_attack_detect_json;
-		protocol_map["irisviel.new"] = &Irisviel_new_json;
-		protocol_map["irisviel.delete"] = &Irisviel_delete_json;
-		protocol_map["irisviel.search"] = &Irisviel_search_json;
-		protocol_map["irisviel.search_nf"] = &Irisviel_search_nf_json;
-		protocol_map["irisviel.clear"] = &Irisviel_clear_json;
-		protocol_map["irisviel.record_count"] = &Irisviel_record_count_json;
-		protocol_map["irisviel.contains_key"] = &Irisviel_contains_key_json;
-		protocol_map["irisviel.try_get_record"] = &Irisviel_try_get_record_json;
-		protocol_map["irisviel.remove_all"] = &Irisviel_remove_all_json;
-		protocol_map["irisviel.load_databases"] = &Irisviel_load_databases_json;
-		protocol_map["irisviel.remove_records"] = &Irisviel_remove_records_json;
-		protocol_map["irisviel.add_records"] = &Irisviel_add_records_json;
-		protocol_map["irisviel.update_records"] = &Irisviel_update_records_json;
+		}
 
-		return protocol_map;
-	}();
+		void init_plugin(const param_string& config_file_path)
+		{
+			static bool ready = false;
+			static std::string message;
+			static std::once_flag flag;
+			std::call_once(flag, [&]
+				{
+					std::ifstream f_config{ std::string(config_file_path.begin(), config_file_path.end()) };
+					std::string buffer(std::istreambuf_iterator<char>{ f_config }, std::istreambuf_iterator<char>{});
 
-#if (defined(__aarch64__) || defined(__x86_64__) || defined(_M_X64)) && defined(USE_SIMDJSON)
-	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> parser_impl::impl::fusion_protocol_map = [] {
-		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, simdjson::dom::element&, param_span<std::uint8_t>&, std::vector<guid>&)>> protocol_map;
-#else
-	std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&, param_span<std::uint8_t>&)>> parser_impl::impl::fusion_protocol_map = [] {
-		std::unordered_map<std::string, std::function<Json::Value(plugin_interface&, Json::Value&, param_span<std::uint8_t>&, std::vector<guid>&, param_span<std::uint8_t>&)>> protocol_map;
-#endif
-		protocol_map["fusion.romancia.alignface128.gaius.forward"] = &Fusion_Romancia_alignFace128_Gaius_forward_json;
-		protocol_map["fusion.romancia.alignface.cassius.forward"] = &Fusion_Romancia_alignFace_Cassius_forward_json;
-		protocol_map["fusion.romancia.alignface.selene.forward"] = &Fusion_Romancia_alignFace_Selene_forward_json;
-		protocol_map["fusion.romancia.rotate.longinus.detect"] = &Fusion_Romancia_rotate_Longinus_detect_json;
-		return protocol_map;
-	}();
+					Json::Reader reader(Json::Features::strictMode());
+					Json::Value config;
+					if (!reader.parse(buffer, config))
+						throw parser_exception(parser_exception::parser_exception_code::JSON_EXCEPTION, "parse json failed");
 
-	plugin_interface parser_impl::impl::plugin{nullptr};
-	bool parser_impl::impl::ready = false;
+					for (auto lib_item : config["plugin_list"])
+					{
+						bool ret = get_component_loader().add_module_by_name(to_param_string(std::string_view(lib_item.asString())));
+						if (!ret)
+						{
+							ready = false;
+							message = fmt::format(R"({"load module '{}' failed"})", lib_item.asString());
+							throw parser_exception(parser_exception::parser_exception_code::INTERNAL_FUNCTION_FAILURE, message);
+						}
+					}
 
-	parser_impl::parser_impl() :impl_(new impl)
+					plugin_manager_ = exposing::make_exported_interface<plugin_manager>();
+					ready = true;
+				});
+
+			if(!ready)
+				throw parser_exception(parser_exception::parser_exception_code::INTERNAL_FUNCTION_FAILURE, message);
+		}
+
+	private:
+		plugin_manager plugin_manager_;
+	};
+
+	parser_impl::parser_impl()
 	{
 	}
 	parser_impl::~parser_impl()
 	{
-		if (impl_)
-		{
-			delete impl_;
-			impl_ = nullptr;
-		}
 	}
 
-	param_string parser_impl::parse(const param_string& topic, const param_string& jstr_param, param_span<std::uint8_t> data, param_span<std::uint8_t> external)
+	guid parser_impl::create_instance(const param_string& qualified_name, const param_string& str_param)
 	{
-		return impl_->parse(topic, jstr_param, data, external);
+		return parser_impl_concret::instance().create_instance(qualified_name, str_param);
 	}
 
-	param_string parser_impl::query_all_instance()
+	param_string parser_impl::execute(const guid& instance_id, const param_string& str_param, const param_span<std::uint8_t> img_data, const int height, const int width, const int data_format, bool is_base64, param_span<std::uint8_t> output_data)
 	{
-		return impl_->query_all_instance();
+		return parser_impl_concret::instance().execute(instance_id, str_param, img_data, height, width, static_cast<IMAGE_FORMAT>(data_format), is_base64, output_data);
 	}
 
-	param_string parser_impl::support_protocol()
+	void parser_impl::release_instance(const guid& instance_id)
 	{
-		return impl_->support_protocol();
+		parser_impl_concret::instance().release_instance(instance_id);
 	}
 
-	param_string parser_impl::init_plugin(const param_string& config_file_path)
+	void parser_impl::init_plugin(const param_string& config_file_path)
 	{
-		return impl_->init_plugin(config_file_path);
+		return parser_impl_concret::instance().init_plugin(config_file_path);
 	}
 }

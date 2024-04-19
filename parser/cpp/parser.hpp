@@ -18,34 +18,42 @@ namespace glasssix::exposing::impl
 
 		struct type : abi_unknown_object
 		{
-			virtual std::int32_t G6_ABI_CALL parse(abi_in_t<param_string> topic, abi_in_t<param_string> str_param, abi_in_t<param_span<std::uint8_t>> data, abi_in_t<param_span<std::uint8_t>> external, abi_out_t<param_string> result) noexcept = 0;
-			virtual std::int32_t G6_ABI_CALL query_all_instance(abi_out_t<param_string> result) noexcept = 0;
-			virtual std::int32_t G6_ABI_CALL support_protocol(abi_out_t<param_string> result) noexcept = 0;
-			virtual std::int32_t G6_ABI_CALL init_plugin(abi_in_t<param_string> config_file_path, abi_out_t<param_string> result) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL create_instance(abi_in_t<param_string> qualified_name, abi_in_t<param_string> str_param, abi_out_t<guid> result) = 0;
+			virtual std::int32_t G6_ABI_CALL execute(abi_in_t<guid> instance_id, abi_in_t<param_string> str_param, 
+				abi_in_t<param_span<std::uint8_t>> img_data, abi_in_t<std::int32_t> height, abi_in_t<std::int32_t> width,
+				abi_in_t<std::int32_t> img_format, abi_in_t<bool> is_base64,
+				abi_in_t<param_span<std::uint8_t>> output_data, abi_out_t<param_string> result) = 0;
+			virtual std::int32_t G6_ABI_CALL release_instance(abi_in_t<guid> instance_id) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL init_plugin(abi_in_t<param_string> config_file_path) = 0;
 		};
 	};
 
 	template<typename Derived>
 	struct interface_vtable<Derived, nessus::parser> : interface_vtable_base<Derived, nessus::parser>
 	{
-		virtual std::int32_t G6_ABI_CALL parse(abi_in_t<param_string> topic, abi_in_t<param_string> str_param, abi_in_t<param_span<std::uint8_t>> data, abi_in_t<param_span<std::uint8_t>> external, abi_out_t<param_string> result) noexcept override
+		virtual std::int32_t G6_ABI_CALL create_instance(abi_in_t<param_string> qualified_name, abi_in_t<param_string> str_param, abi_out_t<guid> result) override
 		{
-			return abi_safe_call([&] { *result = detach_abi(this->self().parse(create_from_abi<param_string>(topic), create_from_abi<param_string>(str_param), create_from_abi<param_span<std::uint8_t>>(data), create_from_abi<param_span<std::uint8_t>>(external))); });
+			return abi_safe_call([&] { *result = detach_abi(this->self().create_instance(create_from_abi<param_string>(qualified_name), create_from_abi<param_string>(str_param))); });
 		}
 
-		virtual std::int32_t G6_ABI_CALL query_all_instance(abi_out_t<param_string> result) noexcept override
+		virtual std::int32_t G6_ABI_CALL execute(abi_in_t<guid> instance_id, abi_in_t<param_string> str_param,
+			abi_in_t<param_span<std::uint8_t>> bgr_data, abi_in_t<std::int32_t> height, abi_in_t<std::int32_t> width,
+			abi_in_t<std::int32_t> img_format, abi_in_t<bool> is_base64,
+			 abi_in_t<param_span<std::uint8_t>> output_data, abi_out_t<param_string> result) override
 		{
-			return abi_safe_call([&] { *result = detach_abi(this->self().query_all_instance()); });
+			return abi_safe_call([&] { *result = detach_abi(this->self().execute(create_from_abi<guid>(instance_id), create_from_abi<param_string>(str_param), 
+				create_from_abi<param_span<std::uint8_t>>(bgr_data), create_from_abi<std::int32_t>(height), create_from_abi<std::int32_t>(width),
+				create_from_abi<std::int32_t>(img_format), create_from_abi<bool>(is_base64), create_from_abi<param_span<std::uint8_t>>(output_data))); });
 		}
 
-		virtual std::int32_t G6_ABI_CALL support_protocol(abi_out_t<param_string> result) noexcept override
+		virtual std::int32_t G6_ABI_CALL release_instance(abi_in_t<guid> instance_id) noexcept override
 		{
-			return abi_safe_call([&] { *result = detach_abi(this->self().support_protocol()); });
+			return abi_safe_call([&] { this->self().release_instance(create_from_abi<guid>(instance_id)); });
 		}
 
-		virtual std::int32_t G6_ABI_CALL init_plugin(abi_in_t<param_string> config_file_path, abi_out_t<param_string> result) noexcept override
+		virtual std::int32_t G6_ABI_CALL init_plugin(abi_in_t<param_string> config_file_path) override
 		{
-			return abi_safe_call([&] { *result = detach_abi(this->self().init_plugin(create_from_abi<param_string>(config_file_path))); });
+			return abi_safe_call([&] { this->self().init_plugin(create_from_abi<param_string>(config_file_path)); });
 		}
 	};
 
@@ -54,28 +62,26 @@ namespace glasssix::exposing::impl
 		template<typename Derived>
 		struct type : enable_self_abi_awareness<Derived, nessus::parser>
 		{
-			param_string parse(const param_string& topic, const param_string& str_param, param_span<std::uint8_t> data, param_span<std::uint8_t> external) const
+			guid create_instance(const param_string& qualified_name, const param_string& str_param) const
 			{
-				param_string result{ nullptr };
-				return (check_abi_result(this->self_abi().parse(get_abi(topic), get_abi(str_param), get_abi(data), get_abi(external), put_abi(result))), result);
+				guid result;
+				return (check_abi_result(this->self_abi().create_instance(get_abi(qualified_name), get_abi(str_param), put_abi(result))), result);
 			}
 
-			param_string query_all_instance() const
+			param_string execute(const guid& instance_id, const param_string& str_param, param_span<std::uint8_t> bgr_data, std::int32_t height, std::int32_t width, std::int32_t img_format, bool is_base64, param_span<std::uint8_t> output_data) const
 			{
 				param_string result{ nullptr };
-				return (check_abi_result(this->self_abi().query_all_instance(put_abi(result))), result);
+				return (check_abi_result(this->self_abi().execute(get_abi(instance_id), get_abi(str_param), get_abi(bgr_data), get_abi(height), get_abi(width), get_abi(img_format), get_abi(is_base64), get_abi(output_data), put_abi(result))), result);
 			}
 
-			param_string support_protocol() const
+			void release_instance(const guid& instance_id)
 			{
-				param_string result{ nullptr };
-				return (check_abi_result(this->self_abi().support_protocol(put_abi(result))), result);
+				check_abi_result(this->self_abi().release_instance(get_abi(instance_id)));
 			}
 
-			param_string init_plugin(const param_string& config_file_path) const
+			void init_plugin(const param_string& config_file_path) const
 			{
-				param_string result{ nullptr };
-				return (check_abi_result(this->self_abi().init_plugin(get_abi(config_file_path), put_abi(result))), result);
+				check_abi_result(this->self_abi().init_plugin(get_abi(config_file_path)));
 			}
 		};
 	};

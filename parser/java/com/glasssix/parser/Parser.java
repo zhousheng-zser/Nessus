@@ -19,7 +19,11 @@ public class Parser {
 
     private native void release();
 
-    public native String initPlugin(String config_file_path, String license_key);
+    public native void initPlugin(String config_file_path, String license_key) throws Throwable;
+	
+	public native String createInstance(String qualified_name, String param) throws Throwable;
+	
+    public native void releaseInstance(String instance_id);
 
-    public native String parse(String topic, String jstr, byte[] data, byte[] external);
+    public native String execute(String instance_id, String param, byte[] imgData, int height, int width, int img_format, boolean is_base64, byte[] outputData) throws Throwable;
 }

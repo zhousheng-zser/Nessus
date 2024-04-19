@@ -1,7 +1,7 @@
 #include <singleton.hpp>
 #include <plugin_manager.hpp>
 #include <abi/implements.hpp>
-#include <plugin_interface.hpp>
+#include <algo_plugin_interface.hpp>
 
 namespace glasssix::exposing::nessus
 {
@@ -13,10 +13,9 @@ namespace glasssix::exposing::nessus
 	class plugin_manager_impl : public implements<plugin_manager_impl, plugin_manager>, public make_external_qualified_name<plugin_manager_qualified_name>
 	{
 	public:
-		void load_from_existing_libraries();
-		void load_from_file(const param_string& path);
-		void load_from_directory(const param_string& path);
-		plugin_interface lookup(const param_string& plugin_name);
-		unknown_object execute(const param_string& plugin_name, const param_string& function_name, const param_hash_map<param_string, unknown_object>& params);
+		guid create_algo_instance(const param_string& qualified_name, const param_string& str_params);
+		algo_plugin_interface lookup(const guid& id);
+		param_string execute(const guid& id, const param_hash_map<param_string, unknown_object>& input_params_map);
+		void release_algo_instance(const guid& id);
 	};
 }

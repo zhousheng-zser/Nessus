@@ -1,7 +1,7 @@
 #pragma once
 
 #include <abi/consumer.hpp>
-#include <plugin_interface.hpp>
+#include <algo_plugin_interface.hpp>
 
 namespace glasssix::exposing::nessus
 {
@@ -17,40 +17,34 @@ namespace glasssix::exposing::impl
 
 		struct type : abi_unknown_object
 		{
-			virtual std::int32_t G6_ABI_CALL load_from_existing_libraries() noexcept = 0;
-			virtual std::int32_t G6_ABI_CALL load_from_file(abi_in_t<param_string> path) noexcept = 0;
-			virtual std::int32_t G6_ABI_CALL load_from_directory(abi_in_t<param_string> directory) noexcept = 0;
-			virtual std::int32_t G6_ABI_CALL lookup(abi_in_t<param_string> plugin_name, abi_out_t<nessus::plugin_interface> result) noexcept = 0;
-			virtual std::int32_t G6_ABI_CALL execute(abi_in_t<param_string> plugin_name, abi_in_t<param_string> function_name, abi_in_t<param_hash_map<param_string, unknown_object>> params, abi_out_t<unknown_object> result) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL create_algo_instance(abi_in_t<param_string> qualified_name, abi_in_t<param_string> str_params, abi_out_t<guid> result) = 0;
+			virtual std::int32_t G6_ABI_CALL lookup(abi_in_t<guid> id, abi_out_t<nessus::algo_plugin_interface> result) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL execute(abi_in_t<guid> id, abi_in_t<param_hash_map<param_string, unknown_object>> input_params_map, abi_out_t<param_string> result) = 0;
+			virtual std::int32_t G6_ABI_CALL release_algo_instance(abi_in_t<guid> instance_id) noexcept = 0;
 		};
 	};
 
 	template<typename Derived>
 	struct interface_vtable<Derived, nessus::plugin_manager> : interface_vtable_base<Derived, nessus::plugin_manager>
 	{
-		virtual std::int32_t G6_ABI_CALL load_from_existing_libraries() noexcept override
+		virtual std::int32_t G6_ABI_CALL create_algo_instance(abi_in_t<param_string> qualified_name, abi_in_t<param_string> str_params, abi_out_t<guid> result) override
 		{
-			return abi_safe_call([&] { this->self().load_from_existing_libraries(); });
+			return abi_safe_call([&] { *result = detach_abi(this->self().create_algo_instance(create_from_abi<param_string>(qualified_name), create_from_abi<param_string>(str_params))); });
 		}
 
-		virtual std::int32_t G6_ABI_CALL load_from_file(abi_in_t<param_string> path) noexcept override
+		virtual std::int32_t G6_ABI_CALL lookup(abi_in_t<guid> id, abi_out_t<nessus::algo_plugin_interface> result) noexcept override
 		{
-			return abi_safe_call([&] { this->self().load_from_file(create_from_abi<param_string>(path)); });
+			return abi_safe_call([&] { *result = detach_abi(this->self().lookup(create_from_abi<guid>(id))); });
 		}
 
-		virtual std::int32_t G6_ABI_CALL load_from_directory(abi_in_t<param_string> directory) noexcept override
+		virtual std::int32_t G6_ABI_CALL execute(abi_in_t<guid> id, abi_in_t<param_hash_map<param_string, unknown_object>> input_params_map, abi_out_t<param_string> result) override
 		{
-			return abi_safe_call([&] { this->self().load_from_directory(create_from_abi<param_string>(directory)); });
+			return abi_safe_call([&] { *result = detach_abi(this->self().execute(create_from_abi<guid>(id), create_from_abi<param_hash_map<param_string, unknown_object>>(input_params_map))); });
 		}
 
-		virtual std::int32_t G6_ABI_CALL lookup(abi_in_t<param_string> plugin_name, abi_out_t<nessus::plugin_interface> result) noexcept override
+		virtual std::int32_t G6_ABI_CALL release_algo_instance(abi_in_t<guid> instance_id) noexcept override
 		{
-			return abi_safe_call([&] { *result = detach_abi(this->self().lookup(create_from_abi<param_string>(plugin_name))); });
-		}
-
-		virtual std::int32_t G6_ABI_CALL execute(abi_in_t<param_string> plugin_name, abi_in_t<param_string> function_name, abi_in_t<param_hash_map<param_string, unknown_object>> params, abi_out_t<unknown_object> result) noexcept override
-		{
-			return abi_safe_call([&] { *result = detach_abi(this->self().execute(create_from_abi<param_string>(plugin_name), create_from_abi<param_string>(function_name), create_from_abi<param_hash_map<param_string, unknown_object>>(params))); });
+			return abi_safe_call([&] { this->self().release_algo_instance(create_from_abi<guid>(instance_id)); });
 		}
 	};
 
@@ -59,33 +53,30 @@ namespace glasssix::exposing::impl
 		template<typename Derived>
 		struct type : enable_self_abi_awareness<Derived, nessus::plugin_manager>
 		{
-			void load_from_existing_libraries() const
+			guid create_algo_instance(const param_string& qualified_name, const param_string& str_params)
 			{
-				check_abi_result(this->self_abi().load_from_existing_libraries());
+				guid result;
+
+				return (check_abi_result(this->self_abi().create_algo_instance(get_abi(qualified_name), get_abi(str_params), put_abi(result))), result);
 			}
 
-			void load_from_file(const param_string& path) const
+			nessus::algo_plugin_interface lookup(const guid& id) const
 			{
-				check_abi_result(this->self_abi().load_from_file(get_abi(path)));
+				nessus::algo_plugin_interface result{ nullptr };
+
+				return (check_abi_result(this->self_abi().lookup(get_abi(id), put_abi(result))), result);
 			}
 
-			void load_from_directory(const param_string& path) const
+			param_string execute(const guid& id, const param_hash_map<param_string, unknown_object>& input_params_map) const
 			{
-				check_abi_result(this->self_abi().load_from_directory(get_abi(path)));
+				param_string result{ nullptr };
+
+				return (check_abi_result(this->self_abi().execute(get_abi(id), get_abi(input_params_map), put_abi(result))), result);
 			}
 
-			nessus::plugin_interface lookup(const param_string& plugin_name) const
+			void release_algo_instance(const guid& instance_id)
 			{
-				nessus::plugin_interface result{ nullptr };
-
-				return (check_abi_result(this->self_abi().lookup(get_abi(plugin_name), put_abi(result))), result);
-			}
-
-			unknown_object execute(const param_string& plugin_name, const param_string& function_name, const param_hash_map<param_string, unknown_object>& params) const
-			{
-				unknown_object result{ nullptr };
-
-				return (check_abi_result(this->self_abi().execute(get_abi(plugin_name), get_abi(function_name), get_abi(params), put_abi(result))), result);
+				check_abi_result(this->self_abi().release_algo_instance(get_abi(instance_id)));
 			}
 		};
 	};

@@ -12,86 +12,69 @@ namespace glasssix::exposing::nessus
 	class plugin_manager_concrete_impl : public singleton<plugin_manager_concrete_impl>
 	{
 	public:
-		friend singleton<plugin_manager_concrete_impl>;
 
-		void load_from_existing_libraries()
-		{
-			for (const auto& item : get_component_loader().factories())
-			{
-				create_plugin(item.value());
-			}
-		}
-
-		void load_from_file(const param_string& path)
-		{
-			if (auto factory = get_component_loader().add_module_with_factory(path); factory && factory.qualified_names().contains(plugin_qualified_name))
-			{
-				create_plugin(factory);
-			}
-		}
-
-		void load_from_directory(const param_string& path)
-		{
-			if (auto factories = get_component_loader().add_modules_with_factories_in_directory(path); factories && !factories.empty())
-			{
-				for (const auto& item : factories)
-				{
-					create_plugin(item.value());
-				}
-			}
-		}
-
-		plugin_interface lookup(const param_string& plugin_name)
+		algo_plugin_interface lookup(const guid& id)
 		{
 			std::scoped_lock lock{ mutex_ };
-			auto iter = plugins_.find(plugin_name);
+			auto iter = plugin_instances_map_.find(id);
 
-			return iter != plugins_.end() ? iter->second : nullptr;
+			return iter != plugin_instances_map_.end() ? iter->second : nullptr;
 		}
 
-		unknown_object execute(const param_string& plugin_name, const param_string& function_name, const param_hash_map<param_string, unknown_object>& params)
+		guid create_algo_instance(const param_string& qualified_name, const param_string& str_params)
 		{
-			auto plugin = lookup(plugin_name);
-
-			return plugin ? plugin.execute(function_name, params) : throw abi_key_not_found{};
-		}
-	private:
-		void create_plugin(const class_factory& item)
-		{
-			if (auto plugin = item.create_by_name(plugin_qualified_name).try_as<plugin_interface>())
+			auto instance = get_component_loader().create_by_name(qualified_name).try_as<algo_plugin_interface>();
+			if (instance)
 			{
+				instance.init(str_params);
+				auto instance_id = create_guid_from_bytes(meta::to_array(reinterpret_cast<std::size_t>(get_abi(instance))));
 				std::scoped_lock lock{ mutex_ };
-
-				plugins_.insert_or_assign(plugin.name(), plugin);
+				plugin_instances_map_.insert_or_assign(instance_id, instance);
+				return instance_id;
 			}
+			else
+				throw abi_no_interface{ u8"using '" + qualified_name + "' to create instance failed."};
 		}
 
+		param_string execute(const guid& instance_id, const param_hash_map<param_string, unknown_object>& input_params_map)
+		{
+			auto instance = lookup(instance_id);
+			if (instance)
+			{
+				return instance.execute(input_params_map);
+			}
+			else
+				throw abi_key_not_found{};
+		}
+
+		void release_algo_instance(const guid& instance_id)
+		{
+			std::scoped_lock lock1{ mutex_ };
+			plugin_instances_map_.erase(instance_id);
+		}
+
+	private:
 		std::mutex mutex_;
-		std::unordered_map<param_string, plugin_interface> plugins_;
+		std::unordered_map<guid, algo_plugin_interface> plugin_instances_map_;
 	};
 
-	void plugin_manager_impl::load_from_existing_libraries()
+	guid plugin_manager_impl::create_algo_instance(const param_string& qualified_name, const param_string& str_params)
 	{
-		plugin_manager_concrete_impl::instance().load_from_existing_libraries();
+		return plugin_manager_concrete_impl::instance().create_algo_instance(qualified_name, str_params);
 	}
 
-	void plugin_manager_impl::load_from_file(const param_string& path)
+	algo_plugin_interface plugin_manager_impl::lookup(const guid& id)
 	{
-		plugin_manager_concrete_impl::instance().load_from_file(path);
+		return plugin_manager_concrete_impl::instance().lookup(id);
 	}
 
-	void plugin_manager_impl::load_from_directory(const param_string& path)
+	param_string plugin_manager_impl::execute(const guid& id, const param_hash_map<param_string, unknown_object>& input_params_map)
 	{
-		plugin_manager_concrete_impl::instance().load_from_directory(path);
+		return plugin_manager_concrete_impl::instance().execute(id, input_params_map);
 	}
 
-	plugin_interface plugin_manager_impl::lookup(const param_string& plugin_name)
+	void plugin_manager_impl::release_algo_instance(const guid& instance_id)
 	{
-		return plugin_manager_concrete_impl::instance().lookup(plugin_name);
-	}
-
-	unknown_object plugin_manager_impl::execute(const param_string& plugin_name, const param_string& function_name, const param_hash_map<param_string, unknown_object>& params)
-	{
-		return plugin_manager_concrete_impl::instance().execute(plugin_name, function_name, params);
+		plugin_manager_concrete_impl::instance().release_algo_instance(instance_id);
 	}
 }
