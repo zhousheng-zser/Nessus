@@ -1,4 +1,6 @@
 #include "../parser.hpp"
+#include "../json.h"
+#include "../parser_exception.hpp"
 
 #include <memory>
 #include <cstdlib>
@@ -81,8 +83,60 @@ extern "C" {
 		env->DeleteLocalRef(clazz);
 	}
 
-	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_parse(JNIEnv* env, jobject thiz, jstring jtopic, jstring jstr_param, jbyteArray dataArray, jbyteArray externalArray)
+	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_createInstance(JNIEnv* env, jobject thiz, jstring jstr_qualified_name, jstring jstr_param)
 	{
+		std::unique_ptr<_jclass, std::function<void(jclass)>> class_exception{ env->FindClass("java/lang/Exception"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
+
+		jclass clazz = env->GetObjectClass(thiz);
+		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
+		jlong p = env->GetLongField(thiz, fid_mObject);
+
+		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
+
+		glasssix::exposing::param_string qualified_name = jstring2paramstring(env, jstr_qualified_name);
+		glasssix::exposing::param_string str_param = jstring2paramstring(env, jstr_param);
+
+		Json::FastWriter writer;
+		Json::Value value;
+		try
+		{
+			std::string result = glasssix::exposing::to_string(parser_object.create_instance(qualified_name, str_param));
+			env->DeleteLocalRef(clazz);
+			return char2Jstring(env, result.data(), result.size());
+		}
+		catch (const glasssix::exposing::abi_error& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.result());
+			value["status"]["message"] = ex.what_to_narrow();
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), writer.write(value).c_str());
+		}
+		catch (const glasssix::exposing::nessus::parser_exception& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.what_code());
+			value["status"]["message"] = ex.what();
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), ex.what());
+		}
+		catch (const Json::Exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::JSON_EXCEPTION);
+			value["status"]["message"] = ex.what();
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), writer.write(value).c_str());
+		}
+		catch (const std::exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::UNKNOWN_EXCEPTION);
+			value["status"]["message"] = ex.what();
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), writer.write(value).c_str());
+		}
+	}
+
+	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_execute(JNIEnv* env, jobject thiz, jstring jstr_instance_id, jstring jstr_param, jbyteArray imgDataArray, jint height, jint width, jint img_format, jboolean is_base64, jbyteArray outputDataArray)
+	{
+		std::unique_ptr<_jclass, std::function<void(jclass)>> class_exception{ env->FindClass("java/lang/Exception"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
 #ifndef G6_DISABLE_LICENSE
 		try
 		{
@@ -102,37 +156,102 @@ extern "C" {
 
 		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
 
-		glasssix::exposing::param_string topic = jstring2paramstring(env, jtopic);
+		glasssix::exposing::guid instance_id(jstring2string(env, jstr_instance_id));
 		glasssix::exposing::param_string str_param = jstring2paramstring(env, jstr_param);
 
-		glasssix::exposing::param_span<std::uint8_t> data(nullptr, 0);
+		glasssix::exposing::param_span<std::uint8_t> img_data(nullptr, 0);
 		jbyte* data_ptr = nullptr;
-		if (dataArray != nullptr)
+		if (imgDataArray != nullptr)
 		{
-			data_ptr = env->GetByteArrayElements(dataArray, 0);
-			data = glasssix::exposing::param_span<std::uint8_t>(reinterpret_cast<std::uint8_t*>(data_ptr), env->GetArrayLength(dataArray));
+			data_ptr = env->GetByteArrayElements(imgDataArray, 0);
+			img_data = glasssix::exposing::param_span<std::uint8_t>(reinterpret_cast<std::uint8_t*>(data_ptr), env->GetArrayLength(imgDataArray));
 		}
 
-		glasssix::exposing::param_span<std::uint8_t> external(nullptr, 0);
-		jbyte* external_ptr = nullptr;
-		if (externalArray != nullptr)
+		glasssix::exposing::param_span<std::uint8_t> output_data(nullptr, 0);
+		jbyte* output_data_ptr = nullptr;
+		if (outputDataArray != nullptr)
 		{
-			external_ptr = env->GetByteArrayElements(externalArray, 0);
-			external = glasssix::exposing::param_span<std::uint8_t>(reinterpret_cast<std::uint8_t*>(external_ptr), env->GetArrayLength(externalArray));
+			output_data_ptr = env->GetByteArrayElements(outputDataArray, 0);
+			output_data = glasssix::exposing::param_span<std::uint8_t>(reinterpret_cast<std::uint8_t*>(output_data_ptr), env->GetArrayLength(outputDataArray));
 		}
 
-		glasssix::exposing::param_string result = parser_object.parse(topic, str_param, data, external);
+		Json::FastWriter writer;
+		Json::Value value;
+		try
+		{
+			glasssix::exposing::param_string result = parser_object.execute(instance_id, str_param, img_data, static_cast<int>(height), static_cast<int>(width), static_cast<int>(img_format), is_base64 == JNI_TRUE, output_data);
 
-		if(external_ptr)
-			env->ReleaseByteArrayElements(externalArray, external_ptr, 0);
-		if(data_ptr)
-			env->ReleaseByteArrayElements(dataArray, data_ptr, 0);
-		env->DeleteLocalRef(clazz);
+			if (output_data_ptr)
+				env->ReleaseByteArrayElements(outputDataArray, output_data_ptr, 0);
+			if (data_ptr)
+				env->ReleaseByteArrayElements(imgDataArray, data_ptr, 0);
+			env->DeleteLocalRef(clazz);
 
-		return char2Jstring(env, result.data(), result.size());
+			return char2Jstring(env, result.data(), result.size());
+		}
+		catch (const glasssix::exposing::abi_error& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.result());
+			value["status"]["message"] = ex.what_to_narrow();
+			if (output_data_ptr)
+				env->ReleaseByteArrayElements(outputDataArray, output_data_ptr, 0);
+			if (data_ptr)
+				env->ReleaseByteArrayElements(imgDataArray, data_ptr, 0);
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), writer.write(value).c_str());
+		}
+		catch (const glasssix::exposing::nessus::parser_exception& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.what_code());
+			value["status"]["message"] = ex.what();
+			if (output_data_ptr)
+				env->ReleaseByteArrayElements(outputDataArray, output_data_ptr, 0);
+			if (data_ptr)
+				env->ReleaseByteArrayElements(imgDataArray, data_ptr, 0);
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), ex.what());
+		}
+		catch (const Json::Exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::JSON_EXCEPTION);
+			value["status"]["message"] = ex.what();
+			if (output_data_ptr)
+				env->ReleaseByteArrayElements(outputDataArray, output_data_ptr, 0);
+			if (data_ptr)
+				env->ReleaseByteArrayElements(imgDataArray, data_ptr, 0);
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), writer.write(value).c_str());
+		}
+		catch (const std::exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::UNKNOWN_EXCEPTION);
+			value["status"]["message"] = ex.what();
+			if (output_data_ptr)
+				env->ReleaseByteArrayElements(outputDataArray, output_data_ptr, 0);
+			if (data_ptr)
+				env->ReleaseByteArrayElements(imgDataArray, data_ptr, 0);
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), writer.write(value).c_str());
+		}
 	}
 
-	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_initPlugin(JNIEnv* env, jobject thiz, jstring jstr, jstring license_key)
+	JNIEXPORT void JNICALL Java_com_glasssix_parser_Parser_releaseInstance(JNIEnv* env, jobject thiz, jstring jstr_instance_id)
+	{
+		std::unique_ptr<_jclass, std::function<void(jclass)>> class_exception{ env->FindClass("java/lang/Exception"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
+
+		jclass clazz = env->GetObjectClass(thiz);
+		jfieldID fid_mObject = env->GetFieldID(clazz, "mObject", "J");
+		jlong p = env->GetLongField(thiz, fid_mObject);
+
+		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
+
+		glasssix::exposing::guid instance_id(jstring2paramstring(env, jstr_instance_id));
+
+		parser_object.release_instance(instance_id);
+		env->DeleteLocalRef(clazz);
+	}
+
+	JNIEXPORT void JNICALL Java_com_glasssix_parser_Parser_initPlugin(JNIEnv* env, jobject thiz, jstring jstr, jstring license_key)
 	{
 		std::unique_ptr<_jclass, std::function<void(jclass)>> class_exception{ env->FindClass("java/lang/Exception"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
 
@@ -145,7 +264,7 @@ extern "C" {
 		}
 		catch (const exposing::abi_error& ex)
 		{
-			return (env->ThrowNew(class_exception.get(), ex.what_to_narrow().c_str()), nullptr);
+			env->ThrowNew(class_exception.get(), ex.what_to_narrow().c_str());
 		}
 #endif
 
@@ -156,11 +275,42 @@ extern "C" {
 		auto parser_object{ glasssix::exposing::create_from_abi<glasssix::exposing::nessus::parser>(reinterpret_cast<void*>(p)) };
 
 		glasssix::exposing::param_string config_file_path = jstring2paramstring(env, jstr);
-		glasssix::exposing::param_string status = parser_object.init_plugin(config_file_path);
 
-		env->DeleteLocalRef(clazz);
-
-		return char2Jstring(env, status.data(), status.size());
+		Json::FastWriter writer;
+		Json::Value value;
+		try
+		{
+			parser_object.init_plugin(config_file_path);
+			env->DeleteLocalRef(clazz);
+		}
+		catch (const glasssix::exposing::abi_error& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.result());
+			value["status"]["message"] = ex.what_to_narrow();
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), writer.write(value).c_str());
+		}
+		catch (const glasssix::exposing::nessus::parser_exception& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.what_code());
+			value["status"]["message"] = ex.what();
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), ex.what());
+		}
+		catch (const Json::Exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::JSON_EXCEPTION);
+			value["status"]["message"] = ex.what();
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), writer.write(value).c_str());
+		}
+		catch (const std::exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::UNKNOWN_EXCEPTION);
+			value["status"]["message"] = ex.what();
+			env->DeleteLocalRef(clazz);
+			env->ThrowNew(class_exception.get(), writer.write(value).c_str());
+		}
 	}
 
 //#ifdef __ANDROID__

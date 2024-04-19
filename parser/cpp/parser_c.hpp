@@ -24,19 +24,6 @@ extern "C" {
 #endif
 
 	/// <summary>
-	/// Creates a new instance of a protocol praser.
-	/// </summary>
-	/// <returns>The instance</returns>
-	/// <remarks>The instance must be freed by parser_release_instance function</remarks>
-	PARSER_C_EXPORT void* parser_new_instance();
-
-	/// <summary>
-	/// Disposes a instance of a protocol parser.
-	/// </summary>
-	/// <param name="instance">The instance</param>
-	PARSER_C_EXPORT void parser_release_instance(void* instance);
-
-	/// <summary>
 	/// Initializes all plugins.
 	/// </summary>
 	/// <param name="instance">The instance of a protocol parser</param>
@@ -45,7 +32,7 @@ extern "C" {
 	/// <param name="license_key">The license key provided by the service provider</param>
 	/// <returns>The result interpreted as JSON</returns>
 	/// <remarks>The return value must be disposed by calling praser_free function.</remarks>
-	PARSER_C_EXPORT char* parser_init_plugin(void* instance, const char* config_file_path, const char* license_key);
+	PARSER_C_EXPORT char* parser_init_plugin(const char* config_file_path, const char* license_key);
 
 	/// <summary>
 	/// Dispatches a protocol.
@@ -59,7 +46,14 @@ extern "C" {
 	/// <param name="external_size">The size of the optional binary data</param>
 	/// <returns>The result interpreted as JSON</returns>
 	/// <remarks>The return value must be disposed by calling praser_free function.</remarks>
-	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, const char* jstr_param, char* data, size_t data_len, void* external, size_t external_size);
+	PARSER_C_EXPORT char* parser_create_instance(const char* qualified_name, const char* str_param);
+
+
+	PARSER_C_EXPORT char* parser_execute(const char* instance_id, const char* str_param,
+		const char* img_data, const int img_data_len, const int height, int width,
+		const int img_format, bool is_base64, char* output_data, const int output_data_len);
+
+	PARSER_C_EXPORT void parser_release_instance(const char* instance_id);
 
 	/// <summary>
 	/// Disposes a buffer.

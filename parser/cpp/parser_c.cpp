@@ -1,5 +1,7 @@
 #include "parser_c.hpp"
 #include "parser.hpp"
+#include "json.h"
+#include "parser_exception.hpp"
 
 #include <memory.hpp>
 
@@ -7,28 +9,33 @@
 #include <vulcanus/license.hpp>
 #endif
 
+static glasssix::exposing::nessus::parser parser_object;
 bool parser_module_ready = []
 {
-	return glasssix::exposing::get_component_loader().add_module_by_name("parser");
+	if (glasssix::exposing::get_component_loader().add_module_by_name("parser"))
+	{
+		try
+		{
+			parser_object = glasssix::exposing::make_exported_interface<glasssix::exposing::nessus::parser>();
+		}
+		catch (...)
+		{
+			return false;
+		}
+		return true;
+	}
+	else
+		return false;
 }();
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-	PARSER_C_EXPORT void* parser_new_instance()
-	{
-		auto parser_object = glasssix::exposing::make_exported_interface<glasssix::exposing::nessus::parser>();
-		return glasssix::exposing::detach_abi(parser_object);
-	}
 
-	PARSER_C_EXPORT void parser_release_instance(void *instance)
+	PARSER_C_EXPORT char* parser_init_plugin(const char* config_file_path, const char* license_key)
 	{
-		glasssix::exposing::unknown_object parser_objcet{ reinterpret_cast<void*>(instance) };
-		instance = nullptr;
-	}
-
-	PARSER_C_EXPORT char* parser_init_plugin(void* instance, const char* config_file_path, const char* license_key)
-	{
+		Json::FastWriter writer;
+		Json::Value value;
 #ifndef G6_DISABLE_LICENSE
 
 		init_license_system(license_key);
@@ -46,36 +53,135 @@ extern "C" {
 		}
 #endif
 
-		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
+		glasssix::exposing::param_string _config_file_path(config_file_path);
+		try
+		{
+			parser_object.init_plugin(_config_file_path);
+			value["status"]["code"] = 0;
+			value["status"]["message"] = "OK";
+		}
+		catch (const glasssix::exposing::abi_error& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.result());
+			value["status"]["message"] = ex.what_to_narrow();
+		}
+		catch (const glasssix::exposing::nessus::parser_exception& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.what_code());
+			value["status"]["message"] = ex.what();
+		}
+		catch (const Json::Exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::JSON_EXCEPTION);
+			value["status"]["message"] = ex.what();
+		}
+		catch (const std::exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::UNKNOWN_EXCEPTION);
+			value["status"]["message"] = ex.what();
+		}
 
-		glasssix::exposing::param_string config_file_path_(config_file_path);
-		auto status_ = parser_object.init_plugin(config_file_path_);
-		std::size_t size = status_.size() + 1;
+		std::string result_str = writer.write(value);
+		std::size_t size = result_str.size() + 1;
+		auto result = glasssix::memory::heap_alloc_elements<char>(size);
+		std::memcpy(result, result_str.data(), size * sizeof(char));
+
+		return result;
+	}
+
+
+	PARSER_C_EXPORT char* parser_create_instance(const char* qualified_name, const char* str_param)
+	{
+		Json::FastWriter writer;
+		Json::Value value;
+
+		try
+		{
+			glasssix::exposing::guid instance_id = parser_object.create_instance(qualified_name, str_param);
+			value["status"]["code"] = 0;
+			value["status"]["message"] = "OK";
+			value["instance_id"] = glasssix::exposing::to_string(instance_id);
+		}
+		catch (const glasssix::exposing::abi_error& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.result());
+			value["status"]["message"] = ex.what_to_narrow();
+		}
+		catch (const glasssix::exposing::nessus::parser_exception& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.what_code());
+			value["status"]["message"] = ex.what();
+		}
+		catch (const Json::Exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::JSON_EXCEPTION);
+			value["status"]["message"] = ex.what();
+		}
+		catch (const std::exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::UNKNOWN_EXCEPTION);
+			value["status"]["message"] = ex.what();
+		}
+
+		std::string result_str = writer.write(value);
+		std::size_t size = result_str.size() + 1;
+		auto result = glasssix::memory::heap_alloc_elements<char>(size);
+		std::memcpy(result, result_str.data(), size * sizeof(char));
+
+		return result;
+	}
+
+
+	PARSER_C_EXPORT char* parser_execute(const char* instance_id, const char* str_param,
+		const char* img_data, const int img_data_len, const int height, int width,
+		const int img_format, bool is_base64, char* output_data, const int output_data_len)
+	{
+		Json::FastWriter writer;
+		Json::Value value;
+		try
+		{
+			glasssix::exposing::param_string _str_param(str_param ? str_param : u8"");
+			glasssix::exposing::param_span<std::uint8_t> input_data(reinterpret_cast<std::uint8_t*>(const_cast<char*>(img_data)), static_cast<size_t>(img_data_len));
+			glasssix::exposing::param_span<std::uint8_t> output_data(reinterpret_cast<std::uint8_t*>(output_data), static_cast<size_t>(output_data_len));
+
+			glasssix::exposing::param_string result_str = parser_object.execute(glasssix::exposing::guid(std::string(instance_id)), _str_param, input_data, height, width, img_format, is_base64, output_data);
+			value["status"]["code"] = 0;
+			value["status"]["message"] = "OK";
+			value["result"] = glasssix::exposing::to_narrow_string(result_str);
+		}
+
+		catch (const glasssix::exposing::abi_error& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.result());
+			value["status"]["message"] = ex.what_to_narrow();
+		}
+		catch (const glasssix::exposing::nessus::parser_exception& ex)
+		{
+			value["status"]["code"] = Json::Int(ex.what_code());
+			value["status"]["message"] = ex.what();
+		}
+		catch (const Json::Exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::JSON_EXCEPTION);
+			value["status"]["message"] = ex.what();
+		}
+		catch (const std::exception& ex)
+		{
+			value["status"]["code"] = Json::Int(glasssix::exposing::nessus::parser_exception::parser_exception_code::UNKNOWN_EXCEPTION);
+			value["status"]["message"] = ex.what();
+		}
+
+		std::string status_str = writer.write(value);
+		std::size_t size = status_str.size() + 1;
 		auto status = glasssix::memory::heap_alloc_elements<char>(size);
-		std::memcpy(status, status_.data(), size * sizeof(char));
+		std::memcpy(status, status_str.data(), size * sizeof(char));
 
-		glasssix::exposing::detach_abi(parser_object);
-		
 		return status;
 	}
 
-	PARSER_C_EXPORT char* parser_parse(void* instance, const char* topic, const char* jstr_param, char* data, size_t data_len, void* external, size_t external_size)
+	PARSER_C_EXPORT void parser_release_instance(const char* instance_id)
 	{
-		glasssix::exposing::nessus::parser parser_object{ glasssix::exposing::take_over_abi_from_void_ptr(reinterpret_cast<void*>(instance)) };
-
-		glasssix::exposing::param_string topic_(topic);
-		glasssix::exposing::param_string str_param_(jstr_param ? jstr_param : u8"");
-		glasssix::exposing::param_span<std::uint8_t> data_(reinterpret_cast<std::uint8_t*>(data), data_len);
-		glasssix::exposing::param_span<std::uint8_t> external_(reinterpret_cast<std::uint8_t*>(external), external_size);
-
-		glasssix::exposing::param_string result_ = parser_object.parse(topic_, str_param_, data_, external_);
-		std::size_t size = result_.size() + 1;
-		auto result = glasssix::memory::heap_alloc_elements<char>(size);
-		std::memcpy(result, result_.data(), size * sizeof(char));
-
-		glasssix::exposing::detach_abi(parser_object);
-
-		return result;
+		parser_object.release_instance(glasssix::exposing::guid(std::string(instance_id)));
 	}
 
 	PARSER_C_EXPORT void parser_free(void* ptr)
