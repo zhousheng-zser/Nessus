@@ -101,7 +101,6 @@ namespace glasssix::exposing::nessus::Protocol {
 					int roi_y = 0;
 					int roi_width = width;
 					int roi_height = height;
-
 					Json::Value rois = root.get("roi_x", Json::Value());
 					bool inputRoiEmpty = rois.empty();
 					if (!inputRoiEmpty) {
@@ -134,15 +133,45 @@ namespace glasssix::exposing::nessus::Protocol {
 							{u8"params", param_map_abi},
 						});
 
-					auto result = plugin.execute(u8"fighting.detect", param);
-					auto fight_score = unbox<float>(result);
-					value["detect_info"]["score"] = Json::Value(fight_score);
-					if (fight_score > 0.5) {
-						value["detect_info"]["category"] = Json::Int(1);
+					//auto result = plugin.execute(u8"fighting.detect", param);
+					auto result = plugin.execute(u8"fighting.detect", param).as<exposing::param_vector<fighting::box_info>>();
+
+					Json::Value jarray_box;
+					Json::Value jarray_fight_detected(Json::arrayValue);
+					Json::Value jarray_normal_detected(Json::arrayValue);
+
+					for (int i = 0; i < result.size(); i++)
+					{
+						int category = Json::Int(result[i].category());
+						// Json::Value jarray_box;
+						if (category == 1)
+						{
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].score());
+							jarray_box["category"] = Json::Value(result[i].category());
+							jarray_fight_detected.append(jarray_box);
+						}
+						else
+						{
+							jarray_box["x1"] = Json::Int(result[i].x1());
+							jarray_box["y1"] = Json::Int(result[i].y1());
+							jarray_box["x2"] = Json::Int(result[i].x2());
+							jarray_box["y2"] = Json::Int(result[i].y2());
+							jarray_box["score"] = Json::Value(result[i].score());
+							jarray_box["category"] = Json::Value(result[i].category());
+							jarray_normal_detected.append(jarray_box);
+						}
 					}
-					else {
-						value["detect_info"]["category"] = Json::Int(0);
-					}
+
+					Json::Value jarray_info;
+
+					jarray_info["fight_list"] = jarray_fight_detected;
+					jarray_info["normal_list"] = jarray_normal_detected;
+
+					value["detect_info"] = jarray_info;
 
 					value["status"]["message"] = Json::Value("OK");
 					value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
