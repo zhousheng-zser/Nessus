@@ -133,23 +133,21 @@ extern "C" {
 
 
 	PARSER_C_EXPORT char* parser_execute(const char* instance_id, const char* str_param,
-		const char* img_data, const int img_data_len, const int height, int width,
-		const int img_format, bool is_base64, char* output_data, const int output_data_len)
+		const char* input_data, const int input_data_len, char* output_data, const int output_data_len)
 	{
 		Json::FastWriter writer;
 		Json::Value value;
 		try
 		{
 			glasssix::exposing::param_string _str_param(str_param ? str_param : u8"");
-			glasssix::exposing::param_span<std::uint8_t> input_data(reinterpret_cast<std::uint8_t*>(const_cast<char*>(img_data)), static_cast<size_t>(img_data_len));
+			glasssix::exposing::param_span<std::uint8_t> input_data(reinterpret_cast<std::uint8_t*>(const_cast<char*>(input_data)), static_cast<size_t>(input_data_len));
 			glasssix::exposing::param_span<std::uint8_t> output_data(reinterpret_cast<std::uint8_t*>(output_data), static_cast<size_t>(output_data_len));
 
-			glasssix::exposing::param_string result_str = parser_object.execute(glasssix::exposing::guid(std::string(instance_id)), _str_param, input_data, height, width, img_format, is_base64, output_data);
+			glasssix::exposing::param_string result_str = parser_object.execute(glasssix::exposing::guid(std::string(instance_id)), _str_param, input_data, output_data);
 			value["status"]["code"] = 0;
 			value["status"]["message"] = "OK";
 			value["result"] = glasssix::exposing::to_narrow_string(result_str);
 		}
-
 		catch (const glasssix::exposing::abi_error& ex)
 		{
 			value["status"]["code"] = Json::Int(ex.result());

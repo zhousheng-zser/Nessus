@@ -71,7 +71,7 @@ namespace glasssix::exposing::nessus
 
 
 	//supported image format
-	enum class IMAGE_FORMAT
+	enum class DATA_FORMAT
 	{
 		IMAGE_BGR_NCHW = 0,
 		IMAGE_BGR_NHWC = 1,
@@ -81,8 +81,8 @@ namespace glasssix::exposing::nessus
 
 	struct data_handler
 	{
-		data_handler() : data_{ nullptr }, size_{ 0 }, format_{ IMAGE_FORMAT::UNKNOW }, is_heap_allocated_{ false } {}
-		data_handler(std::uint8_t* data, size_t size, IMAGE_FORMAT format, bool is_heap_allocated) : data_{ data }, size_{ size }, format_{ format }, is_heap_allocated_{ is_heap_allocated } {}
+		data_handler() : data_{ nullptr }, size_{ 0 }, format_{ DATA_FORMAT::UNKNOW }, is_heap_allocated_{ false } {}
+		data_handler(std::uint8_t* data, size_t size, DATA_FORMAT format, bool is_heap_allocated) : data_{ data }, size_{ size }, format_{ format }, is_heap_allocated_{ is_heap_allocated } {}
 		~data_handler()
 		{
 			if (is_heap_allocated_)
@@ -91,67 +91,88 @@ namespace glasssix::exposing::nessus
 		}
 		const std::uint8_t* data_;
 		size_t size_;
-		IMAGE_FORMAT format_;
+		DATA_FORMAT format_;
 		bool is_heap_allocated_;
 	};
 
 
 
-	inline void convert_to_bgr(std::shared_ptr<data_handler>& src, std::shared_ptr<data_handler>& dst, int width, int height)
+	inline void convert_to_bgr(std::shared_ptr<data_handler>& src, std::shared_ptr<data_handler>& dst, int n, int c, int h, int w)
 	{
 		switch (src->format_)
 		{
-		case IMAGE_FORMAT::IMAGE_BGR_NCHW:
+		case DATA_FORMAT::IMAGE_BGR_NCHW:
 		{
-			if (width * height * 3 != src->size_)
-				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NCHW, width * height * 3 != src->size_");
-			dst = src;
-		}
-		case IMAGE_FORMAT::IMAGE_BGR_NHWC:
-		{
-			int step = 0;
-			if (src->size_ != width * height * 3)
-			{
-				step = ((width * 3 + 3) >> 2) << 2;
-				if (src->size_ != step * height)
-					throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, src->size_ != width * height * 3 || src->size_ != (((width * 3 + 3) >> 2) << 2) * height");
-			}
-			else
-				step = width * 3;
+			if (src->size_ % n != 0 && src->size_ / n < c * h * w)
+				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NCHW, src->size_ % n != 0 && src->size_ / n < c * h * w");
 
-			if (step == width * 3)
+			int stride = src->size_ / (n * c * h);
+			if(stride == w)
 				dst = src;
-			else if (step > width * 3)
+			else if (stride > w)
 			{
-				size_t size = 3 * height * width;
+				int size = n * c * h * w;
 				std::uint8_t* dst_ptr = new std::uint8_t[size];
 				const std::uint8_t* src_ptr = src->data_;
-				for (size_t i = 0; i < height; i++)
-					std::copy(src_ptr + i * step, src_ptr + i * step + width * 3, dst_ptr + i * width * 3);
+				for (int i = 0; i < n; i++)
+					for (int j = 0; j < c; j++)
+						for (int y = 0; y < h; y++)
+							std::copy(src_ptr + i * c * h * stride + j * h * stride + y * stride, src_ptr + i * c * h * stride + j * h * stride + y * stride + w, dst_ptr + i * c * h * w + j * h * w + y * w);
 
-				dst = std::make_shared<data_handler>(dst_ptr, size, IMAGE_FORMAT::IMAGE_BGR_NHWC, true);
+				dst = std::make_shared<data_handler>(dst_ptr, size, DATA_FORMAT::IMAGE_BGR_NCHW, true);
+			}
+			else
+				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "stride < w");
+		}
+		case DATA_FORMAT::IMAGE_BGR_NHWC:
+		{
+			if (src->size_ % n != 0 && src->size_ / n < h * w * c)
+			{
+				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "BGR_NHWC, src->size_ % n != 0 && src->size_ / n < h * w * c");
+			}
+
+			int stride = src->size_ / (n * h);
+			if (stride == c * w)
+				dst = src;
+			else if (stride > c * w)
+			{
+				int size = n * c * h * w;
+				std::uint8_t* dst_ptr = new std::uint8_t[size];
+				const std::uint8_t* src_ptr = src->data_;
+				for (int i = 0; i < n; i++)
+				{
+					for (int y = 0; y < h; y++)
+					{
+						std::copy(src_ptr + i * h * stride + i * stride, src_ptr + i * h * stride + y * stride + c * w, dst_ptr + i * c * h * w + y * c * w);
+					}
+				}
+
+				dst = std::make_shared<data_handler>(dst_ptr, size, DATA_FORMAT::IMAGE_BGR_NHWC, true);
 			}
 			else
 			{
-				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "step < width * 3");
+				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "stride < c * w");
 			}
 
 			break;
 		}
-		case IMAGE_FORMAT::IMAGE_NV21:
+		case DATA_FORMAT::IMAGE_NV21:
 		{
-			size_t size = width * height * 3;
-			if (src->size_ != (size >> 1))
-				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "convert_to_bgr: src->size_ != (width * height * 3 >> 1)");
+			int size = h * w * c;
+			if (h & 1 || src->size_ != n * (size >> 1))
+				throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "convert_to_bgr: h & 1 || src->size_ != n * (size >> 1)");
 
-			std::uint8_t* dst_ptr = new std::uint8_t[size];
-			int aligned_src_width = (width + 1) & ~1;
-			const uint8_t* y = src->data_;
-			const uint8_t* uv = src->data_ + aligned_src_width * height;
-			if (libyuv::NV21ToRGB24(y, width, uv, aligned_src_width, dst_ptr, width * 3, width, height))
-				throw parser_exception(parser_exception::parser_exception_code::INTERNAL_FUNCTION_FAILURE, "NV21ToRGB24 failed.");
+			std::uint8_t* dst_ptr = new std::uint8_t[n * size];
+			for (int i = 0; i < n; n++)
+			{
+				int aligned_src_width = (w + 1) & ~1;
+				const uint8_t* y = src->data_ + i * (size >> 1);
+				const uint8_t* vu = src->data_ + i * (size >> 1) + aligned_src_width * h;
+				if (libyuv::NV21ToRGB24(y, w, vu, aligned_src_width, dst_ptr + i * size, w * c, w, h))
+					throw parser_exception(parser_exception::parser_exception_code::INTERNAL_FUNCTION_FAILURE, "NV21ToRGB24 failed.");
+			}
 
-			dst = std::make_shared<data_handler>(dst_ptr, size, IMAGE_FORMAT::IMAGE_BGR_NHWC, true);
+			dst = std::make_shared<data_handler>(dst_ptr, size * n, DATA_FORMAT::IMAGE_BGR_NHWC, true);
 			break;
 		}
 		default:
@@ -160,10 +181,10 @@ namespace glasssix::exposing::nessus
 		}
 	}
 
-	inline std::shared_ptr<data_handler> decode_and_convert(param_span<std::uint8_t> src, bool is_base64, IMAGE_FORMAT format, int width, int height)
+	inline std::shared_ptr<data_handler> decode_and_convert(param_span<std::uint8_t> src, bool is_base64, DATA_FORMAT format, int n, int c, int h, int w)
 	{
-		if (height <= 0 || width <= 0)
-			throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Invalid argument: height <= 0 || width <= 0");
+		if (h <= 0 || w <= 0)
+			throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Invalid argument: h <= 0 || w <= 0");
 
 		if (src.size() <= 0)
 			throw parser_exception(parser_exception::parser_exception_code::INVALID_ARGUMENT, "Invalid argument: src.size() <= 0");
@@ -183,7 +204,7 @@ namespace glasssix::exposing::nessus
 		}
 
 		std::shared_ptr<data_handler> dst;
-		convert_to_bgr(temp, dst, width, height);
+		convert_to_bgr(temp, dst, n, c, h, w);
 		return dst;
 	}
 
@@ -199,19 +220,49 @@ namespace glasssix::exposing::nessus
 			return plugin_manager_.create_algo_instance(qualified_name, str_param);
 		}
 
-		param_string execute(const guid& instance_id, const param_string& str_param, const param_span<std::uint8_t> img_data, const int height, const int width, const IMAGE_FORMAT img_format, bool is_base64, const param_span<std::uint8_t> output_data)
+		param_string execute(const guid& instance_id, const param_string& str_param, const param_span<std::uint8_t> input_data, const param_span<std::uint8_t> reserve_output_data)
 		{
-			auto frame = decode_and_convert(img_data, is_base64, img_format, width, height);
-			param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
+			Json::Reader reader(Json::Features::strictMode());
+			Json::FastWriter writer;
+			Json::Value root;
+			if (!reader.parse(exposing::to_narrow_string(str_param), root))
+				throw parser_exception(parser_exception::parser_exception_code::JSON_EXCEPTION, "parse json failed");
 
-			auto input_params_map = make_param_hash_map<param_string, unknown_object>(
-				{ {u8"params", box(str_param)},
-				{u8"bgr_data", box(image_span)},
-				{u8"height", box(height)},
-				{u8"width", box(width)},
-				{u8"output_data", box(output_data)} });
+			if (root["data_params"].empty())
+			{
+				auto input_params_map = make_param_hash_map<param_string, unknown_object>(
+					{ {u8"params", box(exposing::to_param_string(writer.write(root.get("algo_params", Json::Value(Json::nullValue)))))},
+					{u8"input_data", box(input_data)},
+					{u8"output_data", box(reserve_output_data)} });
 
-			return plugin_manager_.execute(instance_id, input_params_map);
+				return plugin_manager_.execute(instance_id, input_params_map);
+			}
+			else
+			{
+				int n = root["data_params"].get("num", Json::Int(1)).asInt();
+				int c = root["data_params"].get("channels", Json::Int(3)).asInt();
+				int h = root["data_params"]["height"].asInt();
+				int w = root["data_params"]["width"].asInt();
+				int format = root["data_params"].get("format", Json::Int(1)).asInt();
+
+				auto frames = decode_and_convert(input_data, false, static_cast<DATA_FORMAT>(format), n, c, h, w);
+				param_span<std::uint8_t> data_span(const_cast<std::uint8_t*>(frames->data_), frames->size_);
+
+				param_vector<int> data_shape = make_param_vector<int>();
+				data_shape.push_back(n);
+				data_shape.push_back(c);
+				data_shape.push_back(h);
+				data_shape.push_back(w);
+
+				auto input_params_map = make_param_hash_map<param_string, unknown_object>(
+					{ {u8"params", box(exposing::to_param_string(writer.write(root.get("algo_params", Json::Value(Json::nullValue)))))},
+					{u8"input_data", box(data_span)},
+					{u8"order", box(static_cast<int>(frames->format_))},
+					{u8"data_shape", data_shape},
+					{u8"output_data", box(reserve_output_data)} });
+
+				return plugin_manager_.execute(instance_id, input_params_map);
+			}
 		}
 
 		const char* nessus_version_ = "1.0.0";
@@ -274,9 +325,9 @@ namespace glasssix::exposing::nessus
 		return parser_impl_concret::instance().create_instance(qualified_name, str_param);
 	}
 
-	param_string parser_impl::execute(const guid& instance_id, const param_string& str_param, const param_span<std::uint8_t> img_data, const int height, const int width, const int data_format, bool is_base64, param_span<std::uint8_t> output_data)
+	param_string parser_impl::execute(const guid& instance_id, const param_string& str_param, const param_span<std::uint8_t> input_data, const param_span<std::uint8_t> reserve_output_data)
 	{
-		return parser_impl_concret::instance().execute(instance_id, str_param, img_data, height, width, static_cast<IMAGE_FORMAT>(data_format), is_base64, output_data);
+		return parser_impl_concret::instance().execute(instance_id, str_param, input_data, reserve_output_data);
 	}
 
 	void parser_impl::release_instance(const guid& instance_id)

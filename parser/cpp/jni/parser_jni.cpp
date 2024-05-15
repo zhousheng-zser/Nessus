@@ -134,7 +134,7 @@ extern "C" {
 		}
 	}
 
-	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_execute(JNIEnv* env, jobject thiz, jstring jstr_instance_id, jstring jstr_param, jbyteArray imgDataArray, jint height, jint width, jint img_format, jboolean is_base64, jbyteArray outputDataArray)
+	JNIEXPORT jstring JNICALL Java_com_glasssix_parser_Parser_execute(JNIEnv* env, jobject thiz, jstring jstr_instance_id, jstring jstr_param, jbyteArray imgDataArray, jbyteArray outputDataArray)
 	{
 		std::unique_ptr<_jclass, std::function<void(jclass)>> class_exception{ env->FindClass("java/lang/Exception"), [&](jclass inner) { env->DeleteLocalRef(inner); } };
 #ifndef G6_DISABLE_LICENSE
@@ -179,7 +179,7 @@ extern "C" {
 		Json::Value value;
 		try
 		{
-			glasssix::exposing::param_string result = parser_object.execute(instance_id, str_param, img_data, static_cast<int>(height), static_cast<int>(width), static_cast<int>(img_format), is_base64 == JNI_TRUE, output_data);
+			glasssix::exposing::param_string result = parser_object.execute(instance_id, str_param, img_data, output_data);
 
 			if (output_data_ptr)
 				env->ReleaseByteArrayElements(outputDataArray, output_data_ptr, 0);
