@@ -50,8 +50,7 @@ extern "C" {
 
 
 	PARSER_C_EXPORT char* parser_execute(const char* instance_id, const char* str_param,
-		const char* img_data, const int img_data_len, const int height, int width,
-		const int img_format, bool is_base64, char* output_data, const int output_data_len);
+		const char* input_data, const int input_data_len, char* output_data, const int output_data_len);
 
 	PARSER_C_EXPORT void parser_release_instance(const char* instance_id);
 
