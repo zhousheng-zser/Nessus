@@ -140,10 +140,10 @@ extern "C" {
 		try
 		{
 			glasssix::exposing::param_string _str_param(str_param ? str_param : u8"");
-			glasssix::exposing::param_span<std::uint8_t> input_data(reinterpret_cast<std::uint8_t*>(const_cast<char*>(input_data)), static_cast<size_t>(input_data_len));
-			glasssix::exposing::param_span<std::uint8_t> output_data(reinterpret_cast<std::uint8_t*>(output_data), static_cast<size_t>(output_data_len));
+			glasssix::exposing::param_span<std::uint8_t> input_data_span(reinterpret_cast<std::uint8_t*>(const_cast<char*>(input_data)), static_cast<size_t>(input_data_len));
+			glasssix::exposing::param_span<std::uint8_t> output_data_span(reinterpret_cast<std::uint8_t*>(output_data), static_cast<size_t>(output_data_len));
 
-			glasssix::exposing::param_string result_str = parser_object.execute(glasssix::exposing::guid(std::string(instance_id)), _str_param, input_data, output_data);
+			glasssix::exposing::param_string result_str = parser_object.execute(glasssix::exposing::guid(std::string(instance_id)), _str_param, input_data_span, output_data_span);
 			value["status"]["code"] = 0;
 			value["status"]["message"] = "OK";
 			value["result"] = glasssix::exposing::to_narrow_string(result_str);
