@@ -6,9 +6,9 @@
 
 namespace glasssix::exposing::nessus::Protocol {
 
-	class P_Pedestrian : public Protocol
+	class P_Pedestrian_min : public Protocol
 	{
-		static Json::Value Pedestrian_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Pedestrian_min_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -47,7 +47,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Pedestrian_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Pedestrian_min_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 
@@ -86,7 +86,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Pedestrian_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Pedestrian_min_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -122,8 +122,10 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Pedestrian_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Pedestrian_min_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
+
+			printf("in pedestrian_min_detect vissdion\n");
 			Json::Value value;
 			try
 			{
@@ -215,15 +217,15 @@ namespace glasssix::exposing::nessus::Protocol {
 	public:
 		virtual const std::unordered_map<std::string, protocol_function> parser_protocol_dump() const override {
 			std::unordered_map<std::string, protocol_function> protocol_map;
-			protocol_map["pedestrian_min.new"] = &Pedestrian_new_json;
-			protocol_map["pedestrian_min.delete"] = &Pedestrian_delete_json;
-			protocol_map["pedestrian_min.detect"] = &Pedestrian_detect_json;
-			protocol_map["pedestrian_min.version"] = &Pedestrian_version_json;
+			protocol_map["pedestrian_min.new"] = &Pedestrian_min_new_json;
+			protocol_map["pedestrian_min.delete"] = &Pedestrian_min_delete_json;
+			protocol_map["pedestrian_min.detect"] = &Pedestrian_min_detect_json;
+			protocol_map["pedestrian_min.version"] = &Pedestrian_min_version_json;
 
 			return protocol_map;
 		}
 	};
 
-	REGISTE_PROTOCOL(P_Pedestrian)
+	REGISTE_PROTOCOL(P_Pedestrian_min)
 
 }

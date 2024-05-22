@@ -1,5 +1,5 @@
-#ifndef _PEDESTRIAN_CLASSIFY_CODE_HPP_
-#define _PEDESTRIAN_CLASSIFY_CODE_HPP_
+#ifndef _PEDESTRIAN_MIN_CLASSIFY_CODE_HPP_
+#define _PEDESTRIAN_MIN_CLASSIFY_CODE_HPP_
 
 #include "box_info.hpp"
 #include <abi/consumer.hpp>
@@ -16,7 +16,7 @@ namespace glasssix::exposing::impl
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{ "{25455959-A263-45CF-AE90-FC25ACEEC4AA}" };
+        static constexpr guid id{ "6ACD7A6C-6EE0-0A47-1531-888A6123B65B" };
 
         struct type : abi_unknown_object
         {
@@ -104,22 +104,22 @@ namespace glasssix::exposing::impl
                 std::int32_t roi_height,
                 const exposing::param_hash_map<exposing::param_string, float>& param_map_abi) const
             {
-                exposing::param_vector<pedestrian_min::box_info> result{ nullptr };
+				exposing::param_vector<pedestrian_min::box_info> result{ nullptr };
 
-                return (check_abi_result(
-                    this->self_abi().detect(
-                        get_abi(bitmap),
-                        channels,
-                        height,
-                        width,
-                        roi_x,
-                        roi_y,
-                        roi_width,
-                        roi_height,
-                        get_abi(param_map_abi),
-                        put_abi(result))
+				return (check_abi_result(
+					this->self_abi().detect(
+						get_abi(bitmap),
+						channels,
+						height,
+						width,
+						roi_x,
+						roi_y,
+						roi_width,
+						roi_height,
+						get_abi(param_map_abi),
+						put_abi(result))
 				),result);
-            }
+			}
 
             param_string version() const
             {

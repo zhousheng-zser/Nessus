@@ -1,5 +1,5 @@
-#ifndef _PEDESTRIAN_BOX_INFO_HPP_
-#define _PEDESTRIAN_BOX_INFO_HPP_
+#ifndef _PEDESTRIAN_MIN_BOX_INFO_HPP_
+#define _PEDESTRIAN_MIN_BOX_INFO_HPP_
 
 #include <abi/consumer.hpp>
 
@@ -15,7 +15,7 @@ namespace glasssix::exposing::impl
     {
         using identity_type = type_identity_interface;
 
-        static constexpr guid id{ "{6647E928-AB9E-4D82-BDFB-941B30A76FC9}" };
+        static constexpr guid id{ "{D63B2379-DE39-1FB5-40A8-5B03E571113D}" };
 
         struct type : abi_unknown_object
         {
@@ -24,7 +24,7 @@ namespace glasssix::exposing::impl
             virtual std::int32_t G6_ABI_CALL x2(abi_out_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL y2(abi_out_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL score(abi_out_t<float> result) noexcept = 0;
-            virtual std::int32_t G6_ABI_CALL category(abi_out_t<int> result) noexcept = 0;
+			virtual std::int32_t G6_ABI_CALL category(abi_out_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL set_x1(abi_in_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL set_y1(abi_in_t<int> result) noexcept = 0;
             virtual std::int32_t G6_ABI_CALL set_x2(abi_in_t<int> result) noexcept = 0;
@@ -65,12 +65,12 @@ namespace glasssix::exposing::impl
         virtual std::int32_t G6_ABI_CALL score(abi_out_t<float> result) noexcept override
         {
             return abi_safe_call([&]
-                { *result = detach_abi(this->self().score()); });
+                                 { *result = detach_abi(this->self().score()); });
         }
         virtual std::int32_t G6_ABI_CALL category(abi_out_t<int> result) noexcept override
         {
             return abi_safe_call([&]
-                { *result = detach_abi(this->self().category()); });
+                                 { *result = detach_abi(this->self().category()); });
         }
 
         virtual std::int32_t G6_ABI_CALL set_x1(abi_in_t<int> input) noexcept override
@@ -141,13 +141,13 @@ namespace glasssix::exposing::impl
                 return (check_abi_result(this->self_abi().y2(put_abi(result))), result);
             }
 
-            float score() const
+			float score() const
             {
                 float result = 0;
 
                 return (check_abi_result(this->self_abi().score(put_abi(result))), result);
             }
-            int category() const
+			int category() const
             {
                 int result = 0;
 
