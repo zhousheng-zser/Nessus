@@ -125,7 +125,6 @@ namespace glasssix::exposing::nessus::Protocol {
 		static Json::Value Pedestrian_min_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 
-			printf("in pedestrian_min_detect vissdion\n");
 			Json::Value value;
 			try
 			{
