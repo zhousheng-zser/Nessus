@@ -110,7 +110,20 @@ namespace glasssix::exposing::nessus::Protocol {
 				for (auto& param_name : params.getMemberNames()) {
 					param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
 				}
+				Json::Value pedestrain_info(Json::arrayValue);
+				pedestrain_info = root["person_list"];
 
+                auto pedestrain_info_abi = exposing::make_param_vector<pedestrian::box_info>();
+                for (int i = 0; i < pedestrain_info.size(); i++)
+                {
+					auto temp = exposing::make_exported_interface<pedestrian::box_info>();
+                    temp.set_x1(pedestrain_info[i]["x1"].asInt());
+                    temp.set_y2(pedestrain_info[i]["y2"].asInt());
+                    temp.set_x2(pedestrain_info[i]["x2"].asInt());
+                    temp.set_y1(pedestrain_info[i]["y1"].asInt());
+                    temp.set_score(pedestrain_info[i]["score"].asFloat());
+                    pedestrain_info_abi.push_back(temp);
+                }
 				auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 				param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
@@ -126,6 +139,7 @@ namespace glasssix::exposing::nessus::Protocol {
 						{u8"channels", box(channels)},
 						{u8"object_id", box(instance)},
 						{u8"params", param_map_abi},
+						{u8"person_list", pedestrain_info_abi},
 
 					});
 
