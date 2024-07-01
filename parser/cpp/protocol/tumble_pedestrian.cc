@@ -2,12 +2,12 @@
 #include "../protocol_register.hpp"
 #include "../message_protocol_jsoncpp.hpp"
 //
-#include <tumble/detect_code.hpp>
-#include <tumble/box_info.hpp>
+#include <tumble_pedestrian/detect_code.hpp>
+#include <tumble_pedestrian/box_info.hpp>
 
 namespace glasssix::exposing::nessus::Protocol {
 
-	class P_Tumble : public Protocol
+	class P_Tumble_Pedestrian : public Protocol
 	{
 		static Json::Value Tumble_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
@@ -19,7 +19,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"device", box(device)}, {u8"models_directory", box(std::string_view(models_directory))} });
 
-				instance = unbox<guid>(plugin.execute(u8"tumble.new", param));
+				instance = unbox<guid>(plugin.execute(u8"tumble_pedestrian.new", param));
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 			}
@@ -55,7 +55,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				auto version = plugin.execute(u8"tumble.version", param);
+				auto version = plugin.execute(u8"tumble_pedestrian.version", param);
 
 				value["version"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
 
@@ -129,7 +129,7 @@ namespace glasssix::exposing::nessus::Protocol {
 
 					});
 
-				auto result = plugin.execute(u8"tumble.detect", param).as<param_vector<tumble::box_info>>();
+				auto result = plugin.execute(u8"tumble_pedestrian.detect", param).as<param_vector<tumble_pedestrian::box_info>>();
 				Json::Value jarray_box;
 				Json::Value jarray_tumble_detected(Json::arrayValue);
 				Json::Value jarray_no_tumble_detected(Json::arrayValue);
@@ -200,7 +200,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				plugin.execute(u8"tumble.delete", param);
+				plugin.execute(u8"tumble_pedestrian.delete", param);
 
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -231,15 +231,15 @@ namespace glasssix::exposing::nessus::Protocol {
 	public:
 		virtual const std::unordered_map<std::string, protocol_function> parser_protocol_dump() const override {
 			std::unordered_map<std::string, protocol_function> protocol_map;
-			protocol_map["tumble.new"] = &Tumble_new_json;
-			protocol_map["tumble.delete"] = &Tumble_delete_json;
-			protocol_map["tumble.detect"] = &Tumble_detect_json;
-			protocol_map["tumble.version"] = &Tumble_version_json;
+			protocol_map["tumble_pedestrian.new"] = &Tumble_new_json;
+			protocol_map["tumble_pedestrian.delete"] = &Tumble_delete_json;
+			protocol_map["tumble_pedestrian.detect"] = &Tumble_detect_json;
+			protocol_map["tumble_pedestrian.version"] = &Tumble_version_json;
 
 			return protocol_map;
 		}
 	};
 
-	REGISTE_PROTOCOL(P_Tumble)
+	REGISTE_PROTOCOL(P_Tumble_Pedestrian)
 
 }
