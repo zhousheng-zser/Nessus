@@ -1,30 +1,27 @@
 #pragma once
 #include "../protocol_register.hpp"
 #include "../message_protocol_jsoncpp.hpp"
-#include <helmet/detect_code.hpp>
-#include <helmet/box_info.hpp>
 //
+#include <tumble_pedestrian/detect_code.hpp>
+#include <tumble_pedestrian/box_info.hpp>
 
 namespace glasssix::exposing::nessus::Protocol {
 
-	class P_Helmet : public Protocol
+	class P_Tumble_Pedestrian : public Protocol
 	{
-		static Json::Value Helmet_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Tumble_new_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 
 			try {
-
 				std::string models_directory = root["models_directory"].asString();
 				int device = root["device"].asInt();
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"device", box(device)}, {u8"models_directory", box(std::string_view(models_directory))} });
 
-
-				instance = unbox<guid>(plugin.execute(u8"helmet.new", param));
+				instance = unbox<guid>(plugin.execute(u8"tumble_pedestrian.new", param));
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
-
 			}
 			catch (const parser_exception& ex)
 			{
@@ -50,7 +47,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Helmet_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Tumble_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -58,7 +55,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				auto version = plugin.execute(u8"helmet.version", param);
+				auto version = plugin.execute(u8"tumble_pedestrian.version", param);
 
 				value["version"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(version)));
 
@@ -89,42 +86,44 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Helmet_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Tumble_detect_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
 			{
-
 				int format = root["format"].asInt();
 				int height = root["height"].asInt();
 				int width = root["width"].asInt();
+
 				int roi_x = root["roi_x"].asInt();
 				int roi_y = root["roi_y"].asInt();
+
 				int roi_width = root["roi_width"].asInt();
 				int roi_height = root["roi_height"].asInt();
+				
+				int channels = 3;
 
 				Json::Value params = root.get("params", Json::Value());
-
-				auto head_info_list = root["head_info_list"];
-				auto heads = exposing::make_param_vector<head::box_info>();
-				for (auto p : head_info_list)
-				{
-					auto head = exposing::make_exported_interface<head::box_info>();
-					head.set_x1(p["x1"].asInt());
-					head.set_y1(p["y1"].asInt());
-					head.set_x2(p["x2"].asInt());
-					head.set_y2(p["y2"].asInt());
-					head.set_score(p["score"].asFloat());
-					heads.push_back(head);
-				}
-
 
 				auto param_map_abi = exposing::make_param_hash_map<exposing::param_string, float>();
 
 				for (auto& param_name : params.getMemberNames()) {
 					param_map_abi.add_or_update(param_name.c_str(), params[param_name].asFloat());
 				}
+				Json::Value pedestrain_info(Json::arrayValue);
+				pedestrain_info = root["person_list"];
 
+                auto pedestrain_info_abi = exposing::make_param_vector<pedestrian::box_info>();
+                for (int i = 0; i < pedestrain_info.size(); i++)
+                {
+					auto temp = exposing::make_exported_interface<pedestrian::box_info>();
+                    temp.set_x1(pedestrain_info[i]["x1"].asInt());
+                    temp.set_y2(pedestrain_info[i]["y2"].asInt());
+                    temp.set_x2(pedestrain_info[i]["x2"].asInt());
+                    temp.set_y1(pedestrain_info[i]["y1"].asInt());
+                    temp.set_score(pedestrain_info[i]["score"].asFloat());
+                    pedestrain_info_abi.push_back(temp);
+                }
 				auto frame = decode_and_convert(data, false, static_cast<PROTOCOL_IMAGE_FORMAT>(format), width, height);
 				param_span<std::uint8_t> image_span(const_cast<std::uint8_t*>(frame->data_), frame->size_);
 
@@ -137,57 +136,46 @@ namespace glasssix::exposing::nessus::Protocol {
 						{u8"roi_y", box(roi_y)},
 						{u8"roi_width", box(roi_width)},
 						{u8"roi_height", box(roi_height)},
+						{u8"channels", box(channels)},
 						{u8"object_id", box(instance)},
-						{u8"head_info_list", heads},
 						{u8"params", param_map_abi},
+						{u8"person_list", pedestrain_info_abi},
+
 					});
 
-				auto result = plugin.execute(u8"helmet.detect", param).as<exposing::param_vector<helmet::box_info>>();
-
+				auto result = plugin.execute(u8"tumble_pedestrian.detect", param).as<param_vector<tumble_pedestrian::box_info>>();
 				Json::Value jarray_box;
-				Json::Value jarray_helmet_detected(Json::arrayValue);			
-				Json::Value jarray_hat_detected(Json::arrayValue);
-				Json::Value jarray_head_detected(Json::arrayValue);
+				Json::Value jarray_tumble_detected(Json::arrayValue);
+				Json::Value jarray_no_tumble_detected(Json::arrayValue);
 
 				for (int i = 0; i < result.size(); i++)
 				{
 					int category = Json::Int(result[i].category());
-
-					if (category == 0)
+					// Json::Value jarray_box;
+					if (category == 1)
 					{
 						jarray_box["x1"] = Json::Int(result[i].x1());
 						jarray_box["y1"] = Json::Int(result[i].y1());
 						jarray_box["x2"] = Json::Int(result[i].x2());
 						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"]= Json::Value(result[i].score());
-						jarray_helmet_detected.append(jarray_box);
+						jarray_box["score"] = Json::Value(result[i].score());
+						jarray_tumble_detected.append(jarray_box);
 					}
-					else if (category == 1)
+					else if (category == 0)
 					{
 						jarray_box["x1"] = Json::Int(result[i].x1());
 						jarray_box["y1"] = Json::Int(result[i].y1());
 						jarray_box["x2"] = Json::Int(result[i].x2());
 						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"]= Json::Value(result[i].score());
-						jarray_hat_detected.append(jarray_box);//rk3588现在表示非人头
-					}
-					else if (category == 2)
-					{
-						jarray_box["x1"] = Json::Int(result[i].x1());
-						jarray_box["y1"] = Json::Int(result[i].y1());
-						jarray_box["x2"] = Json::Int(result[i].x2());
-						jarray_box["y2"] = Json::Int(result[i].y2());
-						jarray_box["score"]= Json::Value(result[i].score());
-						jarray_head_detected.append(jarray_box);
+						jarray_box["score"] = Json::Value(result[i].score());
+						jarray_no_tumble_detected.append(jarray_box);
 					}
 				}
 
 				Json::Value jarray_info;
 
-				jarray_info["with_helmet_list"] = jarray_helmet_detected;
-				jarray_info["with_hat_list"] = jarray_hat_detected;
-				jarray_info["head_list"] = jarray_head_detected;
-
+				jarray_info["tumble_list"] = jarray_tumble_detected;
+				jarray_info["stand_list"] = jarray_no_tumble_detected;
 
 				value["detect_info"] = jarray_info;
 
@@ -218,7 +206,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
-		static Json::Value Helmet_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		static Json::Value Tumble_delete_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
 			try
@@ -226,7 +214,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				auto param = make_param_hash_map<param_string, unknown_object>(
 					{ {u8"object_id", box(instance)} });
 
-				plugin.execute(u8"helmet.delete", param);
+				plugin.execute(u8"tumble_pedestrian.delete", param);
 
 				value["status"]["message"] = Json::Value("OK");
 				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
@@ -257,15 +245,15 @@ namespace glasssix::exposing::nessus::Protocol {
 	public:
 		virtual const std::unordered_map<std::string, protocol_function> parser_protocol_dump() const override {
 			std::unordered_map<std::string, protocol_function> protocol_map;
-			protocol_map["helmet.new"] = &Helmet_new_json;
-			protocol_map["helmet.delete"] = &Helmet_delete_json;
-			protocol_map["helmet.detect"] = &Helmet_detect_json;
-			protocol_map["helmet.version"] = &Helmet_version_json;
+			protocol_map["tumble_pedestrian.new"] = &Tumble_new_json;
+			protocol_map["tumble_pedestrian.delete"] = &Tumble_delete_json;
+			protocol_map["tumble_pedestrian.detect"] = &Tumble_detect_json;
+			protocol_map["tumble_pedestrian.version"] = &Tumble_version_json;
 
 			return protocol_map;
 		}
 	};
 
-	REGISTE_PROTOCOL(P_Helmet)
+	REGISTE_PROTOCOL(P_Tumble_Pedestrian)
 
 }
