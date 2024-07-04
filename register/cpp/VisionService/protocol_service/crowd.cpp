@@ -22,6 +22,13 @@ namespace glasssix::exposing::nessus::Service
 			auto instance = vision_service_impl::impl::get_instance<crowd::detect_code>(params);
 			return box(instance.version());
 		}
+		static unknown_object crowd_remove_library(const param_hash_map<param_string, unknown_object>& params)
+		{
+			auto instance = vision_service_impl::impl::get_instance<crowd::detect_code>(params);
+
+			auto id = unbox<std::int32_t>(params.get_value(u8"id"));
+			return box(instance.remove_library(id));
+		}
 
 		static unknown_object crowd_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
@@ -47,13 +54,14 @@ namespace glasssix::exposing::nessus::Service
 		static constexpr utf8_string_view NEW_{ u8"crowd.new" };
 		static constexpr utf8_string_view DELETE_{ u8"crowd.delete" };
 		static constexpr utf8_string_view VERSION_{ u8"crowd.version" };
+		static constexpr utf8_string_view remove_library{ u8"crowd.remove_library" };
 		static constexpr utf8_string_view detect_{ u8"crowd.detect" };
 	public:
 		virtual const void service_dump(std::unordered_map<param_string, service_function_ty>& service_map) const override {
 			service_map.try_emplace(NEW_, &crowd_new);
 			service_map.try_emplace(DELETE_, DELETE_FUNC);
 			service_map.try_emplace(VERSION_, &crowd_version);
-
+			service_map.try_emplace(remove_library, &crowd_remove_library);
 			service_map.try_emplace(detect_, &crowd_detect);
 		}
 	};

@@ -50,6 +50,49 @@ namespace glasssix::exposing::nessus::Protocol {
 			return value;
 		}
 
+		static Json::Value Crowd_remove_library_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
+		{
+			Json::Value value;
+			try
+			{
+				int id = root["id"].asInt();
+				auto param = make_param_hash_map<param_string, unknown_object>(
+					{
+						{u8"object_id", box(instance)},
+						{u8"id", box(id)}
+					});
+
+				auto ans = plugin.execute(u8"crowd.remove_library", param);
+
+				value["delete_info"] = Json::Value(glasssix::exposing::to_narrow_string(unbox<param_string>(ans)));
+				value["status"]["message"] = Json::Value("OK");
+				value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
+
+			}
+			catch (const parser_exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(ex.what_code()));
+			}
+			catch (const Json::Exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::JSON_EXCEPTION));
+			}
+			catch (const std::exception& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what());
+				value["status"]["code"] = Json::Int(static_cast<int>(parser_exception::parser_exception_code::UNKNOWN_EXCEPTION));
+			}
+			catch (const abi_error& ex)
+			{
+				value["status"]["message"] = Json::Value(ex.what_to_narrow());
+				value["status"]["code"] = Json::Int(ex.result());
+			}
+
+			return value;
+		}
+
 		static Json::Value Crowd_version_json(plugin_interface& plugin, Json::Value& root, param_span<std::uint8_t>& data, guid& instance, param_span<std::uint8_t>& external)
 		{
 			Json::Value value;
@@ -244,6 +287,7 @@ namespace glasssix::exposing::nessus::Protocol {
 			protocol_map["crowd.delete"] = &Crowd_delete_json;
 			protocol_map["crowd.detect"] = &Crowd_detect_json;
 			protocol_map["crowd.version"] = &Crowd_version_json;
+			protocol_map["crowd.remove_library"] = &Crowd_remove_library_json;
 
 			return protocol_map;
 		}
