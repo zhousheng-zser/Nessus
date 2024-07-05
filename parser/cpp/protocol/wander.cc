@@ -254,6 +254,7 @@ namespace glasssix::exposing::nessus::Protocol {
 					jarray_box["first_show_time"] = Json::Value(result[i].first_show_time());
 					jarray_box["last_show_time"] = Json::Value(result[i].last_show_time());
 					jarray_box["cosine_similarity"] = Json::Value(result[i].cosine_similarity());
+					jarray_box["detection_number"] = Json::Value(result[i].detection_number());
 					jarray_detected.append(jarray_box);
 				
 				}
