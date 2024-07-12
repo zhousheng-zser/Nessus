@@ -105,10 +105,11 @@ namespace glasssix::exposing::nessus::Protocol {
                 int lying_detected = 0;
 
                 Json::Value jarray_box;
-                Json::Value jarray_normal_detected(Json::arrayValue);
+                Json::Value jarray_persion_detected(Json::arrayValue);
                 Json::Value jarray_climb_detected(Json::arrayValue);
                 Json::Value jarray_tumble_detected(Json::arrayValue);
-                Json::Value jarray_abnormal_detected(Json::arrayValue);
+                Json::Value jarray_disabled_detected(Json::arrayValue);
+                Json::Value jarray_other_detected(Json::arrayValue);
 
                 for (int i = 0; i < result.size(); i++)
                 {
@@ -121,7 +122,7 @@ namespace glasssix::exposing::nessus::Protocol {
                         jarray_box["x2"] = Json::Int(result[i].x2());
                         jarray_box["y2"] = Json::Int(result[i].y2());
                         jarray_box["score"] = Json::Value(result[i].confidence());
-                        jarray_normal_detected.append(jarray_box);
+                        jarray_persion_detected.append(jarray_box);
                     }
                     else if (category == 1)
                     {
@@ -148,19 +149,26 @@ namespace glasssix::exposing::nessus::Protocol {
                         jarray_box["x2"] = Json::Int(result[i].x2());
                         jarray_box["y2"] = Json::Int(result[i].y2());
                         jarray_box["score"] = Json::Value(result[i].confidence());
-                        jarray_abnormal_detected.append(jarray_box);
+                        jarray_disabled_detected.append(jarray_box);
+                    }
+                    else if (category == 4)
+                    {
+                        jarray_box["x1"] = Json::Int(result[i].x1());
+                        jarray_box["y1"] = Json::Int(result[i].y1());
+                        jarray_box["x2"] = Json::Int(result[i].x2());
+                        jarray_box["y2"] = Json::Int(result[i].y2());
+                        jarray_box["score"] = Json::Value(result[i].confidence());
+                        jarray_other_detected.append(jarray_box);
                     }
                 }
 
                 Json::Value jarray_info;
 
-                jarray_info["normal_list"] = jarray_normal_detected;
-
+                jarray_info["persion_list"] = jarray_persion_detected;
                 jarray_info["climb_list"] = jarray_climb_detected;
-
                 jarray_info["tumble_list"] = jarray_tumble_detected;
-
-                jarray_info["abnormal_list"] = jarray_abnormal_detected;
+                jarray_info["disabled_list"] = jarray_disabled_detected;
+                jarray_info["other_list"] = jarray_other_detected;
 
                 value["detect_info"] = jarray_info;
                 value["status"]["message"] = Json::Value("OK");
