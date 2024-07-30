@@ -1,13 +1,15 @@
-#ifndef _wander_DETECT_CODE_HPP_
-#define _wander_DETECT_CODE_HPP_
+#ifndef _WANDER_DETECT_CODE_HPP_
+#define _WANDER_DETECT_CODE_HPP_
 
 #include "box_info.hpp"
-#include "../pedestrian/box_info.hpp"
 #include <abi/consumer.hpp>
+
 namespace glasssix::wander
 {
     struct detect_code;
 }
+
+
 
 namespace glasssix::exposing::impl
 {
@@ -83,7 +85,7 @@ namespace glasssix::exposing::impl
                 {
                     *result = detach_abi(this->self().version());
                 }
-                );
+            );
         }
 
 
@@ -94,7 +96,7 @@ namespace glasssix::exposing::impl
                 {
                     *result = detach_abi(this->self().remove_library(id));
                 }
-                );
+            );
         }
 
         virtual std::int32_t G6_ABI_CALL remove_person_by_index(std::int32_t device_id, std::int32_t id, abi_out_t<param_string> result) noexcept override
@@ -104,7 +106,7 @@ namespace glasssix::exposing::impl
                 {
                     *result = detach_abi(this->self().remove_person_by_index(device_id, id));
                 }
-                );
+            );
         }
 
     };
@@ -188,5 +190,4 @@ namespace glasssix::wander
         using inherits::inherits;
     };
 }
-
 #endif
