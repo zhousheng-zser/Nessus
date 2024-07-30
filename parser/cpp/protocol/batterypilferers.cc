@@ -96,9 +96,7 @@ namespace glasssix::exposing::nessus::Protocol {
 				Json::Value jarray_normal_detected(Json::arrayValue);
                 Json::Value jarray_steal_detected(Json::arrayValue);
  				
-				Json::Value jarray_info;
-                jarray_info["score"] = Json::Value(0);
-                jarray_info["category"] = Json::Int(0);
+
                 for (int i = 0; i < result.size(); i++)
                 {
                     int category = Json::Int(result[i].category());
@@ -106,18 +104,34 @@ namespace glasssix::exposing::nessus::Protocol {
                     // Json::Value jarray_box;
                     if (category == 1)
                     {
-						jarray_info["score"] = Json::Value(std::max(result[i].score(), jarray_info["score"].asFloat() ) );
-                		jarray_info["category"] = Json::Int(1);
-                        // jarray_box["x1"] = Json::Int(result[i].x1());
-                        // jarray_box["y1"] = Json::Int(result[i].y1());
-                        // jarray_box["x2"] = Json::Int(result[i].x2());
-                        // jarray_box["y2"] = Json::Int(result[i].y2());
-                        // jarray_box["score"] = Json::Value(result[i].score());
-                        // jarray_steal_detected.append(jarray_box);
-                    }
-                }
+						jarray_box["score"] = Json::Value(result[i].score());
+                		jarray_box["category"] = Json::Int(1);
+                        jarray_box["x1"] = Json::Int(result[i].x1());
+                        jarray_box["y1"] = Json::Int(result[i].y1());
+                        jarray_box["x2"] = Json::Int(result[i].x2());
+                        jarray_box["y2"] = Json::Int(result[i].y2());
+                        jarray_box["score"] = Json::Value(result[i].score());
+                        jarray_steal_detected.append(jarray_box);
+                    }else
+					{
+						jarray_box["score"] = Json::Value(result[i].score());
+                		jarray_box["category"] = Json::Int(1);
+                        jarray_box["x1"] = Json::Int(result[i].x1());
+                        jarray_box["y1"] = Json::Int(result[i].y1());
+                        jarray_box["x2"] = Json::Int(result[i].x2());
+                        jarray_box["y2"] = Json::Int(result[i].y2());
+                        jarray_box["score"] = Json::Value(result[i].score());
+                        jarray_normal_detected.append(jarray_box);
 
-                value["detect_info"] = jarray_info;
+					}
+                }
+				Json::Value jarray_info;
+
+				jarray_info["steal_list"] = jarray_steal_detected;
+				jarray_info["normal_list"] = jarray_normal_detected;
+
+				value["detect_info"] = jarray_info;
+
                 value["status"]["message"] = Json::Value("OK");
                 value["status"]["code"] = Json::Value(static_cast<int>(parser_exception::parser_exception_code::NO_EXCEPTION));
 			}
