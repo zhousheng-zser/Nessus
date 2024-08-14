@@ -131,15 +131,12 @@ namespace glasssix::exposing::nessus::Protocol {
                 for (int i = 0; i < result.size(); i++)
                 {
                     int category = Json::Int(result[i].category());
-                    if (category == 1)
-                    {
-                        jarray_box["x1"] = Json::Int(result[i].x1());
-                        jarray_box["y1"] = Json::Int(result[i].y1());
-                        jarray_box["x2"] = Json::Int(result[i].x2());
-                        jarray_box["y2"] = Json::Int(result[i].y2());
-                        jarray_box["score"] = Json::Value(result[i].score());
-                        jarray_without_policeuniform_detected.append(jarray_box);
-                    }
+                    jarray_box["x1"] = Json::Int(result[i].x1());
+                    jarray_box["y1"] = Json::Int(result[i].y1());
+                    jarray_box["x2"] = Json::Int(result[i].x2());
+                    jarray_box["y2"] = Json::Int(result[i].y2());
+                    jarray_box["score"] = Json::Value(result[i].score());
+                    jarray_without_policeuniform_detected.append(jarray_box);
                 }
                 Json::Value jarray_info;
                 jarray_info["without_policeuniform_list"] = jarray_without_policeuniform_detected;
