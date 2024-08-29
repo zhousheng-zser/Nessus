@@ -9,7 +9,7 @@
 namespace glasssix::exposing::nessus::Service
 {
 	class S_Pump_Protect_Face :public Service { //Plugin
-		static unknown_object pump_mask_new(const param_hash_map<param_string, unknown_object>& params)
+		static unknown_object pump_protect_face_new(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto device = unbox<std::int32_t>(params.get_value(u8"device"));
 			auto model_type = unbox<std::int32_t>(params.get_value(u8"model_type"));
@@ -18,13 +18,13 @@ namespace glasssix::exposing::nessus::Service
 			return vision_service_impl::impl::add_instance(MODULE_, make_exported_interface<pump_protect_face::detect_code>(models_directory, device,model_type));
 		}
 
-		static 	unknown_object pump_mask_version(const param_hash_map<param_string, unknown_object>& params)
+		static 	unknown_object pump_protect_face_version(const param_hash_map<param_string, unknown_object>& params)
 		{
 			auto instance = vision_service_impl::impl::get_instance<pump_protect_face::detect_code>(params);
 			return box(instance.version());
 		}
 
-		static unknown_object pump_mask_detect(const param_hash_map<param_string, unknown_object>& params)
+		static unknown_object pump_protect_face_detect(const param_hash_map<param_string, unknown_object>& params)
 		{
 			constexpr std::int32_t channels = 3;
 			auto instance = vision_service_impl::impl::get_instance<pump_protect_face::detect_code>(params);
@@ -42,11 +42,11 @@ namespace glasssix::exposing::nessus::Service
 		static constexpr utf8_string_view detect_{ u8"pump_protect_face.detect" };
 	public:
 		virtual const void service_dump(std::unordered_map<param_string, service_function_ty>& service_map) const override {
-			service_map.try_emplace(NEW_, &pump_mask_new);
+			service_map.try_emplace(NEW_, &pump_protect_face_new);
 			service_map.try_emplace(DELETE_, DELETE_FUNC);
-			service_map.try_emplace(VERSION_, &pump_mask_version);
+			service_map.try_emplace(VERSION_, &pump_protect_face_version);
 
-			service_map.try_emplace(detect_, &pump_mask_detect);
+			service_map.try_emplace(detect_, &pump_protect_face_detect);
 		}
 	};
 
